@@ -1,1 +1,21 @@
-{}
+{
+  "frame": {
+    "name": "Hypeman",
+    "version": "1",
+    "iconUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1758053572/cropped-Screenshot_2025-09-15_at_4.59.20_PM_gvvmjo.png",
+    "homeUrl": "https://hypeman-client.vercel.app",
+    "imageUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1758053572/cropped-Screenshot_2025-09-15_at_4.59.20_PM_gvvmjo.png",
+    "splashImageUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1758053572/cropped-Screenshot_2025-09-15_at_4.59.20_PM_gvvmjo.png",
+    "splashBackgroundColor": "#000000",
+    "webhookUrl": "https://hypeman-client.vercel.app/api/webhook",
+    "subtitle": "Hype your posts",
+    "description": "Hype your posts",
+    "primaryCategory": "utility",
+    "heroImageUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1758053572/cropped-Screenshot_2025-09-15_at_4.59.20_PM_gvvmjo.png"
+  },
+  "accountAssociation": {
+    "header": "eyJmaWQiOjQ4MzcxMywidHlwZSI6ImF1dGgiLCJrZXkiOiIweDQ2M0IxRThFNzhCMjgwMjdiNDIzRWE2ZjAwNjk1ZjAxYTg0RUZlNzIifQ",
+    "payload": "eyJkb21haW4iOiJoeXBlbWFuLWNsaWVudC52ZXJjZWwuYXBwIn0",
+    "signature": "Aht/trzEwcMX2G/MZ4SXGodvgXgHhSekb2SMf+G/MCAO/UpDRyCLoS22lyBIaknPHGJ0383jl36qghrKqAqRDBs="
+  }
+}
