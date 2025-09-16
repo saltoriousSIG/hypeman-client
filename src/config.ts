@@ -7,7 +7,7 @@ export const embedConfig = {
     action: {
       type: "launch_frame",
       name: "Hypeman",
-      url: "",
+      url: "https://hypeman-client.vercel.app/",
     },
   },
 } as const;
