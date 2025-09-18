@@ -6,8 +6,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, Save, DollarSign, User, CheckCircle, Star } from "lucide-react"
 import { NavLink } from "react-router-dom"
+import { useFrameContext } from "@/providers/FrameProvider"
 
 export default function CreatorSettingsPage() {
+    const { fUser } = useFrameContext();
     const [isVerifiedPromoter, setIsVerifiedPromoter] = useState(false)
 
     const [settings, setSettings] = useState({
@@ -66,13 +68,17 @@ export default function CreatorSettingsPage() {
                     /* Profile Section - Only for verified promoters */
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/10">
                         <div className="flex items-center gap-4 mb-6">
-                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 p-1">
-                                <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
-                                    <User className="w-6 h-6 text-white/80" />
-                                </div>
+                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-purple-600 p-1 mx-auto">
+                                <img
+                                    src={fUser?.pfpUrl || "/placeholder.svg"}
+                                    alt={fUser?.username}
+                                    width={88}
+                                    height={88}
+                                    className="w-full h-full rounded-full object-cover"
+                                />
                             </div>
                             <div>
-                                <h2 className="text-lg font-semibold text-white">@alex_crypto</h2>
+                                <h2 className="text-lg font-semibold text-white">@{fUser?.username}</h2>
                                 <p className="text-sm text-white/60">Creator Profile</p>
                             </div>
                         </div>
@@ -142,10 +148,14 @@ export default function CreatorSettingsPage() {
                     /* Verification CTA - For non-verified users */
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 border border-white/10 text-center">
                         <div className="flex justify-center mb-6">
-                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 p-1">
-                                <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
-                                    <Star className="w-8 h-8 text-white/80" />
-                                </div>
+                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-purple-600 p-1 mx-auto">
+                                <img
+                                    src={fUser?.pfpUrl || "/placeholder.svg"}
+                                    alt={fUser?.username}
+                                    width={88}
+                                    height={88}
+                                    className="w-full h-full rounded-full object-cover"
+                                />
                             </div>
                         </div>
 

@@ -1,0 +1,185 @@
+[
+  {
+    "inputs": [],
+    "name": "Ownable__NotOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "Ownable__NotTransitiveOwner",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "CastHashSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "who",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "time",
+        "type": "uint256"
+      }
+    ],
+    "name": "OpenPromotionAccepted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "who",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "time",
+        "type": "uint256"
+      }
+    ],
+    "name": "PromotionAccepted",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "promoter_fid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "promotion_id",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "cast_hash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "cast_time",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "verified",
+        "type": "bool"
+      }
+    ],
+    "name": "accept_open_promotion",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "promotion_id",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "cast_hash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "cast_time",
+        "type": "uint256"
+      }
+    ],
+    "name": "accept_promotion",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "promotion_id",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "cast_hash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "cast_time",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "promoter_address",
+        "type": "address"
+      }
+    ],
+    "name": "set_cast_hash",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

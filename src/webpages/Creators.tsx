@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,77 +10,25 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ArrowLeft, Star, Zap, Search, Check, Plus, History, Users, Target } from "lucide-react"
+import { toast } from "sonner"
 import { NavLink } from "react-router-dom"
+import useContract, { ExecutionType } from "@/hooks/useContract"
+import { USDC_ADDRESS } from "@/lib/utils"
 
 // Mock creator data
-const creators = [
-    {
-        id: 1,
-        name: "Alex Chen",
-        handle: "@alexbuilds",
-        avatar: "/tech-creator-avatar.png",
-        followers: "125K",
-        engagement: "8.2%",
-        price: 299,
-        rating: 4.9,
-        specialty: "Tech & Startups",
-        bio: "Building in public, sharing the journey. Love amplifying innovative projects.",
-        isRegistered: true,
-    },
-    {
-        id: 2,
-        name: "Sarah Kim",
-        handle: "@sarahcodes",
-        avatar: "/female-developer-avatar.png",
-        followers: "89K",
-        engagement: "12.1%",
-        price: 199,
-        rating: 4.8,
-        specialty: "Web3 & AI",
-        bio: "Passionate about emerging tech. Authentic voice in the developer community.",
-        isRegistered: true,
-    },
-    {
-        id: 3,
-        name: "Marcus Johnson",
-        handle: "@marcusdesigns",
-        avatar: "/diverse-designer-avatars.png",
-        followers: "156K",
-        engagement: "6.7%",
-        price: 399,
-        rating: 4.9,
-        specialty: "Design & UX",
-        bio: "Design leader sharing insights. Love promoting beautiful, functional products.",
-        isRegistered: true,
-    },
-]
+const creators = []
 
 // Mock search results for any user search
-const searchResults = [
-    {
-        id: 101,
-        name: "Emma Rodriguez",
-        handle: "@emmatech",
-        avatar: "/placeholder.svg?height=64&width=64",
-        followers: "45K",
-        isRegistered: false,
-    },
-    {
-        id: 102,
-        name: "David Park",
-        handle: "@davidbuilds",
-        avatar: "/placeholder.svg?height=64&width=64",
-        followers: "78K",
-        isRegistered: false,
-    },
-]
+const searchResults = [];
 
-export default function CreatorsPage() {
-    const [promotionType, setPromotionType] = useState<"open" | "targeted">("targeted")
+export default function BuyersPage() {
+    const [promotionType, setPromotionType] = useState<"open" | "targeted">("open")
     const [selectedCreators, setSelectedCreators] = useState<number[]>([])
     const [selectedUsers, setSelectedUsers] = useState<any[]>([])
     const [searchQuery, setSearchQuery] = useState("")
     const [showSearchResults, setShowSearchResults] = useState(false)
+    const [promotionMode, setPromotionMode] = useState<"existing" | "new">("new")
+    const [customDuration, setCustomDuration] = useState({ value: "", unit: "hours" })
     const [projectDetails, setProjectDetails] = useState({
         name: "",
         description: "",
@@ -89,7 +36,18 @@ export default function CreatorsPage() {
         budget: "",
         pricePerPost: "",
         totalBudget: "",
+        profilesToMention: "",
+        parentCast: "",
+        castToPost: "",
+        existingCastUrl: "",
+        postDuration: "24",
     })
+    const [isApproved, setIsApproved] = useState();
+
+    const allowance = useContract(ExecutionType.READABLE, "ERC20", "allowance", USDC_ADDRESS);
+    const approve = useContract(ExecutionType.READABLE, "ERC20", "approve", USDC_ADDRESS);
+    const create_promotion = useContract(ExecutionType.WRITABLE, "Create", "create_promotion");
+
 
     const calculateTotalSpend = () => {
         if (promotionType === "open") {
@@ -100,7 +58,7 @@ export default function CreatorsPage() {
         }
 
         const verifiedTotal = selectedCreators.reduce((total, creatorId) => {
-            const creator = creators.find((c) => c.id === creatorId)
+            const creator: any = creators.find((c: any) => c.id === creatorId)
             return total + (creator?.price || 0)
         }, 0)
 
@@ -113,7 +71,7 @@ export default function CreatorsPage() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        console.log("Submitting request:", { promotionType, selectedCreators, selectedUsers, projectDetails })
+        console.log("Submitting request:", { promotionType, selectedUsers, projectDetails })
     }
 
     const handleSearch = (query: string) => {
@@ -218,7 +176,7 @@ export default function CreatorsPage() {
                                         ? "border-purple-400/50 bg-purple-500/10"
                                         : "border-white/20 bg-white/5 hover:bg-white/10"
                                         }`}
-                                    onClick={() => setPromotionType("targeted")}
+                                    onClick={() => toast.info("Coming Soon!")}
                                 >
                                     <div className="flex items-center gap-3 mb-2">
                                         <div
@@ -250,6 +208,50 @@ export default function CreatorsPage() {
                         </CardHeader>
                         <CardContent className="pt-0">
                             <form onSubmit={handleSubmit} className="space-y-4">
+                                {/* Promotion Mode Selection */}
+                                <div>
+                                    <Label className="text-white/80 text-sm mb-3 block">Promotion Mode</Label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div
+                                            className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${promotionMode === "existing"
+                                                ? "border-purple-400/50 bg-purple-500/10"
+                                                : "border-white/20 bg-white/5 hover:bg-white/10"
+                                                }`}
+                                            onClick={() => setPromotionMode("existing")}
+                                        >
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <div
+                                                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${promotionMode === "existing" ? "bg-purple-500 border-purple-500" : "border-white/30"
+                                                        }`}
+                                                >
+                                                    {promotionMode === "existing" && <Check className="w-2.5 h-2.5 text-white" />}
+                                                </div>
+                                                <h3 className="font-medium text-white text-sm">Promote Existing Cast</h3>
+                                            </div>
+                                            <p className="text-xs text-white/60 ml-6">Boost an existing cast by pasting its URL</p>
+                                        </div>
+
+                                        <div
+                                            className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${promotionMode === "new"
+                                                ? "border-purple-400/50 bg-purple-500/10"
+                                                : "border-white/20 bg-white/5 hover:bg-white/10"
+                                                }`}
+                                            onClick={() => setPromotionMode("new")}
+                                        >
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <div
+                                                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${promotionMode === "new" ? "bg-purple-500 border-purple-500" : "border-white/30"
+                                                        }`}
+                                                >
+                                                    {promotionMode === "new" && <Check className="w-2.5 h-2.5 text-white" />}
+                                                </div>
+                                                <h3 className="font-medium text-white text-sm">Create New Promotion</h3>
+                                            </div>
+                                            <p className="text-xs text-white/60 ml-6">Create fresh promotional content</p>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div>
                                     <Label htmlFor="project-name" className="text-white/80 text-sm">
                                         Project Name
@@ -289,6 +291,159 @@ export default function CreatorsPage() {
                                         onChange={(e) => setProjectDetails((prev) => ({ ...prev, url: e.target.value }))}
                                         className="bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder:text-white/50 h-11 mt-1"
                                     />
+                                </div>
+
+                                {promotionMode === "existing" ? (
+                                    <div>
+                                        <Label htmlFor="existing-cast-url" className="text-white/80 text-sm">
+                                            Cast URL to Promote
+                                        </Label>
+                                        <Input
+                                            id="existing-cast-url"
+                                            placeholder="https://warpcast.com/username/0x123..."
+                                            value={projectDetails.existingCastUrl || ""}
+                                            onChange={(e) => setProjectDetails((prev) => ({ ...prev, existingCastUrl: e.target.value }))}
+                                            className="bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder:text-white/50 h-11 mt-1"
+                                        />
+                                        <p className="text-xs text-white/50 mt-1">Paste the URL of the cast you want to promote</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div>
+                                            <Label htmlFor="profiles-mention" className="text-white/80 text-sm">
+                                                Profiles to Mention
+                                            </Label>
+                                            <Input
+                                                id="profiles-mention"
+                                                placeholder="@username1, @username2"
+                                                value={projectDetails.profilesToMention || ""}
+                                                onChange={(e) => setProjectDetails((prev) => ({ ...prev, profilesToMention: e.target.value }))}
+                                                className="bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder:text-white/50 h-11 mt-1"
+                                            />
+                                            <p className="text-xs text-white/50 mt-1">Comma-separated usernames to mention in posts</p>
+                                        </div>
+
+                                        <div>
+                                            <Label htmlFor="parent-cast" className="text-white/80 text-sm">
+                                                Parent Cast
+                                            </Label>
+                                            <Input
+                                                id="parent-cast"
+                                                placeholder="https://warpcast.com/username/0x123..."
+                                                value={projectDetails.parentCast || ""}
+                                                onChange={(e) => setProjectDetails((prev) => ({ ...prev, parentCast: e.target.value }))}
+                                                className="bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder:text-white/50 h-11 mt-1"
+                                            />
+                                            <p className="text-xs text-white/50 mt-1">URL of the cast to reply to (optional)</p>
+                                        </div>
+
+                                        <div>
+                                            <Label htmlFor="cast-to-post" className="text-white/80 text-sm">
+                                                Cast to Post
+                                            </Label>
+                                            <Textarea
+                                                id="cast-to-post"
+                                                placeholder="Check out this amazing project! 🚀"
+                                                rows={3}
+                                                value={projectDetails.castToPost || ""}
+                                                onChange={(e) => setProjectDetails((prev) => ({ ...prev, castToPost: e.target.value }))}
+                                                className="bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder:text-white/50 mt-1 resize-none"
+                                            />
+                                            <p className="text-xs text-white/50 mt-1">The message creators will post about your project</p>
+                                        </div>
+                                    </>
+                                )}
+
+                                <div>
+                                    <Label htmlFor="post-duration" className="text-white/80 text-sm">
+                                        Required Post Duration
+                                    </Label>
+                                    <select
+                                        id="post-duration"
+                                        value={projectDetails.postDuration || "24"}
+                                        onChange={(e) => {
+                                            setProjectDetails((prev) => ({ ...prev, postDuration: e.target.value }))
+                                            if (e.target.value !== "custom") {
+                                                setCustomDuration({ value: "", unit: "hours" })
+                                            }
+                                        }}
+                                        className="w-full bg-white/10 backdrop-blur-sm border border-white/20 text-white h-11 mt-1 rounded-md px-3 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                                    >
+                                        <option value="6" className="bg-gray-900 text-white">
+                                            6 hours
+                                        </option>
+                                        <option value="12" className="bg-gray-900 text-white">
+                                            12 hours
+                                        </option>
+                                        <option value="24" className="bg-gray-900 text-white">
+                                            24 hours
+                                        </option>
+                                        <option value="48" className="bg-gray-900 text-white">
+                                            48 hours
+                                        </option>
+                                        <option value="72" className="bg-gray-900 text-white">
+                                            72 hours
+                                        </option>
+                                        <option value="168" className="bg-gray-900 text-white">
+                                            1 week
+                                        </option>
+                                        <option value="custom" className="bg-gray-900 text-white">
+                                            Custom duration
+                                        </option>
+                                    </select>
+
+                                    {projectDetails.postDuration === "custom" && (
+                                        <div className="mt-3 flex gap-2">
+                                            <div className="flex-1">
+                                                <Input
+                                                    placeholder="Enter duration"
+                                                    type="number"
+                                                    min="1"
+                                                    value={customDuration.value}
+                                                    onChange={(e) => setCustomDuration((prev) => ({ ...prev, value: e.target.value }))}
+                                                    className="bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder:text-white/50 h-10"
+                                                />
+                                            </div>
+                                            <div className="w-24">
+                                                <select
+                                                    value={customDuration.unit}
+                                                    onChange={(e) => setCustomDuration((prev) => ({ ...prev, unit: e.target.value }))}
+                                                    className="w-full bg-white/10 backdrop-blur-sm border border-white/20 text-white h-10 rounded-md px-2 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                                                >
+                                                    <option value="hours" className="bg-gray-900 text-white">
+                                                        Hours
+                                                    </option>
+                                                    <option value="days" className="bg-gray-900 text-white">
+                                                        Days
+                                                    </option>
+                                                    <option value="weeks" className="bg-gray-900 text-white">
+                                                        Weeks
+                                                    </option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <p className="text-xs text-white/50 mt-1">
+                                        {projectDetails.postDuration === "custom" && customDuration.value
+                                            ? `Posts must stay live for ${customDuration.value} ${customDuration.unit}. Creators cannot claim payment if deleted early.`
+                                            : projectDetails.postDuration === "custom"
+                                                ? "Specify custom duration above. Creators cannot claim payment if deleted early."
+                                                : `Minimum time posts must stay live: ${projectDetails.postDuration === "6"
+                                                    ? "6 hours"
+                                                    : projectDetails.postDuration === "12"
+                                                        ? "12 hours"
+                                                        : projectDetails.postDuration === "24"
+                                                            ? "24 hours"
+                                                            : projectDetails.postDuration === "48"
+                                                                ? "48 hours"
+                                                                : projectDetails.postDuration === "72"
+                                                                    ? "72 hours"
+                                                                    : projectDetails.postDuration === "168"
+                                                                        ? "1 week"
+                                                                        : "24 hours"
+                                                }. Creators cannot claim payment if deleted early.`}
+                                    </p>
                                 </div>
 
                                 {promotionType === "open" ? (
@@ -446,11 +601,11 @@ export default function CreatorsPage() {
                                         <div className="space-y-2">
                                             {searchResults
                                                 .filter(
-                                                    (user) =>
+                                                    (user: any) =>
                                                         user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                                         user.handle.toLowerCase().includes(searchQuery.toLowerCase()),
                                                 )
-                                                .map((user) => (
+                                                .map((user: any) => (
                                                     <div
                                                         key={user.id}
                                                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/10 cursor-pointer transition-colors active:scale-[0.98]"
@@ -503,7 +658,7 @@ export default function CreatorsPage() {
 
                                     <div className="space-y-2">
                                         {selectedCreators.map((creatorId) => {
-                                            const creator = creators.find((c) => c.id === creatorId)
+                                            const creator: any = creators.find((c: any) => c.id === creatorId)
                                             return creator ? (
                                                 <div
                                                     key={creatorId}
@@ -585,7 +740,7 @@ export default function CreatorsPage() {
                                 Verified Creators
                             </h2>
                             <div className="space-y-3">
-                                {creators.map((creator) => (
+                                {creators.map((creator: any) => (
                                     <Card
                                         key={creator.id}
                                         className={`cursor-pointer transition-all hover:shadow-lg bg-white/10 backdrop-blur-sm border-white/20 active:scale-[0.98] ${selectedCreators.includes(creator.id) ? "ring-2 ring-purple-400/50 bg-white/15" : ""

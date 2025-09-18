@@ -2,6 +2,8 @@ import { NavLink } from "react-router-dom"
 import { Card, CardContent } from "@/components/ui/card"
 import { Zap, Plus, Check, X, Settings, Clock, DollarSign, Eye } from "lucide-react"
 import { useState, useRef } from "react"
+import { useFrameContext } from "@/providers/FrameProvider"
+import sdk from "@farcaster/frame-sdk"
 
 export default function HomePage() {
     const [holdStates, setHoldStates] = useState<{ [key: number]: { isHolding: boolean; progress: number } }>({})
@@ -10,6 +12,9 @@ export default function HomePage() {
     const [activeTab, setActiveTab] = useState<"active" | "completed">("active")
     const holdTimers = useRef<{ [key: number]: NodeJS.Timeout }>({})
     const progressIntervals = useRef<{ [key: number]: NodeJS.Timeout }>({})
+
+    const { fUser } = useFrameContext();
+    console.log(fUser);
 
     const currentUser = {
         username: "alex_crypto",
@@ -83,7 +88,7 @@ export default function HomePage() {
         },
     ]
 
-    const handleHoldStart = (castId: number) => {
+    const handleHoldStart = async (castId: number) => {
         setHoldStates((prev) => ({
             ...prev,
             [castId]: { isHolding: true, progress: 0 },
@@ -98,6 +103,7 @@ export default function HomePage() {
             }))
         }, 50)
 
+        await sdk.haptics.impactOccurred("heavy");
         holdTimers.current[castId] = setTimeout(() => {
             handlePost(castId)
             handleHoldEnd(castId)
@@ -180,18 +186,15 @@ export default function HomePage() {
                         <div className="relative inline-block mb-4">
                             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-purple-600 p-1 mx-auto">
                                 <img
-                                    src={currentUser.profileImage || "/placeholder.svg"}
-                                    alt={currentUser.username}
+                                    src={fUser?.pfpUrl || "/placeholder.svg"}
+                                    alt={fUser?.username}
                                     width={88}
                                     height={88}
                                     className="w-full h-full rounded-full object-cover"
                                 />
                             </div>
-                            <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-lg shadow-lg">
-                                1
-                            </div>
                         </div>
-                        <h2 className="text-2xl font-bold text-white mb-2">@{currentUser.username}</h2>
+                        <h2 className="text-2xl font-bold text-white mb-2">@{fUser?.username}</h2>
                         <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-500/20 to-green-400/20 text-green-400 px-6 py-2 rounded-full text-sm font-semibold border border-green-400/20">
                             ${currentUser.totalEarned} earned
                         </div>
