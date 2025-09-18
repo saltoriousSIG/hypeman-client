@@ -2,8 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Landing from "./webpages/Landing";
 import CreatorsPage from "./webpages/Creators";
 import CreatorSettingsPage from "./webpages/CreatorSettings";
-import BuyersPage from "./webpages/BuyPromotion";
-import PromotionsPage from "./webpages/Promotions";
+import CreatorManagePage from "./webpages/Promotions";
 
 function App() {
   return (
@@ -12,8 +11,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/creators" element={<CreatorsPage />} />
         <Route path="/creators/settings" element={<CreatorSettingsPage />} />
-        <Route path="/buyers" element={<BuyersPage />} />
-        <Route path="/promotions" element={<PromotionsPage />} />
+        <Route path="/manage" element={<CreatorManagePage />} />
       </Routes>
     </div>
   );

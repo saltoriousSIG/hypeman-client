@@ -1,462 +1,465 @@
+import { Card, CardContent } from "@/components/ui/card"
+import {
+    ArrowLeft,
+    Edit3,
+    Trash2,
+    Eye,
+    DollarSign,
+    Users,
+    TrendingUp,
+    Pause,
+    Play,
+    Settings,
+    AlertTriangle,
+    CheckCircle,
+} from "lucide-react"
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, Eye, Edit, Trash2, TrendingUp, DollarSign, Users, MoreHorizontal, Play, Pause } from "lucide-react"
 import { NavLink } from "react-router-dom"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
-// Mock promotion data
-const promotions = [
-    {
-        id: 1,
-        projectName: "TaskFlow AI",
-        description: "A revolutionary AI-powered task management app that learns from your workflow patterns.",
-        status: "active",
-        totalSpend: 1200,
-        creatorsSelected: 4,
-        createdAt: "2024-01-15",
-        performance: {
-            views: "45.2K",
-            engagement: "8.7%",
-            clicks: "2.1K",
-            conversions: 89,
-        },
-        creators: [
-            { name: "Alex Chen", handle: "@alexbuilds", status: "posted", earnings: 299 },
-            { name: "Sarah Kim", handle: "@sarahcodes", status: "approved", earnings: 199 },
-            { name: "Marcus Johnson", handle: "@marcusdesigns", status: "pending", earnings: 399 },
-            { name: "Emma Rodriguez", handle: "@emmatech", status: "posted", earnings: 303 },
+export default function CreatorManagePage() {
+    const [activeTab, setActiveTab] = useState<"active" | "paused" | "completed">("active")
+    const [promotions, setPromotions] = useState({
+        active: [
+            {
+                id: 1,
+                title: "DeFi Protocol Launch",
+                description: "Promote our revolutionary new DeFi protocol with amazing yield opportunities",
+                budget: 500,
+                spent: 180,
+                applications: 24,
+                posts: 8,
+                engagement: "2.1K likes, 340 recasts",
+                createdAt: "2 days ago",
+                status: "active",
+                category: "Crypto",
+            },
+            {
+                id: 2,
+                title: "NFT Collection Drop",
+                description: "Help spread the word about our exclusive NFT collection with unique utility",
+                budget: 300,
+                spent: 120,
+                applications: 18,
+                posts: 5,
+                engagement: "1.8K likes, 290 recasts",
+                createdAt: "5 days ago",
+                status: "active",
+                category: "NFT",
+            },
+            {
+                id: 3,
+                title: "Gaming Tournament",
+                description: "Promote our massive gaming tournament with $50k prize pool",
+                budget: 750,
+                spent: 95,
+                applications: 32,
+                posts: 3,
+                engagement: "3.2K likes, 480 recasts",
+                createdAt: "1 week ago",
+                status: "active",
+                category: "Gaming",
+            },
         ],
-    },
-    {
-        id: 2,
-        projectName: "CodeSnap",
-        description: "Beautiful code screenshot generator with syntax highlighting and customizable themes.",
-        status: "completed",
-        totalSpend: 800,
-        creatorsSelected: 3,
-        createdAt: "2024-01-10",
-        performance: {
-            views: "28.5K",
-            engagement: "12.3%",
-            clicks: "1.8K",
-            conversions: 156,
-        },
-        creators: [
-            { name: "Alex Chen", handle: "@alexbuilds", status: "posted", earnings: 299 },
-            { name: "Sarah Kim", handle: "@sarahcodes", status: "posted", earnings: 199 },
-            { name: "David Park", handle: "@davidbuilds", status: "posted", earnings: 302 },
+        paused: [
+            {
+                id: 4,
+                title: "AI Trading Bot",
+                description: "Promote our advanced AI trading bot with proven results",
+                budget: 400,
+                spent: 200,
+                applications: 15,
+                posts: 6,
+                engagement: "1.5K likes, 220 recasts",
+                createdAt: "3 weeks ago",
+                status: "paused",
+                category: "Crypto",
+            },
         ],
-    },
-    {
-        id: 3,
-        projectName: "MindMap Pro",
-        description: "Advanced mind mapping tool for creative professionals and teams.",
-        status: "draft",
-        totalSpend: 600,
-        creatorsSelected: 2,
-        createdAt: "2024-01-20",
-        performance: {
-            views: "0",
-            engagement: "0%",
-            clicks: "0",
-            conversions: 0,
-        },
-        creators: [
-            { name: "Marcus Johnson", handle: "@marcusdesigns", status: "draft", earnings: 399 },
-            { name: "Emma Rodriguez", handle: "@emmatech", status: "draft", earnings: 201 },
+        completed: [
+            {
+                id: 5,
+                title: "Web3 Platform Launch",
+                description: "Successfully launched our Web3 platform with community support",
+                budget: 600,
+                spent: 580,
+                applications: 45,
+                posts: 18,
+                engagement: "5.2K likes, 890 recasts",
+                createdAt: "1 month ago",
+                status: "completed",
+                category: "Web3",
+                results: "150% engagement increase, 2.3K new users",
+            },
+            {
+                id: 6,
+                title: "Crypto Exchange Promo",
+                description: "Promoted new features on our crypto exchange platform",
+                budget: 350,
+                spent: 340,
+                applications: 28,
+                posts: 12,
+                engagement: "3.8K likes, 650 recasts",
+                createdAt: "2 months ago",
+                status: "completed",
+                category: "Crypto",
+                results: "200% trading volume increase",
+            },
         ],
-    },
-]
+    })
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null)
+    const [actionFeedback, setActionFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
-const getStatusColor = (status: string) => {
-    switch (status) {
-        case "active":
-            return "bg-blue-500/20 text-blue-400 border-blue-500/30"
-        case "completed":
-            return "bg-green-500/20 text-green-400 border-green-500/30"
-        case "draft":
-            return "bg-gray-500/20 text-gray-400 border-gray-500/30"
-        case "paused":
-            return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-        default:
-            return "bg-gray-500/20 text-gray-400 border-gray-500/30"
-    }
-}
-
-const getCreatorStatusColor = (status: string) => {
-    switch (status) {
-        case "posted":
-            return "bg-green-500/20 text-green-400"
-        case "approved":
-            return "bg-blue-500/20 text-blue-400"
-        case "pending":
-            return "bg-yellow-500/20 text-yellow-400"
-        case "draft":
-            return "bg-gray-500/20 text-gray-400"
-        default:
-            return "bg-gray-500/20 text-gray-400"
-    }
-}
-
-export default function PromotionsPage() {
-    const [selectedPromotion, setSelectedPromotion] = useState<number | null>(null)
-
-    const activePromotions = promotions.filter((p) => p.status === "active")
-    const completedPromotions = promotions.filter((p) => p.status === "completed")
-    const draftPromotions = promotions.filter((p) => p.status === "draft")
-
-    const totalSpent = promotions.reduce((sum, p) => sum + p.totalSpend, 0)
-    const totalViews = promotions.reduce((sum, p) => sum + Number.parseInt(p.performance.views.replace(/[^0-9]/g, "")), 0)
-
-    const handleEdit = (promotionId: number) => {
-        console.log("Editing promotion:", promotionId)
-        // Navigate to edit page
+    const currentUser = {
+        username: "alex_crypto",
+        profileImage: "/profile-avatar-person.jpg",
+        totalEarned: 2450,
+        totalPromotions: 12,
+        activePromotions: 3,
     }
 
-    const handleDelete = (promotionId: number) => {
-        console.log("Deleting promotion:", promotionId)
-        // Handle deletion
+    const handlePausePromotion = (id: number) => {
+        const promotion = promotions.active.find((p) => p.id === id)
+        if (promotion) {
+            setPromotions((prev) => ({
+                ...prev,
+                active: prev.active.filter((p) => p.id !== id),
+                paused: [...prev.paused, { ...promotion, status: "paused" }],
+            }))
+            setActionFeedback({ message: "Promotion paused successfully", type: "success" })
+            setTimeout(() => setActionFeedback(null), 3000)
+        }
     }
 
-    const handlePause = (promotionId: number) => {
-        console.log("Pausing promotion:", promotionId)
-        // Handle pause/resume
+    const handleResumePromotion = (id: number) => {
+        const promotion = promotions.paused.find((p) => p.id === id)
+        if (promotion) {
+            setPromotions((prev) => ({
+                ...prev,
+                paused: prev.paused.filter((p) => p.id !== id),
+                active: [...prev.active, { ...promotion, status: "active" }],
+            }))
+            setActionFeedback({ message: "Promotion resumed successfully", type: "success" })
+            setTimeout(() => setActionFeedback(null), 3000)
+        }
+    }
+
+    const handleDeletePromotion = (id: number) => {
+        const activePromotion = promotions.active.find((p) => p.id === id)
+        const pausedPromotion = promotions.paused.find((p) => p.id === id)
+        const completedPromotion = promotions.completed.find((p) => p.id === id)
+
+        if (activePromotion) {
+            setPromotions((prev) => ({
+                ...prev,
+                active: prev.active.filter((p) => p.id !== id),
+            }))
+        } else if (pausedPromotion) {
+            setPromotions((prev) => ({
+                ...prev,
+                paused: prev.paused.filter((p) => p.id !== id),
+            }))
+        } else if (completedPromotion) {
+            setPromotions((prev) => ({
+                ...prev,
+                completed: prev.completed.filter((p) => p.id !== id),
+            }))
+        }
+
+        setShowDeleteConfirm(null)
+        setActionFeedback({ message: "Promotion deleted successfully", type: "success" })
+        setTimeout(() => setActionFeedback(null), 3000)
+    }
+
+    const getCurrentPromotions = () => {
+        switch (activeTab) {
+            case "active":
+                return promotions.active
+            case "paused":
+                return promotions.paused
+            case "completed":
+                return promotions.completed
+            default:
+                return promotions.active
+        }
     }
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white">
-            {/* Header */}
-            <header className="sticky top-0 z-50 border-b border-gray-800/50 bg-gray-900/80 backdrop-blur-md">
-                <div className="px-4 py-3">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <NavLink to="/">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="w-8 h-8 p-0 rounded-full text-gray-400 hover:text-white hover:bg-gray-800/50"
-                                >
-                                    <ArrowLeft className="w-4 h-4" />
-                                </Button>
-                            </NavLink>
+        <div className="min-h-screen bg-black text-white pb-20 relative overflow-hidden">
+            {actionFeedback && (
+                <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-3 text-sm">
+                    {actionFeedback.type === "success" ? (
+                        <CheckCircle className="w-4 h-4 text-green-400" />
+                    ) : (
+                        <AlertTriangle className="w-4 h-4 text-red-400" />
+                    )}
+                    <span className={actionFeedback.type === "success" ? "text-green-400" : "text-red-400"}>
+                        {actionFeedback.message}
+                    </span>
+                </div>
+            )}
+
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 max-w-sm w-full">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
+                                <AlertTriangle className="w-5 h-5 text-red-400" />
+                            </div>
                             <div>
-                                <h1 className="text-lg font-semibold text-white">My Promotions</h1>
-                                <p className="text-xs text-gray-400">Manage your campaigns</p>
+                                <h3 className="font-bold text-white">Delete Promotion</h3>
+                                <p className="text-sm text-white/60">This action cannot be undone</p>
                             </div>
                         </div>
-                        <NavLink to="/buyers">
-                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-xs px-3">
-                                New Campaign
-                            </Button>
-                        </NavLink>
+                        <p className="text-sm text-white/80 mb-6">
+                            Are you sure you want to delete this promotion? All associated data will be permanently removed.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowDeleteConfirm(null)}
+                                className="flex-1 py-2 px-4 bg-white/10 hover:bg-white/20 rounded-xl text-white text-sm font-medium transition-all duration-300"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleDeletePromotion(showDeleteConfirm)}
+                                className="flex-1 py-2 px-4 bg-red-500 hover:bg-red-600 rounded-xl text-white text-sm font-semibold transition-all duration-300"
+                            >
+                                Delete
+                            </button>
+                        </div>
                     </div>
                 </div>
+            )}
+
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-20 left-8 w-20 h-20 bg-purple-500/30 rounded-full blur-xl animate-pulse"></div>
+                <div className="absolute top-40 right-12 w-16 h-16 bg-green-400/40 rounded-full blur-lg animate-bounce"></div>
+                <div className="absolute top-60 left-16 w-12 h-12 bg-yellow-400/50 rounded-full blur-md animate-pulse"></div>
+                <div className="absolute bottom-40 right-8 w-24 h-24 bg-blue-500/25 rounded-full blur-xl animate-pulse"></div>
+                <div className="absolute bottom-60 left-12 w-8 h-8 bg-pink-400/60 rounded-full blur-sm animate-bounce"></div>
+                <div className="absolute top-80 right-20 w-14 h-14 bg-cyan-400/35 rounded-full blur-lg animate-pulse"></div>
+            </div>
+
+            <header className="relative z-10 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <NavLink to="/">
+                        <button className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-300">
+                            <ArrowLeft className="w-5 h-5 text-white/80" />
+                        </button>
+                    </NavLink>
+                    <div>
+                        <h1 className="text-xl font-bold text-white">My Promotions</h1>
+                        <p className="text-sm text-white/60">Manage your campaigns</p>
+                    </div>
+                </div>
+                <NavLink to="/creators/settings">
+                    <button className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-300">
+                        <Settings className="w-4 h-4 text-white/60" />
+                    </button>
+                </NavLink>
             </header>
 
-            <div className="container mx-auto px-4 py-6 max-w-4xl">
-                {/* Stats Overview */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                    <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                        <CardContent className="p-4">
-                            <div className="flex flex-col items-center text-center">
-                                <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center mb-2">
-                                    <TrendingUp className="w-4 h-4 text-blue-400" />
-                                </div>
-                                <p className="text-lg font-bold text-white">{promotions.length}</p>
-                                <p className="text-xs text-gray-400">Total Campaigns</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+            <div className="px-4 space-y-6 relative z-10">
+                <div className="text-center mb-8">
+                    <div className="relative inline-block mb-4">
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-purple-600 p-1 mx-auto">
+                            <img
+                                src={currentUser.profileImage || "/placeholder.svg"}
+                                alt={currentUser.username}
+                                width={72}
+                                height={72}
+                                className="w-full h-full rounded-full object-cover"
+                            />
+                        </div>
+                    </div>
+                    <h2 className="text-xl font-bold text-white mb-4">@{currentUser.username}</h2>
 
-                    <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                        <CardContent className="p-4">
-                            <div className="flex flex-col items-center text-center">
-                                <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center mb-2">
-                                    <DollarSign className="w-4 h-4 text-green-400" />
-                                </div>
-                                <p className="text-lg font-bold text-white">${totalSpent.toLocaleString()}</p>
-                                <p className="text-xs text-gray-400">Total Spent</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                        <CardContent className="p-4">
-                            <div className="flex flex-col items-center text-center">
-                                <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center mb-2">
-                                    <Eye className="w-4 h-4 text-purple-400" />
-                                </div>
-                                <p className="text-lg font-bold text-white">{(totalViews / 1000).toFixed(1)}K</p>
-                                <p className="text-xs text-gray-400">Total Views</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                        <CardContent className="p-4">
-                            <div className="flex flex-col items-center text-center">
-                                <div className="w-8 h-8 bg-orange-500/20 rounded-full flex items-center justify-center mb-2">
-                                    <Users className="w-4 h-4 text-orange-400" />
-                                </div>
-                                <p className="text-lg font-bold text-white">{activePromotions.length}</p>
-                                <p className="text-xs text-gray-400">Active Now</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <div className="grid grid-cols-3 gap-4 mb-6">
+                        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                            <div className="text-2xl font-bold text-green-400">${currentUser.totalEarned}</div>
+                            <div className="text-xs text-white/60">Total Earned</div>
+                        </div>
+                        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                            <div className="text-2xl font-bold text-purple-400">{currentUser.totalPromotions}</div>
+                            <div className="text-xs text-white/60">Total Campaigns</div>
+                        </div>
+                        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                            <div className="text-2xl font-bold text-blue-400">{currentUser.activePromotions}</div>
+                            <div className="text-xs text-white/60">Active Now</div>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Promotions List */}
-                <Tabs defaultValue="all" className="space-y-4">
-                    <TabsList className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm w-full">
-                        <TabsTrigger
-                            value="all"
-                            className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-400 flex-1"
-                        >
-                            All ({promotions.length})
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="active"
-                            className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-400 flex-1"
-                        >
-                            Active ({activePromotions.length})
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="completed"
-                            className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-400 flex-1"
-                        >
-                            Done ({completedPromotions.length})
-                        </TabsTrigger>
-                    </TabsList>
+                <div className="flex items-center gap-2 mb-6 bg-white/5 rounded-2xl p-1 backdrop-blur-sm border border-white/10">
+                    <button
+                        onClick={() => setActiveTab("active")}
+                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${activeTab === "active"
+                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25"
+                            : "text-white/60 hover:text-white/80 hover:bg-white/5"
+                            }`}
+                    >
+                        Active ({promotions.active.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("paused")}
+                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${activeTab === "paused"
+                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25"
+                            : "text-white/60 hover:text-white/80 hover:bg-white/5"
+                            }`}
+                    >
+                        Paused ({promotions.paused.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("completed")}
+                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${activeTab === "completed"
+                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25"
+                            : "text-white/60 hover:text-white/80 hover:bg-white/5"
+                            }`}
+                    >
+                        Completed ({promotions.completed.length})
+                    </button>
+                </div>
 
-                    <TabsContent value="all" className="space-y-4">
-                        {promotions.map((promotion) => (
-                            <Card key={promotion.id} className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <CardTitle className="text-base text-white truncate">{promotion.projectName}</CardTitle>
-                                                <Badge variant="outline" className={`text-xs ${getStatusColor(promotion.status)}`}>
-                                                    {promotion.status}
-                                                </Badge>
-                                            </div>
-                                            <CardDescription className="text-xs text-gray-400">
-                                                Created {new Date(promotion.createdAt).toLocaleDateString()} • {promotion.creatorsSelected}{" "}
-                                                creators
-                                            </CardDescription>
+                <div className="space-y-4">
+                    {getCurrentPromotions().map((promotion: any) => (
+                        <Card
+                            key={promotion.id}
+                            className="bg-white/10 backdrop-blur-sm border-white/20 rounded-2xl hover:bg-white/15 transition-all duration-300"
+                        >
+                            <CardContent className="p-6">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-lg">
+                                            {promotion.category.charAt(0)}
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="text-right">
-                                                <div className="text-lg font-bold text-green-400">${promotion.totalSpend}</div>
-                                                <div className="text-xs text-gray-400">total spend</div>
-                                            </div>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="sm" className="w-8 h-8 p-0 text-gray-400 hover:text-white">
-                                                        <MoreHorizontal className="w-4 h-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleEdit(promotion.id)}
-                                                        className="text-gray-300 hover:bg-gray-700"
-                                                    >
-                                                        <Edit className="w-4 h-4 mr-2" />
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    {promotion.status === "active" && (
-                                                        <DropdownMenuItem
-                                                            onClick={() => handlePause(promotion.id)}
-                                                            className="text-gray-300 hover:bg-gray-700"
-                                                        >
-                                                            <Pause className="w-4 h-4 mr-2" />
-                                                            Pause
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {promotion.status === "paused" && (
-                                                        <DropdownMenuItem
-                                                            onClick={() => handlePause(promotion.id)}
-                                                            className="text-gray-300 hover:bg-gray-700"
-                                                        >
-                                                            <Play className="w-4 h-4 mr-2" />
-                                                            Resume
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleDelete(promotion.id)}
-                                                        className="text-red-400 hover:bg-red-400/10"
-                                                    >
-                                                        <Trash2 className="w-4 h-4 mr-2" />
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                        <div>
+                                            <h3 className="font-bold text-white text-lg">{promotion.title}</h3>
+                                            <p className="text-sm text-white/60">{promotion.createdAt}</p>
                                         </div>
                                     </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4 pt-0">
-                                    <p className="text-sm text-gray-400 leading-relaxed">{promotion.description}</p>
+                                    <div className="flex items-center gap-2">
+                                        {activeTab === "active" && (
+                                            <>
+                                                <button
+                                                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-300"
+                                                    title="Edit promotion"
+                                                >
+                                                    <Edit3 className="w-4 h-4 text-white/60" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handlePausePromotion(promotion.id)}
+                                                    className="w-8 h-8 rounded-full bg-yellow-500/20 hover:bg-yellow-500/30 flex items-center justify-center transition-all duration-300"
+                                                    title="Pause promotion"
+                                                >
+                                                    <Pause className="w-4 h-4 text-yellow-400" />
+                                                </button>
+                                            </>
+                                        )}
+                                        {activeTab === "paused" && (
+                                            <button
+                                                onClick={() => handleResumePromotion(promotion.id)}
+                                                className="w-8 h-8 rounded-full bg-green-500/20 hover:bg-green-500/30 flex items-center justify-center transition-all duration-300"
+                                                title="Resume promotion"
+                                            >
+                                                <Play className="w-4 h-4 text-green-400" />
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => setShowDeleteConfirm(promotion.id)}
+                                            className="w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 flex items-center justify-center transition-all duration-300"
+                                            title="Delete promotion"
+                                        >
+                                            <Trash2 className="w-4 h-4 text-red-400" />
+                                        </button>
+                                    </div>
+                                </div>
 
-                                    {/* Performance Metrics */}
-                                    {promotion.status !== "draft" && (
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-gray-700/30 rounded-lg">
-                                            <div className="text-center">
-                                                <div className="text-sm font-semibold text-white">{promotion.performance.views}</div>
-                                                <div className="text-xs text-gray-400">Views</div>
-                                            </div>
-                                            <div className="text-center">
-                                                <div className="text-sm font-semibold text-white">{promotion.performance.engagement}</div>
-                                                <div className="text-xs text-gray-400">Engagement</div>
-                                            </div>
-                                            <div className="text-center">
-                                                <div className="text-sm font-semibold text-white">{promotion.performance.clicks}</div>
-                                                <div className="text-xs text-gray-400">Clicks</div>
-                                            </div>
-                                            <div className="text-center">
-                                                <div className="text-sm font-semibold text-white">{promotion.performance.conversions}</div>
-                                                <div className="text-xs text-gray-400">Conversions</div>
-                                            </div>
+                                <p className="text-sm text-white/80 mb-4">{promotion.description}</p>
+
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                    <div className="bg-black/20 rounded-xl p-3">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <DollarSign className="w-4 h-4 text-green-400" />
+                                            <span className="text-xs text-white/60">Budget</span>
                                         </div>
+                                        <div className="text-sm font-bold text-white">
+                                            ${promotion.spent} / ${promotion.budget}
+                                        </div>
+                                        <div className="w-full bg-white/10 rounded-full h-1 mt-2">
+                                            <div
+                                                className="bg-green-400 h-1 rounded-full transition-all duration-300"
+                                                style={{ width: `${(promotion.spent / promotion.budget) * 100}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="bg-black/20 rounded-xl p-3">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Users className="w-4 h-4 text-blue-400" />
+                                            <span className="text-xs text-white/60">Applications</span>
+                                        </div>
+                                        <div className="text-sm font-bold text-white">{promotion.applications}</div>
+                                    </div>
+                                    <div className="bg-black/20 rounded-xl p-3">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Eye className="w-4 h-4 text-purple-400" />
+                                            <span className="text-xs text-white/60">Posts</span>
+                                        </div>
+                                        <div className="text-sm font-bold text-white">{promotion.posts}</div>
+                                    </div>
+                                    <div className="bg-black/20 rounded-xl p-3">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <TrendingUp className="w-4 h-4 text-yellow-400" />
+                                            <span className="text-xs text-white/60">Engagement</span>
+                                        </div>
+                                        <div className="text-xs text-white/80">{promotion.engagement.split(",")[0]}</div>
+                                    </div>
+                                </div>
+
+                                {activeTab === "completed" && promotion.results && (
+                                    <div className="bg-green-500/10 border border-green-400/20 rounded-xl p-3 mb-4">
+                                        <div className="text-sm font-semibold text-green-400 mb-1">Campaign Results</div>
+                                        <div className="text-xs text-white/80">{promotion.results}</div>
+                                    </div>
+                                )}
+
+                                <div className="flex items-center justify-between">
+                                    <div
+                                        className={`px-3 py-1 rounded-full text-xs font-medium ${promotion.status === "active"
+                                            ? "bg-green-500/20 text-green-400 border border-green-400/20"
+                                            : promotion.status === "paused"
+                                                ? "bg-yellow-500/20 text-yellow-400 border border-yellow-400/20"
+                                                : "bg-gray-500/20 text-gray-400 border border-gray-400/20"
+                                            }`}
+                                    >
+                                        {promotion.status.charAt(0).toUpperCase() + promotion.status.slice(1)}
+                                    </div>
+
+                                    {activeTab === "active" && (
+                                        <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-full text-white text-sm font-semibold transition-all duration-300">
+                                            View Details
+                                        </button>
                                     )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
 
-                                    {/* Creator Status */}
-                                    <div>
-                                        <h4 className="text-sm font-medium mb-2 text-white">Creator Status</h4>
-                                        <div className="space-y-2">
-                                            {promotion.creators.map((creator, index) => (
-                                                <div key={index} className="flex items-center justify-between bg-gray-700/30 rounded-lg p-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <Avatar className="w-6 h-6">
-                                                            <AvatarImage src="/placeholder.svg" alt={creator.name} />
-                                                            <AvatarFallback className="bg-gray-600 text-white text-xs">
-                                                                {creator.name
-                                                                    .split(" ")
-                                                                    .map((n) => n[0])
-                                                                    .join("")}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <div>
-                                                            <span className="text-sm text-white">{creator.name}</span>
-                                                            <p className="text-xs text-gray-400">{creator.handle}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <Badge variant="secondary" className={`text-xs ${getCreatorStatusColor(creator.status)}`}>
-                                                            {creator.status}
-                                                        </Badge>
-                                                        <span className="text-xs text-gray-400">${creator.earnings}</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </TabsContent>
-
-                    <TabsContent value="active" className="space-y-4">
-                        {activePromotions.map((promotion) => (
-                            <Card key={promotion.id} className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                                {/* Same card structure as above */}
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <CardTitle className="text-base text-white truncate">{promotion.projectName}</CardTitle>
-                                                <Badge variant="outline" className={`text-xs ${getStatusColor(promotion.status)}`}>
-                                                    {promotion.status}
-                                                </Badge>
-                                            </div>
-                                            <CardDescription className="text-xs text-gray-400">
-                                                Created {new Date(promotion.createdAt).toLocaleDateString()} • {promotion.creatorsSelected}{" "}
-                                                creators
-                                            </CardDescription>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-lg font-bold text-green-400">${promotion.totalSpend}</div>
-                                            <div className="text-xs text-gray-400">total spend</div>
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4 pt-0">
-                                    <p className="text-sm text-gray-400 leading-relaxed">{promotion.description}</p>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-gray-700/30 rounded-lg">
-                                        <div className="text-center">
-                                            <div className="text-sm font-semibold text-white">{promotion.performance.views}</div>
-                                            <div className="text-xs text-gray-400">Views</div>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="text-sm font-semibold text-white">{promotion.performance.engagement}</div>
-                                            <div className="text-xs text-gray-400">Engagement</div>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="text-sm font-semibold text-white">{promotion.performance.clicks}</div>
-                                            <div className="text-xs text-gray-400">Clicks</div>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="text-sm font-semibold text-white">{promotion.performance.conversions}</div>
-                                            <div className="text-xs text-gray-400">Conversions</div>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </TabsContent>
-
-                    <TabsContent value="completed" className="space-y-4">
-                        {completedPromotions.map((promotion) => (
-                            <Card key={promotion.id} className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                                {/* Same card structure as above */}
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <CardTitle className="text-base text-white truncate">{promotion.projectName}</CardTitle>
-                                                <Badge variant="outline" className={`text-xs ${getStatusColor(promotion.status)}`}>
-                                                    {promotion.status}
-                                                </Badge>
-                                            </div>
-                                            <CardDescription className="text-xs text-gray-400">
-                                                Created {new Date(promotion.createdAt).toLocaleDateString()} • {promotion.creatorsSelected}{" "}
-                                                creators
-                                            </CardDescription>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-lg font-bold text-green-400">${promotion.totalSpend}</div>
-                                            <div className="text-xs text-gray-400">total spend</div>
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4 pt-0">
-                                    <p className="text-sm text-gray-400 leading-relaxed">{promotion.description}</p>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-gray-700/30 rounded-lg">
-                                        <div className="text-center">
-                                            <div className="text-sm font-semibold text-white">{promotion.performance.views}</div>
-                                            <div className="text-xs text-gray-400">Views</div>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="text-sm font-semibold text-white">{promotion.performance.engagement}</div>
-                                            <div className="text-xs text-gray-400">Engagement</div>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="text-sm font-semibold text-white">{promotion.performance.clicks}</div>
-                                            <div className="text-xs text-gray-400">Clicks</div>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="text-sm font-semibold text-white">{promotion.performance.conversions}</div>
-                                            <div className="text-xs text-gray-400">Conversions</div>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </TabsContent>
-                </Tabs>
+                {getCurrentPromotions().length === 0 && (
+                    <div className="text-center py-12">
+                        <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Eye className="w-8 h-8 text-white/40" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-white mb-2">No {activeTab} promotions</h3>
+                        <p className="text-white/60 text-sm">
+                            {activeTab === "active"
+                                ? "Create your first promotion to get started"
+                                : activeTab === "paused"
+                                    ? "No paused campaigns at the moment"
+                                    : "Complete some campaigns to see results here"}
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     )
