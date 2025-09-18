@@ -169,8 +169,8 @@ export default function HomePage() {
             <header className="relative z-10 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <img src="/hypeman-logo.png" alt="Hypeman Logo" width={32} height={32} className="rounded-lg" />
-                    <h1 className="text-lg font-semibold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent">
-                        HYPEMAN
+                    <h1 className="text-lg font-semibold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent title">
+                        HYPE MAN
                     </h1>
                 </div>
                 <NavLink to="/creators/settings">
@@ -209,7 +209,7 @@ export default function HomePage() {
                             : "text-white/60 hover:text-white/80 hover:bg-white/5"
                             }`}
                     >
-                        Available
+                        Promotions
                     </button>
                     <button
                         onClick={() => setActiveTab("completed")}

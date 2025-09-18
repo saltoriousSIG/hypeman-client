@@ -69,6 +69,8 @@ const useContract = <T extends ExecutionType, R = any>(
     }
   }, [facet]);
 
+  console.log(contractAddress, functionName, facet);
+
   const execute = useCallback(
     async (args: Array<any>) => {
       try {

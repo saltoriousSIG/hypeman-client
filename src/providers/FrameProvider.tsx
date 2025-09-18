@@ -58,7 +58,7 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     useEffect(() => {
-        console.log(isConnected);
+        console.log(isConnected, "is connected");
         if (!isConnected) {
             connect({
                 connector: connectors[0]

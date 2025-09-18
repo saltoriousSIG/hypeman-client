@@ -1,7 +1,5 @@
-"use client"
-
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,7 +11,9 @@ import { ArrowLeft, Star, Zap, Search, Check, Plus, History, Users, Target } fro
 import { toast } from "sonner"
 import { NavLink } from "react-router-dom"
 import useContract, { ExecutionType } from "@/hooks/useContract"
-import { USDC_ADDRESS } from "@/lib/utils"
+import { USDC_ADDRESS, DIAMOND_ADDRESS } from "@/lib/utils"
+import { useFrameContext } from "@/providers/FrameProvider"
+import { parseUnits } from "viem"
 
 // Mock creator data
 const creators = []
@@ -22,6 +22,9 @@ const creators = []
 const searchResults = [];
 
 export default function BuyersPage() {
+    const { address } = useFrameContext();
+    console.log(address);
+
     const [promotionType, setPromotionType] = useState<"open" | "targeted">("open")
     const [selectedCreators, setSelectedCreators] = useState<number[]>([])
     const [selectedUsers, setSelectedUsers] = useState<any[]>([])
@@ -42,12 +45,31 @@ export default function BuyersPage() {
         existingCastUrl: "",
         postDuration: "24",
     })
-    const [isApproved, setIsApproved] = useState();
+    const [isApproved, setIsApproved] = useState<boolean>(false);
 
     const allowance = useContract(ExecutionType.READABLE, "ERC20", "allowance", USDC_ADDRESS);
-    const approve = useContract(ExecutionType.READABLE, "ERC20", "approve", USDC_ADDRESS);
+    const approve = useContract(ExecutionType.WRITABLE, "ERC20", "approve", USDC_ADDRESS);
     const create_promotion = useContract(ExecutionType.WRITABLE, "Create", "create_promotion");
 
+    useEffect(() => {
+        const load = async () => {
+            const user_allowance = await allowance([address, DIAMOND_ADDRESS]);
+            setIsApproved(parseInt(user_allowance.toString()) >= parseInt(projectDetails.totalBudget));
+        }
+        load();
+    }, [allowance, address, projectDetails]);
+
+    const handleApprove = useCallback(async () => {
+        try {
+
+            await approve([DIAMOND_ADDRESS, parseUnits(projectDetails.totalBudget, 6)]);
+        } catch (e: any) {
+            console.error(e, e.message);
+        }
+    }, [approve, address, projectDetails]);
+
+
+    console.log(isApproved, "is approved");
 
     const calculateTotalSpend = () => {
         if (promotionType === "open") {
@@ -69,8 +91,12 @@ export default function BuyersPage() {
         return { verifiedTotal, unverifiedTotal, total: verifiedTotal + unverifiedTotal }
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        console.log(isApproved);
+        if (!isApproved) {
+            await handleApprove();
+        }
         console.log("Submitting request:", { promotionType, selectedUsers, projectDetails })
     }
 
@@ -475,8 +501,8 @@ export default function BuyersPage() {
                                                 <p className="text-xs text-white/60 mt-1">
                                                     ~
                                                     {Math.floor(
-                                                        (Number.parseInt(projectDetails.totalBudget.replace(/[^0-9]/g, "")) || 0) /
-                                                        (Number.parseInt(projectDetails.pricePerPost.replace(/[^0-9]/g, "")) || 1),
+                                                        (Number.parseFloat(projectDetails.totalBudget) || 0) /
+                                                        (Number.parseFloat(projectDetails.pricePerPost) || 1),
                                                     )}{" "}
                                                     posts available
                                                 </p>
@@ -570,7 +596,7 @@ export default function BuyersPage() {
                                     }
                                 >
                                     {promotionType === "open"
-                                        ? `Launch Open Promotion - ${projectDetails.totalBudget || "$0"}`
+                                        ? `${isApproved ? "Launch Open Promotion" : "Approve USDC"} - ${projectDetails.totalBudget || "$0"}`
                                         : selectedCreators.length > 0 || selectedUsers.length > 0
                                             ? `Book ${selectedCreators.length + selectedUsers.length} Creator${selectedCreators.length + selectedUsers.length > 1 ? "s" : ""} - $${totalSpend.total}`
                                             : "Select Creators"}
@@ -733,70 +759,73 @@ export default function BuyersPage() {
                                 </CardContent>
                             </Card>
                         )}
+                        {
+                            creators.length > 0 && (
+                                <div className="mb-4">
+                                    <h2 className="text-lg font-semibold mb-3 text-white flex items-center gap-2">
+                                        <Zap className="w-5 h-5 text-purple-400" />
+                                        Verified Creators
+                                    </h2>
+                                    <div className="space-y-3">
+                                        {creators.map((creator: any) => (
+                                            <Card
+                                                key={creator.id}
+                                                className={`cursor-pointer transition-all hover:shadow-lg bg-white/10 backdrop-blur-sm border-white/20 active:scale-[0.98] ${selectedCreators.includes(creator.id) ? "ring-2 ring-purple-400/50 bg-white/15" : ""
+                                                    }`}
+                                                onClick={() => toggleCreator(creator.id)}
+                                            >
+                                                <CardContent className="p-3">
+                                                    <div className="flex items-center gap-3">
+                                                        {/* Checkbox */}
+                                                        <div
+                                                            className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedCreators.includes(creator.id)
+                                                                ? "bg-purple-500 border-purple-500"
+                                                                : "border-white/30"
+                                                                }`}
+                                                        >
+                                                            {selectedCreators.includes(creator.id) && <Check className="w-2.5 h-2.5 text-white" />}
+                                                        </div>
 
-                        <div className="mb-4">
-                            <h2 className="text-lg font-semibold mb-3 text-white flex items-center gap-2">
-                                <Zap className="w-5 h-5 text-purple-400" />
-                                Verified Creators
-                            </h2>
-                            <div className="space-y-3">
-                                {creators.map((creator: any) => (
-                                    <Card
-                                        key={creator.id}
-                                        className={`cursor-pointer transition-all hover:shadow-lg bg-white/10 backdrop-blur-sm border-white/20 active:scale-[0.98] ${selectedCreators.includes(creator.id) ? "ring-2 ring-purple-400/50 bg-white/15" : ""
-                                            }`}
-                                        onClick={() => toggleCreator(creator.id)}
-                                    >
-                                        <CardContent className="p-3">
-                                            <div className="flex items-center gap-3">
-                                                {/* Checkbox */}
-                                                <div
-                                                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedCreators.includes(creator.id)
-                                                        ? "bg-purple-500 border-purple-500"
-                                                        : "border-white/30"
-                                                        }`}
-                                                >
-                                                    {selectedCreators.includes(creator.id) && <Check className="w-2.5 h-2.5 text-white" />}
-                                                </div>
+                                                        {/* Avatar */}
+                                                        <Avatar className="w-10 h-10 flex-shrink-0">
+                                                            <AvatarImage src={creator.avatar || "/placeholder.svg"} alt={creator.name} />
+                                                            <AvatarFallback className="bg-white/20 text-white text-sm">
+                                                                {creator.name
+                                                                    .split(" ")
+                                                                    .map((n) => n[0])
+                                                                    .join("")}
+                                                            </AvatarFallback>
+                                                        </Avatar>
 
-                                                {/* Avatar */}
-                                                <Avatar className="w-10 h-10 flex-shrink-0">
-                                                    <AvatarImage src={creator.avatar || "/placeholder.svg"} alt={creator.name} />
-                                                    <AvatarFallback className="bg-white/20 text-white text-sm">
-                                                        {creator.name
-                                                            .split(" ")
-                                                            .map((n) => n[0])
-                                                            .join("")}
-                                                    </AvatarFallback>
-                                                </Avatar>
+                                                        {/* Creator info */}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <h3 className="font-semibold text-white text-sm truncate">{creator.name}</h3>
+                                                                <div className="flex items-center gap-1">
+                                                                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                                                    <span className="text-xs text-white/60">{creator.rating}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-3 text-xs text-white/60">
+                                                                <span>{creator.followers} followers</span>
+                                                                <span>{creator.engagement} engagement</span>
+                                                            </div>
+                                                        </div>
 
-                                                {/* Creator info */}
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <h3 className="font-semibold text-white text-sm truncate">{creator.name}</h3>
-                                                        <div className="flex items-center gap-1">
-                                                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                                            <span className="text-xs text-white/60">{creator.rating}</span>
+                                                        {/* Price badge */}
+                                                        <div className="flex-shrink-0">
+                                                            <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-400/30 rounded-full px-3 py-1">
+                                                                <span className="text-sm font-semibold text-green-400">${creator.price}</span>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-3 text-xs text-white/60">
-                                                        <span>{creator.followers} followers</span>
-                                                        <span>{creator.engagement} engagement</span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Price badge */}
-                                                <div className="flex-shrink-0">
-                                                    <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-400/30 rounded-full px-3 py-1">
-                                                        <span className="text-sm font-semibold text-green-400">${creator.price}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
-                        </div>
+                                                </CardContent>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                </div>
+                            )
+                        }
                     </div>
                 )}
             </div>

@@ -3,6 +3,34 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@font-face {
+  font-family: "CoinbaseRegular";
+  src: url("/fonts/base_sans/ttf/BaseSans-Thin.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "CoinbaseMedium";
+  src: url("/fonts/base_sans/ttf/BaseSane-Medium.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "CoinbaseDisplayRegular";
+  src: url("/fonts/base_sans/otf/BaseSans-Black.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Rubik";
+  src: url("/fonts/RubikGlitch-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
 :root {
   /* Light theme - refined and professional */
   --background: #ffffff;
@@ -129,4 +157,10 @@ body {
   -moz-user-select: none; /* Firefox */
   -ms-user-select: none; /* Internet Explorer/Edge */
   user-select: none; /* Standard syntax */
+
+  font-family: "CoinbaseRegular", sans-serif;
+}
+
+.title {
+  font-family: "Rubik", sans-serif;
 }
