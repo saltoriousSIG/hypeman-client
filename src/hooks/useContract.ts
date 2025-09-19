@@ -7,7 +7,6 @@ import {
 import { config } from "@/wagmi";
 import { DIAMOND_ADDRESS } from "@/lib/utils";
 import AcceptPromotion from "../abis/AcceptPromotion.json";
-import Claim from "../abis/Claim.json";
 import CreatePromotion from "../abis/CreatePromotion.json";
 import PromotionData from "../abis/PromotionData.json";
 import RefundPromotion from "../abis/RefundPromotion.json";
@@ -43,9 +42,6 @@ const useContract = <T extends ExecutionType, R = any>(
 ): ExecutionResult<T, R> => {
   const abi = useMemo(() => {
     switch (facet) {
-      case "Claim":
-        return Claim;
-        break;
       case "Accept":
         return AcceptPromotion;
         break;

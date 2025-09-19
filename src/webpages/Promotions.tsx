@@ -15,8 +15,10 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { NavLink } from "react-router-dom"
+import { useFrameContext } from "@/providers/FrameProvider"
 
 export default function CreatorManagePage() {
+    const { fUser } = useFrameContext();
     const [activeTab, setActiveTab] = useState<"active" | "paused" | "completed">("active")
     const [promotions, setPromotions] = useState({
         active: [
@@ -264,15 +266,15 @@ export default function CreatorManagePage() {
                     <div className="relative inline-block mb-4">
                         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-purple-600 p-1 mx-auto">
                             <img
-                                src={currentUser.profileImage || "/placeholder.svg"}
-                                alt={currentUser.username}
+                                src={fUser?.pfpUrl || "/placeholder.svg"}
+                                alt={fUser?.username}
                                 width={72}
                                 height={72}
                                 className="w-full h-full rounded-full object-cover"
                             />
                         </div>
                     </div>
-                    <h2 className="text-xl font-bold text-white mb-4">@{currentUser.username}</h2>
+                    <h2 className="text-xl font-bold text-white mb-4">@{fUser?.username}</h2>
 
                     <div className="grid grid-cols-3 gap-4 mb-6">
                         <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">

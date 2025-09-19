@@ -13,7 +13,9 @@ import { NavLink } from "react-router-dom"
 import useContract, { ExecutionType } from "@/hooks/useContract"
 import { USDC_ADDRESS, DIAMOND_ADDRESS } from "@/lib/utils"
 import { useFrameContext } from "@/providers/FrameProvider"
-import { parseUnits } from "viem"
+import { parseUnits, stringToHex } from "viem"
+import { v4 as uuidv4 } from 'uuid';
+
 
 // Mock creator data
 const creators = []
@@ -23,15 +25,13 @@ const searchResults = [];
 
 export default function BuyersPage() {
     const { address } = useFrameContext();
-    console.log(address);
 
     const [promotionType, setPromotionType] = useState<"open" | "targeted">("open")
     const [selectedCreators, setSelectedCreators] = useState<number[]>([])
     const [selectedUsers, setSelectedUsers] = useState<any[]>([])
     const [searchQuery, setSearchQuery] = useState("")
     const [showSearchResults, setShowSearchResults] = useState(false)
-    const [promotionMode, setPromotionMode] = useState<"existing" | "new">("new")
-    const [customDuration, setCustomDuration] = useState({ value: "", unit: "hours" })
+    const [promotionMode, setPromotionMode] = useState<"existing" | "new">("existing")
     const [projectDetails, setProjectDetails] = useState({
         name: "",
         description: "",
@@ -43,9 +43,11 @@ export default function BuyersPage() {
         parentCast: "",
         castToPost: "",
         existingCastUrl: "",
-        postDuration: "24",
     })
     const [isApproved, setIsApproved] = useState<boolean>(false);
+
+
+    const { fUser } = useFrameContext();
 
     const allowance = useContract(ExecutionType.READABLE, "ERC20", "allowance", USDC_ADDRESS);
     const approve = useContract(ExecutionType.WRITABLE, "ERC20", "approve", USDC_ADDRESS);
@@ -54,22 +56,20 @@ export default function BuyersPage() {
     useEffect(() => {
         const load = async () => {
             const user_allowance = await allowance([address, DIAMOND_ADDRESS]);
-            setIsApproved(parseInt(user_allowance.toString()) >= parseInt(projectDetails.totalBudget));
+            console.log(user_allowance);
+            setIsApproved(parseInt(user_allowance.toString()) >= parseUnits(projectDetails.totalBudget, 6));
         }
         load();
-    }, [allowance, address, projectDetails]);
+    }, [allowance, address, projectDetails.totalBudget]);
 
     const handleApprove = useCallback(async () => {
         try {
-
             await approve([DIAMOND_ADDRESS, parseUnits(projectDetails.totalBudget, 6)]);
+            setIsApproved(true);
         } catch (e: any) {
             console.error(e, e.message);
         }
     }, [approve, address, projectDetails]);
-
-
-    console.log(isApproved, "is approved");
 
     const calculateTotalSpend = () => {
         if (promotionType === "open") {
@@ -92,12 +92,38 @@ export default function BuyersPage() {
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
+        if (!fUser) return;
         e.preventDefault();
-        console.log(isApproved);
-        if (!isApproved) {
-            await handleApprove();
+
+        try {
+            const promotion_id = uuidv4();
+            const promotion_id_hex = stringToHex(promotion_id).substring(0, 65);
+
+            const createParams = {
+                id: promotion_id_hex,
+                name: projectDetails.name,
+                description: projectDetails.description,
+                url: projectDetails.url,
+                promoters: [],
+                total_budget: parseUnits(projectDetails.totalBudget, 6),
+                token: USDC_ADDRESS,
+                creator_fid: fUser.fid,
+                creator: address,
+                is_open_promotion: promotionType === "open",
+                price_per_post: parseUnits(projectDetails.pricePerPost, 6),
+                cast_url: projectDetails.existingCastUrl,
+                profile_mentions: projectDetails.profilesToMention.split(",")
+            }
+
+            await create_promotion([createParams]);
+            toast.success("promotion created");
+
+        } catch (e: any) {
+            console.error(e, e.message);
+            toast.error("There was an error")
         }
-        console.log("Submitting request:", { promotionType, selectedUsers, projectDetails })
+
+
     }
 
     const handleSearch = (query: string) => {
@@ -150,10 +176,10 @@ export default function BuyersPage() {
                         </div>
                     </NavLink>
                     <div>
-                        <h1 className="text-lg font-semibold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent">
+                        <h1 className="text-lg font-semibold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent title">
                             Find Your Hypeman
                         </h1>
-                        <p className="text-xs text-white/60 leading-tight">Select multiple creators</p>
+                        <p className="text-xs text-white/60 leading-tight">Choose a promotion type</p>
                     </div>
                 </div>
                 <NavLink to="/manage">
@@ -224,7 +250,7 @@ export default function BuyersPage() {
                 </div>
 
                 {/* Project Details */}
-                <div className="w-full">
+                <div className="w-full mb-5">
                     <Card className="bg-white/10 backdrop-blur-sm border-white/20">
                         <CardHeader className="pb-4">
                             <CardTitle className="text-white text-lg">Project Details</CardTitle>
@@ -380,98 +406,6 @@ export default function BuyersPage() {
                                     </>
                                 )}
 
-                                <div>
-                                    <Label htmlFor="post-duration" className="text-white/80 text-sm">
-                                        Required Post Duration
-                                    </Label>
-                                    <select
-                                        id="post-duration"
-                                        value={projectDetails.postDuration || "24"}
-                                        onChange={(e) => {
-                                            setProjectDetails((prev) => ({ ...prev, postDuration: e.target.value }))
-                                            if (e.target.value !== "custom") {
-                                                setCustomDuration({ value: "", unit: "hours" })
-                                            }
-                                        }}
-                                        className="w-full bg-white/10 backdrop-blur-sm border border-white/20 text-white h-11 mt-1 rounded-md px-3 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                                    >
-                                        <option value="6" className="bg-gray-900 text-white">
-                                            6 hours
-                                        </option>
-                                        <option value="12" className="bg-gray-900 text-white">
-                                            12 hours
-                                        </option>
-                                        <option value="24" className="bg-gray-900 text-white">
-                                            24 hours
-                                        </option>
-                                        <option value="48" className="bg-gray-900 text-white">
-                                            48 hours
-                                        </option>
-                                        <option value="72" className="bg-gray-900 text-white">
-                                            72 hours
-                                        </option>
-                                        <option value="168" className="bg-gray-900 text-white">
-                                            1 week
-                                        </option>
-                                        <option value="custom" className="bg-gray-900 text-white">
-                                            Custom duration
-                                        </option>
-                                    </select>
-
-                                    {projectDetails.postDuration === "custom" && (
-                                        <div className="mt-3 flex gap-2">
-                                            <div className="flex-1">
-                                                <Input
-                                                    placeholder="Enter duration"
-                                                    type="number"
-                                                    min="1"
-                                                    value={customDuration.value}
-                                                    onChange={(e) => setCustomDuration((prev) => ({ ...prev, value: e.target.value }))}
-                                                    className="bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder:text-white/50 h-10"
-                                                />
-                                            </div>
-                                            <div className="w-24">
-                                                <select
-                                                    value={customDuration.unit}
-                                                    onChange={(e) => setCustomDuration((prev) => ({ ...prev, unit: e.target.value }))}
-                                                    className="w-full bg-white/10 backdrop-blur-sm border border-white/20 text-white h-10 rounded-md px-2 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                                                >
-                                                    <option value="hours" className="bg-gray-900 text-white">
-                                                        Hours
-                                                    </option>
-                                                    <option value="days" className="bg-gray-900 text-white">
-                                                        Days
-                                                    </option>
-                                                    <option value="weeks" className="bg-gray-900 text-white">
-                                                        Weeks
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <p className="text-xs text-white/50 mt-1">
-                                        {projectDetails.postDuration === "custom" && customDuration.value
-                                            ? `Posts must stay live for ${customDuration.value} ${customDuration.unit}. Creators cannot claim payment if deleted early.`
-                                            : projectDetails.postDuration === "custom"
-                                                ? "Specify custom duration above. Creators cannot claim payment if deleted early."
-                                                : `Minimum time posts must stay live: ${projectDetails.postDuration === "6"
-                                                    ? "6 hours"
-                                                    : projectDetails.postDuration === "12"
-                                                        ? "12 hours"
-                                                        : projectDetails.postDuration === "24"
-                                                            ? "24 hours"
-                                                            : projectDetails.postDuration === "48"
-                                                                ? "48 hours"
-                                                                : projectDetails.postDuration === "72"
-                                                                    ? "72 hours"
-                                                                    : projectDetails.postDuration === "168"
-                                                                        ? "1 week"
-                                                                        : "24 hours"
-                                                }. Creators cannot claim payment if deleted early.`}
-                                    </p>
-                                </div>
-
                                 {promotionType === "open" ? (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
@@ -499,7 +433,6 @@ export default function BuyersPage() {
                                             />
                                             {projectDetails.totalBudget && projectDetails.pricePerPost && (
                                                 <p className="text-xs text-white/60 mt-1">
-                                                    ~
                                                     {Math.floor(
                                                         (Number.parseFloat(projectDetails.totalBudget) || 0) /
                                                         (Number.parseFloat(projectDetails.pricePerPost) || 1),
@@ -585,22 +518,40 @@ export default function BuyersPage() {
                                         )}
                                     </div>
                                 )}
+                                <>
+                                    {!isApproved ? (
+                                        <Button
+                                            type="button"
+                                            onClick={handleApprove}
+                                            disabled={
+                                                !projectDetails.name ||
+                                                (promotionType === "open" && (!projectDetails.totalBudget || !projectDetails.pricePerPost)) ||
+                                                (promotionType === "targeted" && selectedCreators.length === 0 && selectedUsers.length === 0)
+                                            }
+                                            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-white font-medium active:scale-[0.98] transition-all border-0"
+                                        >
+                                            Approve {projectDetails.totalBudget} USDC
+                                        </Button>
 
-                                <Button
-                                    type="submit"
-                                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-white font-medium active:scale-[0.98] transition-all border-0"
-                                    disabled={
-                                        !projectDetails.name ||
-                                        (promotionType === "open" && (!projectDetails.totalBudget || !projectDetails.pricePerPost)) ||
-                                        (promotionType === "targeted" && selectedCreators.length === 0 && selectedUsers.length === 0)
-                                    }
-                                >
-                                    {promotionType === "open"
-                                        ? `${isApproved ? "Launch Open Promotion" : "Approve USDC"} - ${projectDetails.totalBudget || "$0"}`
-                                        : selectedCreators.length > 0 || selectedUsers.length > 0
-                                            ? `Book ${selectedCreators.length + selectedUsers.length} Creator${selectedCreators.length + selectedUsers.length > 1 ? "s" : ""} - $${totalSpend.total}`
-                                            : "Select Creators"}
-                                </Button>
+                                    ) : (
+                                        <Button
+                                            type="submit"
+                                            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-white font-medium active:scale-[0.98] transition-all border-0"
+                                            disabled={
+                                                !projectDetails.name ||
+                                                (promotionType === "open" && (!projectDetails.totalBudget || !projectDetails.pricePerPost)) ||
+                                                (promotionType === "targeted" && selectedCreators.length === 0 && selectedUsers.length === 0)
+                                            }
+                                        >
+                                            {promotionType === "open"
+                                                ? `Launch Open Promotion - ${projectDetails.totalBudget || "$0"} USDC`
+                                                : selectedCreators.length > 0 || selectedUsers.length > 0
+                                                    ? `Book ${selectedCreators.length + selectedUsers.length} Creator${selectedCreators.length + selectedUsers.length > 1 ? "s" : ""} - $${totalSpend.total}`
+                                                    : "Select Creators"}
+                                        </Button>
+                                    )}
+                                </>
+
                             </form>
                         </CardContent>
                     </Card>

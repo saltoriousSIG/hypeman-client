@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { ArrowLeft, Save, DollarSign, User, CheckCircle, Star } from "lucide-react"
+import { ArrowLeft, Save, DollarSign, CheckCircle } from "lucide-react"
 import { NavLink } from "react-router-dom"
 import { useFrameContext } from "@/providers/FrameProvider"
 
@@ -48,7 +48,7 @@ export default function CreatorSettingsPage() {
                     </NavLink>
                     <div className="flex items-center gap-2">
                         <img src="/hypeman-logo.png" alt="Hypeman Logo" width={32} height={32} className="rounded-lg" />
-                        <h1 className="text-lg font-semibold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent">
+                        <h1 className="text-lg font-semibold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent title">
                             Settings
                         </h1>
                     </div>
@@ -63,7 +63,7 @@ export default function CreatorSettingsPage() {
                 </Button>
             </header>
 
-            <div className="px-4 space-y-4 relative z-10">
+            <div className="px-4 space-y-4 relative z-10 mb-5">
                 {isVerifiedPromoter ? (
                     /* Profile Section - Only for verified promoters */
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/10">
