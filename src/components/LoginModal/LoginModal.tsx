@@ -14,6 +14,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ signerApprovalUrl, showLoginMod
     const handleLogin = useCallback(() => {
         if (!signerApprovalUrl) return;
         sdk.actions.openUrl(signerApprovalUrl);
+        sdk.actions.close();
     }, [signerApprovalUrl]);
 
     return (
