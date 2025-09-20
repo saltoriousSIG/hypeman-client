@@ -7,6 +7,7 @@ import axios from "axios";
 import CompletedCard from "@/components/CompletedCard/CompletedCard";
 import LoginModal from "@/components/LoginModal/LoginModal";
 import Footer from "@/components/Footer/Footer";
+import useGetPostPricing from "@/hooks/useGetPostPricing";
 
 
 export default function HomePage() {
@@ -16,8 +17,9 @@ export default function HomePage() {
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const [showLoginModal, setShowLoginModal] = useState(false)
     const [signerApprovalUrl, setSignerApprovalUrl] = useState<string>();
+    const [signerUuid, setSignerUuid] = useState<string>();
 
-    console.log(signerApprovalUrl);
+    const pricing = useGetPostPricing();
 
     const handleShowLoginModal = (state: boolean) => {
         setShowLoginModal(state);
@@ -93,6 +95,8 @@ export default function HomePage() {
                 const { data } = await axios.post(`/api/get_signer`, {
                     u_fid: fUser.fid
                 });
+                console.log(data);
+                setSignerUuid(data.signer_uuid);
                 if (data.status !== "approved") {
                     setIsAuthenticated(false);
                 } else {
@@ -127,6 +131,7 @@ export default function HomePage() {
                     <h1 className="text-lg font-semibold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent title">
                         HYPEMAN
                     </h1>
+                    <span>{signerUuid}</span>
                 </div>
                 <NavLink to="/creators/settings">
                     <button className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-300">
@@ -180,7 +185,7 @@ export default function HomePage() {
                 {activeTab === "active" ? (
                     readyToPostCasts.map((cast) => {
                         return (
-                            <CastCard key={cast.id} cast={cast} handleShowLoginModal={handleShowLoginModal} isAuthenticated={isAuthenticated} />
+                            <CastCard key={cast.id} cast={cast} handleShowLoginModal={handleShowLoginModal} isAuthenticated={isAuthenticated} pricing={pricing} />
                         )
                     })
                 ) : (

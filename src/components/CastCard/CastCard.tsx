@@ -6,9 +6,10 @@ interface CastCardProps {
     cast: any;
     isAuthenticated: boolean;
     handleShowLoginModal: (state: boolean) => void;
+    pricing: number;
 }
 
-const CastCard: React.FC<CastCardProps> = ({ cast, isAuthenticated, handleShowLoginModal }) => {
+const CastCard: React.FC<CastCardProps> = ({ cast, isAuthenticated, handleShowLoginModal, pricing }) => {
     const [holdStates, setHoldStates] = useState<{ [key: number]: { isHolding: boolean; progress: number } }>({})
     const [rerollNotes, setRerollNotes] = useState<{ [key: number]: string }>({})
     const [showRerollInput, setShowRerollInput] = useState<number | null>(null)
@@ -126,7 +127,7 @@ const CastCard: React.FC<CastCardProps> = ({ cast, isAuthenticated, handleShowLo
                                 <div className="text-sm text-white/40">Tap to reroll</div>
                             </div>
                         </div>
-                        <div className="text-right text-purple-400 font-bold text-lg">${cast.budget}</div>
+                        <div className="text-right text-purple-400 font-bold text-lg">${pricing}</div>
                     </div>
 
                     {isShowingReroll ? (

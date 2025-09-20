@@ -15,6 +15,7 @@ import { USDC_ADDRESS, DIAMOND_ADDRESS } from "@/lib/utils"
 import { useFrameContext } from "@/providers/FrameProvider"
 import { parseUnits, stringToHex } from "viem"
 import { v4 as uuidv4 } from 'uuid';
+import { pricing_tiers } from "@/hooks/useGetPostPricing"
 
 
 // Mock creator data
@@ -37,7 +38,6 @@ export default function BuyersPage() {
         description: "",
         url: "",
         budget: "",
-        pricePerPost: "",
         totalBudget: "",
         profilesToMention: "",
         parentCast: "",
@@ -45,7 +45,6 @@ export default function BuyersPage() {
         existingCastUrl: "",
     })
     const [isApproved, setIsApproved] = useState<boolean>(false);
-
 
     const { fUser } = useFrameContext();
 
@@ -63,6 +62,9 @@ export default function BuyersPage() {
     }, [allowance, address, projectDetails.totalBudget]);
 
     const handleApprove = useCallback(async () => {
+        if (parseFloat(projectDetails.totalBudget) < pricing_tiers.tier1) {
+            return toast.error(`Increase total budget to at least ${pricing_tiers.tier1} USDC`);
+        }
         try {
             await approve([DIAMOND_ADDRESS, parseUnits(projectDetails.totalBudget, 6)]);
             setIsApproved(true);
@@ -94,6 +96,9 @@ export default function BuyersPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         if (!fUser) return;
         e.preventDefault();
+        if (parseFloat(projectDetails.totalBudget) < pricing_tiers.tier1) {
+            return toast.error(`Increase total budget to at least ${pricing_tiers.tier1} USDC`);
+        }
 
         try {
             const promotion_id = uuidv4();
@@ -110,7 +115,6 @@ export default function BuyersPage() {
                 creator_fid: fUser.fid,
                 creator: address,
                 is_open_promotion: promotionType === "open",
-                price_per_post: parseUnits(projectDetails.pricePerPost, 6),
                 cast_url: projectDetails.existingCastUrl,
                 profile_mentions: projectDetails.profilesToMention.split(",")
             }
@@ -219,7 +223,7 @@ export default function BuyersPage() {
                                         <h3 className="font-semibold text-white">Open Promotion</h3>
                                     </div>
                                     <p className="text-sm text-white/60 ml-7">
-                                        Set a budget and price per post. Anyone can claim and promote your project.
+                                        Set a budget. Anyone can claim and promote your project.
                                     </p>
                                 </div>
 
@@ -419,23 +423,15 @@ export default function BuyersPage() {
                                                 onChange={(e) => setProjectDetails((prev) => ({ ...prev, totalBudget: e.target.value }))}
                                                 className="bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder:text-white/50 h-11 mt-1"
                                             />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="price-per-post" className="text-white/80 text-sm">
-                                                Price Per Post
-                                            </Label>
-                                            <Input
-                                                id="price-per-post"
-                                                placeholder="$50"
-                                                value={projectDetails.pricePerPost}
-                                                onChange={(e) => setProjectDetails((prev) => ({ ...prev, pricePerPost: e.target.value }))}
-                                                className="bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder:text-white/50 h-11 mt-1"
-                                            />
-                                            {projectDetails.totalBudget && projectDetails.pricePerPost && (
+                                            {parseFloat(projectDetails.totalBudget) < pricing_tiers.tier1 && (
+                                                <p className="text-red-500 text-xs mt-1.5" >Min Budget: {pricing_tiers.tier1} USDC</p>
+                                            )}
+                                            {projectDetails.totalBudget && (
                                                 <p className="text-xs text-white/60 mt-1">
+                                                    ~
                                                     {Math.floor(
                                                         (Number.parseFloat(projectDetails.totalBudget) || 0) /
-                                                        (Number.parseFloat(projectDetails.pricePerPost) || 1),
+                                                        1.5,
                                                     )}{" "}
                                                     posts available
                                                 </p>
@@ -525,8 +521,9 @@ export default function BuyersPage() {
                                             onClick={handleApprove}
                                             disabled={
                                                 !projectDetails.name ||
-                                                (promotionType === "open" && (!projectDetails.totalBudget || !projectDetails.pricePerPost)) ||
-                                                (promotionType === "targeted" && selectedCreators.length === 0 && selectedUsers.length === 0)
+                                                (promotionType === "open" && (!projectDetails.totalBudget)) ||
+                                                (promotionType === "targeted" && selectedCreators.length === 0 && selectedUsers.length === 0) ||
+                                                (parseFloat(projectDetails.totalBudget) < pricing_tiers.tier1)
                                             }
                                             className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-white font-medium active:scale-[0.98] transition-all border-0"
                                         >
@@ -539,8 +536,9 @@ export default function BuyersPage() {
                                             className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-white font-medium active:scale-[0.98] transition-all border-0"
                                             disabled={
                                                 !projectDetails.name ||
-                                                (promotionType === "open" && (!projectDetails.totalBudget || !projectDetails.pricePerPost)) ||
-                                                (promotionType === "targeted" && selectedCreators.length === 0 && selectedUsers.length === 0)
+                                                (promotionType === "open" && (!projectDetails.totalBudget)) ||
+                                                (promotionType === "targeted" && selectedCreators.length === 0 && selectedUsers.length === 0) ||
+                                                (parseFloat(projectDetails.totalBudget) < pricing_tiers.tier1)
                                             }
                                         >
                                             {promotionType === "open"
