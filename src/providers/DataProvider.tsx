@@ -67,8 +67,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 const logs = await publicClient.getLogs({
                     address: DIAMOND_ADDRESS,
                     event: parseAbiItem("event PromotionCreated(bytes32 indexed id, address indexed creator, uint256 indexed creatorFid, string name, uint256 totalBudget, address token, bool isOpenPromotion, uint256 timestamp)"),
-                    fromBlock: 35899628n,
-                    toBlock: "latest"
+                    fromBlock: 35898459n,
+                    toBlock: 35908459n
                 });
                 const processed_promotions = await Promise.all(logs.map(async (l) => {
                     const p = await get_promotion([l.args.id]);
