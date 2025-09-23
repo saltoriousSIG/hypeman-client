@@ -1,0 +1,329 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "promotionId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "promoter",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "fee",
+        "type": "uint256"
+      }
+    ],
+    "name": "PromoterInvited",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "creatorFid",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "totalBudget",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "isOpenPromotion",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "PromotionCreated",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "id",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "project_url",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "cast_url",
+            "type": "string"
+          },
+          {
+            "internalType": "string[]",
+            "name": "profile_mentions",
+            "type": "string[]"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "wallet",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "fid",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "fee",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "post_time",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "cast_hash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "enum LibHypeman.PromoterState",
+                "name": "state",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bool",
+                "name": "verified",
+                "type": "bool"
+              }
+            ],
+            "internalType": "struct LibHypeman.Promoter[]",
+            "name": "promoters",
+            "type": "tuple[]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "total_budget",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "creator_fid",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "is_open_promotion",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PromotionCreate.CreatePromotionArgs",
+        "name": "args",
+        "type": "tuple"
+      }
+    ],
+    "name": "createPromotion",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "promotionId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getPromotion",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "id",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "project_url",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "cast_url",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "creator_fid",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "total_budget",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "remaining_budget",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "created_time",
+            "type": "uint256"
+          },
+          {
+            "internalType": "enum LibHypeman.PromotionState",
+            "name": "state",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "refund_requested",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "is_open_promotion",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct LibHypeman.Promotion",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "promotionId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getPromotionMentions",
+    "outputs": [
+      {
+        "internalType": "string[]",
+        "name": "",
+        "type": "string[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "promotionId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getPromotionPromoters",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

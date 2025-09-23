@@ -1,136 +1,23 @@
 [
   {
-    "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
         "internalType": "bytes32",
         "name": "promotionId",
         "type": "bytes32"
       },
       {
-        "indexed": true,
         "internalType": "address",
-        "name": "requester",
+        "name": "promoterAddress",
         "type": "address"
       }
     ],
-    "name": "PromotionFetched",
-    "type": "event"
-  },
-  {
-    "inputs": [],
-    "name": "getAllPromotionIds",
+    "name": "canPromoterClaim",
     "outputs": [
       {
-        "internalType": "bytes32[]",
-        "name": "promotionIds",
-        "type": "bytes32[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getAllPromotions",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "bytes32",
-            "name": "id",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "string",
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "description",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "project_url",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "cast_url",
-            "type": "string"
-          },
-          {
-            "internalType": "string[]",
-            "name": "profile_mentions",
-            "type": "string[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "creator_fid",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "creator",
-            "type": "address"
-          },
-          {
-            "internalType": "address[]",
-            "name": "promoters",
-            "type": "address[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "required_alive_time",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "total_budget",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "token",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "created_time",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "content_generated",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "refund_requested",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "is_open_promotion",
-            "type": "bool"
-          },
-          {
-            "internalType": "uint256",
-            "name": "price_per_post",
-            "type": "uint256"
-          },
-          {
-            "internalType": "enum LibHypeman.PromotionState",
-            "name": "state",
-            "type": "uint8"
-          }
-        ],
-        "internalType": "struct LibHypeman.Promotion[]",
-        "name": "promotions",
-        "type": "tuple[]"
+        "internalType": "bool",
+        "name": "canClaim",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -193,34 +80,9 @@
             "type": "string"
           },
           {
-            "internalType": "string[]",
-            "name": "profile_mentions",
-            "type": "string[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "creator_fid",
-            "type": "uint256"
-          },
-          {
             "internalType": "address",
             "name": "creator",
             "type": "address"
-          },
-          {
-            "internalType": "address[]",
-            "name": "promoters",
-            "type": "address[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "required_alive_time",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "total_budget",
-            "type": "uint256"
           },
           {
             "internalType": "address",
@@ -229,13 +91,28 @@
           },
           {
             "internalType": "uint256",
+            "name": "creator_fid",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "total_budget",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "remaining_budget",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
             "name": "created_time",
             "type": "uint256"
           },
           {
-            "internalType": "bool",
-            "name": "content_generated",
-            "type": "bool"
+            "internalType": "enum LibHypeman.PromotionState",
+            "name": "state",
+            "type": "uint8"
           },
           {
             "internalType": "bool",
@@ -246,20 +123,71 @@
             "internalType": "bool",
             "name": "is_open_promotion",
             "type": "bool"
-          },
-          {
-            "internalType": "uint256",
-            "name": "price_per_post",
-            "type": "uint256"
-          },
-          {
-            "internalType": "enum LibHypeman.PromotionState",
-            "name": "state",
-            "type": "uint8"
           }
         ],
         "internalType": "struct LibHypeman.Promotion[]",
         "name": "promotions",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "promotionId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address[]",
+        "name": "promoterAddresses",
+        "type": "address[]"
+      }
+    ],
+    "name": "getMultiplePromoters",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "wallet",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fid",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "post_time",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "cast_hash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "enum LibHypeman.PromoterState",
+            "name": "state",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "verified",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct LibHypeman.Promoter[]",
+        "name": "promoters",
         "type": "tuple[]"
       }
     ],
@@ -304,34 +232,9 @@
             "type": "string"
           },
           {
-            "internalType": "string[]",
-            "name": "profile_mentions",
-            "type": "string[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "creator_fid",
-            "type": "uint256"
-          },
-          {
             "internalType": "address",
             "name": "creator",
             "type": "address"
-          },
-          {
-            "internalType": "address[]",
-            "name": "promoters",
-            "type": "address[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "required_alive_time",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "total_budget",
-            "type": "uint256"
           },
           {
             "internalType": "address",
@@ -340,13 +243,28 @@
           },
           {
             "internalType": "uint256",
+            "name": "creator_fid",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "total_budget",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "remaining_budget",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
             "name": "created_time",
             "type": "uint256"
           },
           {
-            "internalType": "bool",
-            "name": "content_generated",
-            "type": "bool"
+            "internalType": "enum LibHypeman.PromotionState",
+            "name": "state",
+            "type": "uint8"
           },
           {
             "internalType": "bool",
@@ -357,16 +275,6 @@
             "internalType": "bool",
             "name": "is_open_promotion",
             "type": "bool"
-          },
-          {
-            "internalType": "uint256",
-            "name": "price_per_post",
-            "type": "uint256"
-          },
-          {
-            "internalType": "enum LibHypeman.PromotionState",
-            "name": "state",
-            "type": "uint8"
           }
         ],
         "internalType": "struct LibHypeman.Promotion[]",
@@ -395,9 +303,9 @@
       {
         "components": [
           {
-            "internalType": "enum LibHypeman.PromoterState",
-            "name": "state",
-            "type": "uint8"
+            "internalType": "address",
+            "name": "wallet",
+            "type": "address"
           },
           {
             "internalType": "uint256",
@@ -411,12 +319,7 @@
           },
           {
             "internalType": "uint256",
-            "name": "accept_time",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "cast_time",
+            "name": "post_time",
             "type": "uint256"
           },
           {
@@ -425,9 +328,9 @@
             "type": "bytes32"
           },
           {
-            "internalType": "address",
-            "name": "wallet",
-            "type": "address"
+            "internalType": "enum LibHypeman.PromoterState",
+            "name": "state",
+            "type": "uint8"
           },
           {
             "internalType": "bool",
@@ -500,34 +403,9 @@
             "type": "string"
           },
           {
-            "internalType": "string[]",
-            "name": "profile_mentions",
-            "type": "string[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "creator_fid",
-            "type": "uint256"
-          },
-          {
             "internalType": "address",
             "name": "creator",
             "type": "address"
-          },
-          {
-            "internalType": "address[]",
-            "name": "promoters",
-            "type": "address[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "required_alive_time",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "total_budget",
-            "type": "uint256"
           },
           {
             "internalType": "address",
@@ -536,13 +414,28 @@
           },
           {
             "internalType": "uint256",
+            "name": "creator_fid",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "total_budget",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "remaining_budget",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
             "name": "created_time",
             "type": "uint256"
           },
           {
-            "internalType": "bool",
-            "name": "content_generated",
-            "type": "bool"
+            "internalType": "enum LibHypeman.PromotionState",
+            "name": "state",
+            "type": "uint8"
           },
           {
             "internalType": "bool",
@@ -553,16 +446,6 @@
             "internalType": "bool",
             "name": "is_open_promotion",
             "type": "bool"
-          },
-          {
-            "internalType": "uint256",
-            "name": "price_per_post",
-            "type": "uint256"
-          },
-          {
-            "internalType": "enum LibHypeman.PromotionState",
-            "name": "state",
-            "type": "uint8"
           }
         ],
         "internalType": "struct LibHypeman.Promotion[]",
@@ -635,34 +518,9 @@
             "type": "string"
           },
           {
-            "internalType": "string[]",
-            "name": "profile_mentions",
-            "type": "string[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "creator_fid",
-            "type": "uint256"
-          },
-          {
             "internalType": "address",
             "name": "creator",
             "type": "address"
-          },
-          {
-            "internalType": "address[]",
-            "name": "promoters",
-            "type": "address[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "required_alive_time",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "total_budget",
-            "type": "uint256"
           },
           {
             "internalType": "address",
@@ -671,13 +529,28 @@
           },
           {
             "internalType": "uint256",
+            "name": "creator_fid",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "total_budget",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "remaining_budget",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
             "name": "created_time",
             "type": "uint256"
           },
           {
-            "internalType": "bool",
-            "name": "content_generated",
-            "type": "bool"
+            "internalType": "enum LibHypeman.PromotionState",
+            "name": "state",
+            "type": "uint8"
           },
           {
             "internalType": "bool",
@@ -688,16 +561,6 @@
             "internalType": "bool",
             "name": "is_open_promotion",
             "type": "bool"
-          },
-          {
-            "internalType": "uint256",
-            "name": "price_per_post",
-            "type": "uint256"
-          },
-          {
-            "internalType": "enum LibHypeman.PromotionState",
-            "name": "state",
-            "type": "uint8"
           }
         ],
         "internalType": "struct LibHypeman.Promotion",
@@ -709,13 +572,71 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "getPromotionCount",
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "promotionId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getPromotionInsights",
     "outputs": [
       {
-        "internalType": "uint256",
-        "name": "count",
-        "type": "uint256"
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "exists",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalSpent",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "averageFeePerPromoter",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "completionRate",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rejectionRate",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "budgetUtilization",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "activePromoterCount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "completedPromoterCount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isFullyCompleted",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isBudgetExhausted",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PromotionData.PromotionInsights",
+        "name": "insights",
+        "type": "tuple"
       }
     ],
     "stateMutability": "view",
@@ -729,12 +650,12 @@
         "type": "bytes32"
       }
     ],
-    "name": "getPromotionPromoterAddresses",
+    "name": "getPromotionMentions",
     "outputs": [
       {
-        "internalType": "address[]",
-        "name": "promoterAddresses",
-        "type": "address[]"
+        "internalType": "string[]",
+        "name": "mentions",
+        "type": "string[]"
       }
     ],
     "stateMutability": "view",
@@ -746,403 +667,26 @@
         "internalType": "bytes32",
         "name": "promotionId",
         "type": "bytes32"
-      },
-      {
-        "internalType": "address[]",
-        "name": "promoterAddresses",
-        "type": "address[]"
       }
     ],
     "name": "getPromotionPromoters",
     "outputs": [
       {
-        "components": [
-          {
-            "internalType": "enum LibHypeman.PromoterState",
-            "name": "state",
-            "type": "uint8"
-          },
-          {
-            "internalType": "uint256",
-            "name": "fid",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "fee",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "accept_time",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "cast_time",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "cast_hash",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "address",
-            "name": "wallet",
-            "type": "address"
-          },
-          {
-            "internalType": "bool",
-            "name": "verified",
-            "type": "bool"
-          }
-        ],
-        "internalType": "struct LibHypeman.Promoter[]",
-        "name": "promoters",
-        "type": "tuple[]"
+        "internalType": "address[]",
+        "name": "promoterAddresses",
+        "type": "address[]"
       }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "creatorFid",
-        "type": "uint256"
-      }
-    ],
-    "name": "getPromotionsByCreatorFid",
+    "inputs": [],
+    "name": "getTotalPromotionCount",
     "outputs": [
       {
-        "components": [
-          {
-            "internalType": "bytes32",
-            "name": "id",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "string",
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "description",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "project_url",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "cast_url",
-            "type": "string"
-          },
-          {
-            "internalType": "string[]",
-            "name": "profile_mentions",
-            "type": "string[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "creator_fid",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "creator",
-            "type": "address"
-          },
-          {
-            "internalType": "address[]",
-            "name": "promoters",
-            "type": "address[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "required_alive_time",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "total_budget",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "token",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "created_time",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "content_generated",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "refund_requested",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "is_open_promotion",
-            "type": "bool"
-          },
-          {
-            "internalType": "uint256",
-            "name": "price_per_post",
-            "type": "uint256"
-          },
-          {
-            "internalType": "enum LibHypeman.PromotionState",
-            "name": "state",
-            "type": "uint8"
-          }
-        ],
-        "internalType": "struct LibHypeman.Promotion[]",
-        "name": "promotions",
-        "type": "tuple[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "enum LibHypeman.PromotionState",
-        "name": "state",
-        "type": "uint8"
-      }
-    ],
-    "name": "getPromotionsByState",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "bytes32",
-            "name": "id",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "string",
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "description",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "project_url",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "cast_url",
-            "type": "string"
-          },
-          {
-            "internalType": "string[]",
-            "name": "profile_mentions",
-            "type": "string[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "creator_fid",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "creator",
-            "type": "address"
-          },
-          {
-            "internalType": "address[]",
-            "name": "promoters",
-            "type": "address[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "required_alive_time",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "total_budget",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "token",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "created_time",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "content_generated",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "refund_requested",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "is_open_promotion",
-            "type": "bool"
-          },
-          {
-            "internalType": "uint256",
-            "name": "price_per_post",
-            "type": "uint256"
-          },
-          {
-            "internalType": "enum LibHypeman.PromotionState",
-            "name": "state",
-            "type": "uint8"
-          }
-        ],
-        "internalType": "struct LibHypeman.Promotion[]",
-        "name": "promotions",
-        "type": "tuple[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "uint256",
-        "name": "offset",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "limit",
-        "type": "uint256"
-      }
-    ],
-    "name": "getPromotionsPaginated",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "bytes32",
-            "name": "id",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "string",
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "description",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "project_url",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "cast_url",
-            "type": "string"
-          },
-          {
-            "internalType": "string[]",
-            "name": "profile_mentions",
-            "type": "string[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "creator_fid",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "creator",
-            "type": "address"
-          },
-          {
-            "internalType": "address[]",
-            "name": "promoters",
-            "type": "address[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "required_alive_time",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "total_budget",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "token",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "created_time",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "content_generated",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "refund_requested",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "is_open_promotion",
-            "type": "bool"
-          },
-          {
-            "internalType": "uint256",
-            "name": "price_per_post",
-            "type": "uint256"
-          },
-          {
-            "internalType": "enum LibHypeman.PromotionState",
-            "name": "state",
-            "type": "uint8"
-          }
-        ],
-        "internalType": "struct LibHypeman.Promotion[]",
-        "name": "promotions",
-        "type": "tuple[]"
-      },
-      {
-        "internalType": "uint256",
-        "name": "total",
+        "name": "count",
         "type": "uint256"
       }
     ],

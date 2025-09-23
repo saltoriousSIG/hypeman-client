@@ -8,6 +8,8 @@ import CompletedCard from "@/components/CompletedCard/CompletedCard";
 import LoginModal from "@/components/LoginModal/LoginModal";
 import Footer from "@/components/Footer/Footer";
 import useGetPostPricing from "@/hooks/useGetPostPricing";
+import { useData } from "@/providers/DataProvider";
+
 
 
 export default function HomePage() {
@@ -18,41 +20,13 @@ export default function HomePage() {
     const [showLoginModal, setShowLoginModal] = useState(false)
     const [signerApprovalUrl, setSignerApprovalUrl] = useState<string>();
 
+    const { promotions, promotion_casts } = useData();
+
     const pricing = useGetPostPricing();
 
     const handleShowLoginModal = (state: boolean) => {
         setShowLoginModal(state);
     }
-
-    const readyToPostCasts = [
-        {
-            id: 1,
-            aiGeneratedText:
-                "Just discovered this insane new DeFi protocol that's about to change everything! 🚀 The yield farming opportunities are absolutely wild - we're talking potential 200%+ APY. Early access starts tomorrow and I'm already locked and loaded. Who else is ready to ride this wave? #DeFi #CryptoGains #YieldFarming",
-            budget: 250,
-            category: "Crypto",
-            engagement: "High",
-            views: "12.5K",
-        },
-        {
-            id: 2,
-            aiGeneratedText:
-                "Okay this NFT drop is actually fire 🔥 The art style is giving me major BAYC vibes but with a fresh twist. Mint starts in 6 hours and I'm setting my alarms. The roadmap looks solid and the team has serious credentials. Don't sleep on this one! #NFT #Mint #DigitalArt",
-            budget: 150,
-            category: "NFT",
-            engagement: "Medium",
-            views: "8.2K",
-        },
-        {
-            id: 3,
-            aiGeneratedText:
-                "MASSIVE gaming tournament alert! 🎮 $50k prize pool, top streamers competing, and the gameplay is absolutely insane. I'll be streaming my reactions live - this is going to be legendary. Mark your calendars because this is THE event of the year! #Gaming #Esports #Tournament",
-            budget: 300,
-            category: "Gaming",
-            engagement: "High",
-            views: "15.7K",
-        },
-    ]
 
     const completedPromotions = [
         {
@@ -179,9 +153,9 @@ export default function HomePage() {
                 </div>
 
                 {activeTab === "active" ? (
-                    readyToPostCasts.map((cast) => {
+                    promotions.map((cast) => {
                         return (
-                            <CastCard key={cast.id} cast={cast} handleShowLoginModal={handleShowLoginModal} isAuthenticated={isAuthenticated} pricing={pricing} />
+                            <CastCard key={cast.id} promotion={cast} cast_text={promotion_casts[cast.id]?.cast_text} handleShowLoginModal={handleShowLoginModal} isAuthenticated={isAuthenticated} pricing={pricing} />
                         )
                     })
                 ) : (

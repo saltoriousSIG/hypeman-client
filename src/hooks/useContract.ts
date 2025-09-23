@@ -6,21 +6,13 @@ import {
 } from "@wagmi/core";
 import { config } from "@/wagmi";
 import { DIAMOND_ADDRESS } from "@/lib/utils";
-import AcceptPromotion from "../abis/AcceptPromotion.json";
-import CreatePromotion from "../abis/CreatePromotion.json";
 import PromotionData from "../abis/PromotionData.json";
-import RefundPromotion from "../abis/RefundPromotion.json";
-import RejectPromotion from "../abis/RefundPromotion.json";
+import PromotionClaim from "../abis/PromotionClaim.json";
+import PromotionCreate from "../abis/PromotionCreate.json";
+import PromotionManage from "../abis/PromotionManage.json";
 import ERC20 from "../abis/ERC20.json";
 
-type Facets =
-  | "Create"
-  | "Accept"
-  | "Claim"
-  | "Data"
-  | "Reject"
-  | "Refund"
-  | "ERC20";
+type Facets = "Create" | "Claim" | "Data" | "Manage" | "ERC20";
 
 export enum ExecutionType {
   READABLE,
@@ -42,20 +34,17 @@ const useContract = <T extends ExecutionType, R = any>(
 ): ExecutionResult<T, R> => {
   const abi = useMemo(() => {
     switch (facet) {
-      case "Accept":
-        return AcceptPromotion;
+      case "Claim":
+        return PromotionClaim;
         break;
       case "Create":
-        return CreatePromotion;
+        return PromotionCreate;
         break;
       case "Data":
         return PromotionData;
         break;
-      case "Reject":
-        return RejectPromotion;
-        break;
-      case "Refund":
-        return RefundPromotion;
+      case "Manage":
+        return PromotionManage;
         break;
       case "ERC20":
         return ERC20;
@@ -64,8 +53,6 @@ const useContract = <T extends ExecutionType, R = any>(
         return ERC20;
     }
   }, [facet]);
-
-  console.log(contractAddress, functionName, facet);
 
   const execute = useCallback(
     async (args: Array<any>) => {

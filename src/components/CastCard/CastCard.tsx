@@ -3,19 +3,20 @@ import { Card, CardContent } from "../ui/card";
 import { Zap, X } from "lucide-react";
 
 interface CastCardProps {
-    cast: any;
+    promotion: any;
+    cast_text: string;
     isAuthenticated: boolean;
     handleShowLoginModal: (state: boolean) => void;
     pricing: number;
 }
 
-const CastCard: React.FC<CastCardProps> = ({ cast, isAuthenticated, handleShowLoginModal, pricing }) => {
+const CastCard: React.FC<CastCardProps> = ({ promotion, cast_text, isAuthenticated, handleShowLoginModal, pricing }) => {
     const [holdStates, setHoldStates] = useState<{ [key: number]: { isHolding: boolean; progress: number } }>({})
     const [rerollNotes, setRerollNotes] = useState<{ [key: number]: string }>({})
     const [showRerollInput, setShowRerollInput] = useState<number | null>(null)
 
-    const holdState = holdStates[cast.id] || { isHolding: false, progress: 0 }
-    const isShowingReroll = showRerollInput === cast.id
+    const holdState = holdStates[promotion.id] || { isHolding: false, progress: 0 }
+    const isShowingReroll = showRerollInput === promotion.id
 
     const holdTimers = useRef<{ [key: number]: NodeJS.Timeout }>({})
     const progressIntervals = useRef<{ [key: number]: NodeJS.Timeout }>({})
@@ -60,7 +61,7 @@ const CastCard: React.FC<CastCardProps> = ({ cast, isAuthenticated, handleShowLo
     }
 
     const handlePost = (castId: number) => {
-        console.log(`[v0] Posting cast ${castId} and sending $${cast?.budget} payment immediately`)
+        console.log(`[v0] Posting cast ${castId} and sending $${promotion.total_budget} payment immediately`)
         // Add post functionality here - automatically sends payment upon successful post
     }
 
@@ -90,7 +91,7 @@ const CastCard: React.FC<CastCardProps> = ({ cast, isAuthenticated, handleShowLo
         }, 1000) // 1 second hold
     }
     return (
-        <div key={cast.id} className="space-y-3 mb-5">
+        <div key={promotion.id} className="space-y-3 mb-5">
             <Card
                 className={`relative overflow-hidden border-0 cursor-pointer transition-all duration-300 hover:scale-[1.02] bg-white/10 backdrop-blur-sm text-white ${holdState.isHolding
                     ? "scale-[1.03] shadow-lg shadow-purple-500/20 ring-2 ring-purple-400/20 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-purple-600/10"
@@ -106,7 +107,7 @@ const CastCard: React.FC<CastCardProps> = ({ cast, isAuthenticated, handleShowLo
                         : undefined,
                     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
-                onClick={() => !isShowingReroll && handleTap(cast.id)}
+                onClick={() => !isShowingReroll && handleTap(promotion.id)}
             >
                 {!isShowingReroll && (
                     <div className="absolute top-4 right-4 transition-opacity duration-300">
@@ -120,10 +121,10 @@ const CastCard: React.FC<CastCardProps> = ({ cast, isAuthenticated, handleShowLo
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-semibold">
-                                {cast.category.charAt(0)}
+                                {promotion.name.charAt(0)}
                             </div>
                             <div>
-                                <div className="font-semibold text-white">{cast.category} Campaign</div>
+                                <div className="font-semibold text-white">{promotion.name} Campaign</div>
                                 <div className="text-sm text-white/40">Tap to reroll</div>
                             </div>
                         </div>
@@ -132,27 +133,27 @@ const CastCard: React.FC<CastCardProps> = ({ cast, isAuthenticated, handleShowLo
 
                     {isShowingReroll ? (
                         <div className="space-y-4">
-                            <p className="text-sm leading-relaxed text-white/80 mb-3">{cast.aiGeneratedText}</p>
+                            <p className="text-sm leading-relaxed text-white/80 mb-3">{cast_text}</p>
                             <div className="bg-black/20 rounded-2xl p-4 border border-white/10">
                                 <label className="block text-sm font-medium text-white/80 mb-2">
                                     Reroll Notes (optional)
                                 </label>
                                 <textarea
-                                    value={rerollNotes[cast.id] || ""}
-                                    onChange={(e) => setRerollNotes((prev) => ({ ...prev, [cast.id]: e.target.value }))}
+                                    value={rerollNotes[promotion.id] || ""}
+                                    onChange={(e) => setRerollNotes((prev) => ({ ...prev, [promotion.id]: e.target.value }))}
                                     className="w-full bg-black/20 rounded-xl p-3 border border-white/10 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[80px] text-white placeholder-white/50"
                                     placeholder="e.g., use less emojis, make it more professional, add more excitement..."
                                 />
                             </div>
                             <div className="flex items-center gap-3">
                                 <button
-                                    onClick={() => handleReroll(cast.id)}
+                                    onClick={() => handleReroll(promotion.id)}
                                     className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-full text-white text-sm font-semibold transition-all duration-300"
                                 >
                                     🔄 Reroll
                                 </button>
                                 <button
-                                    onClick={() => handleCancelReroll(cast.id)}
+                                    onClick={() => handleCancelReroll(promotion.id)}
                                     className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-full text-white text-sm font-medium transition-all duration-300"
                                 >
                                     <X className="w-4 h-4" />
@@ -162,15 +163,25 @@ const CastCard: React.FC<CastCardProps> = ({ cast, isAuthenticated, handleShowLo
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            <p className="text-sm leading-relaxed text-white/80">{cast.aiGeneratedText}</p>
+                            {!cast_text ? (
+                                <div className="space-y-2 animate-pulse">
+                                    <div className="h-4 bg-white/20 rounded-lg w-full"></div>
+                                    <div className="h-4 bg-white/20 rounded-lg w-5/6"></div>
+                                    <div className="h-4 bg-white/20 rounded-lg w-4/5"></div>
+                                    <div className="h-4 bg-white/20 rounded-lg w-3/4"></div>
+                                    <div className="h-4 bg-white/20 rounded-lg w-2/3"></div>
+                                </div>
+                            ) : (
+                                <p className="text-sm leading-relaxed text-white/80">{cast_text}</p>
+                            )}
 
                             <button
                                 onClick={(e) => e.stopPropagation()}
-                                onMouseDown={() => handleHoldStart(cast.id)}
-                                onMouseUp={() => handleHoldEnd(cast.id)}
-                                onMouseLeave={() => handleHoldEnd(cast.id)}
-                                onTouchStart={() => handleHoldStart(cast.id)}
-                                onTouchEnd={() => handleHoldEnd(cast.id)}
+                                onMouseDown={() => handleHoldStart(promotion.id)}
+                                onMouseUp={() => handleHoldEnd(promotion.id)}
+                                onMouseLeave={() => handleHoldEnd(promotion.id)}
+                                onTouchStart={() => handleHoldStart(promotion.id)}
+                                onTouchEnd={() => handleHoldEnd(promotion.id)}
                                 className={`w-full relative overflow-hidden py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-2xl text-white font-semibold transition-all duration-300 active:scale-[0.98] ${holdState.isHolding ? "shadow-lg shadow-purple-500/50 ring-2 ring-purple-400/50" : ""
                                     }`}
                             >

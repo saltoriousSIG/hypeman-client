@@ -1,10 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import React from "react";
 import ReactDOM from "react-dom/client";
 import { WagmiProvider } from "wagmi";
 import { FrameSDKProvider } from "./providers/FrameProvider.tsx";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner"
+import { DataProvider } from "./providers/DataProvider.tsx";
 
 
 import App from "./App.tsx";
@@ -15,16 +15,16 @@ import "./index.css";
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <FrameSDKProvider>
+  <WagmiProvider config={config}>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <FrameSDKProvider>
+          <DataProvider>
             <App />
             <Toaster />
-          </FrameSDKProvider>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </WagmiProvider>
-  </React.StrictMode>,
+          </DataProvider>
+        </FrameSDKProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
+  </WagmiProvider>
 );

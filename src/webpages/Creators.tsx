@@ -13,9 +13,11 @@ import { NavLink } from "react-router-dom"
 import useContract, { ExecutionType } from "@/hooks/useContract"
 import { USDC_ADDRESS, DIAMOND_ADDRESS } from "@/lib/utils"
 import { useFrameContext } from "@/providers/FrameProvider"
-import { parseUnits, stringToHex } from "viem"
-import { v4 as uuidv4 } from 'uuid';
+import { parseUnits } from "viem"
 import { pricing_tiers } from "@/hooks/useGetPostPricing"
+import ShareModal from "@/components/ShareModal/ShareModal"
+import { v4 as uuidv4 } from "uuid";
+import { stringToHex } from "viem"
 
 
 // Mock creator data
@@ -45,17 +47,19 @@ export default function BuyersPage() {
         existingCastUrl: "",
     })
     const [isApproved, setIsApproved] = useState<boolean>(false);
+    const [showShareModal, setShowShareModal] = useState<boolean>(false);
+
+    const handleShowShareModal = (state: boolean) => setShowShareModal(state);
 
     const { fUser } = useFrameContext();
 
     const allowance = useContract(ExecutionType.READABLE, "ERC20", "allowance", USDC_ADDRESS);
     const approve = useContract(ExecutionType.WRITABLE, "ERC20", "approve", USDC_ADDRESS);
-    const create_promotion = useContract(ExecutionType.WRITABLE, "Create", "create_promotion");
+    const create_promotion = useContract(ExecutionType.WRITABLE, "Create", "createPromotion");
 
     useEffect(() => {
         const load = async () => {
             const user_allowance = await allowance([address, DIAMOND_ADDRESS]);
-            console.log(user_allowance);
             setIsApproved(parseInt(user_allowance.toString()) >= parseUnits(projectDetails.totalBudget, 6));
         }
         load();
@@ -108,26 +112,24 @@ export default function BuyersPage() {
                 id: promotion_id_hex,
                 name: projectDetails.name,
                 description: projectDetails.description,
-                url: projectDetails.url,
+                project_url: projectDetails.url,
+                cast_url: projectDetails.existingCastUrl,
+                profile_mentions: projectDetails.profilesToMention.split(","),
                 promoters: [],
                 total_budget: parseUnits(projectDetails.totalBudget, 6),
                 token: USDC_ADDRESS,
                 creator_fid: fUser.fid,
                 creator: address,
                 is_open_promotion: promotionType === "open",
-                cast_url: projectDetails.existingCastUrl,
-                profile_mentions: projectDetails.profilesToMention.split(",")
             }
 
             await create_promotion([createParams]);
             toast.success("promotion created");
-
+            handleShowShareModal(true);
         } catch (e: any) {
             console.error(e, e.message);
             toast.error("There was an error")
         }
-
-
     }
 
     const handleSearch = (query: string) => {
@@ -778,6 +780,12 @@ export default function BuyersPage() {
                     </div>
                 )}
             </div>
+            <ShareModal
+                promotion_title={projectDetails.name}
+                promotion_descripton={projectDetails.description}
+                showShareModal={showShareModal}
+                handleShowShareModal={handleShowShareModal}
+            />
         </div>
     )
 }
