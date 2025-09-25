@@ -2,9 +2,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotionId",
-        "type": "bytes32"
+        "type": "uint256"
       },
       {
         "internalType": "address",
@@ -55,9 +55,9 @@
       {
         "components": [
           {
-            "internalType": "bytes32",
+            "internalType": "uint256",
             "name": "id",
-            "type": "bytes32"
+            "type": "uint256"
           },
           {
             "internalType": "string",
@@ -136,9 +136,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotionId",
-        "type": "bytes32"
+        "type": "uint256"
       },
       {
         "internalType": "address[]",
@@ -197,9 +197,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes32[]",
+        "internalType": "uint256[]",
         "name": "promotionIds",
-        "type": "bytes32[]"
+        "type": "uint256[]"
       }
     ],
     "name": "getMultiplePromotions",
@@ -207,9 +207,9 @@
       {
         "components": [
           {
-            "internalType": "bytes32",
+            "internalType": "uint256",
             "name": "id",
-            "type": "bytes32"
+            "type": "uint256"
           },
           {
             "internalType": "string",
@@ -288,9 +288,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotionId",
-        "type": "bytes32"
+        "type": "uint256"
       },
       {
         "internalType": "address",
@@ -378,9 +378,9 @@
       {
         "components": [
           {
-            "internalType": "bytes32",
+            "internalType": "uint256",
             "name": "id",
-            "type": "bytes32"
+            "type": "uint256"
           },
           {
             "internalType": "string",
@@ -459,9 +459,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotionId",
-        "type": "bytes32"
+        "type": "uint256"
       },
       {
         "internalType": "address",
@@ -483,9 +483,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotionId",
-        "type": "bytes32"
+        "type": "uint256"
       }
     ],
     "name": "getPromotion",
@@ -493,9 +493,9 @@
       {
         "components": [
           {
-            "internalType": "bytes32",
+            "internalType": "uint256",
             "name": "id",
-            "type": "bytes32"
+            "type": "uint256"
           },
           {
             "internalType": "string",
@@ -574,9 +574,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotionId",
-        "type": "bytes32"
+        "type": "uint256"
       }
     ],
     "name": "getPromotionInsights",
@@ -645,9 +645,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotionId",
-        "type": "bytes32"
+        "type": "uint256"
       }
     ],
     "name": "getPromotionMentions",
@@ -664,9 +664,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotionId",
-        "type": "bytes32"
+        "type": "uint256"
       }
     ],
     "name": "getPromotionPromoters",
@@ -696,9 +696,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotionId",
-        "type": "bytes32"
+        "type": "uint256"
       }
     ],
     "name": "promotionExists",

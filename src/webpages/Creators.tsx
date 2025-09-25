@@ -16,8 +16,6 @@ import { useFrameContext } from "@/providers/FrameProvider"
 import { parseUnits } from "viem"
 import { pricing_tiers } from "@/hooks/useGetPostPricing"
 import ShareModal from "@/components/ShareModal/ShareModal"
-import { v4 as uuidv4 } from "uuid";
-import { stringToHex } from "viem"
 
 
 // Mock creator data
@@ -105,11 +103,7 @@ export default function BuyersPage() {
         }
 
         try {
-            const promotion_id = uuidv4();
-            const promotion_id_hex = stringToHex(promotion_id).substring(0, 65);
-
             const createParams = {
-                id: promotion_id_hex,
                 name: projectDetails.name,
                 description: projectDetails.description,
                 project_url: projectDetails.url,

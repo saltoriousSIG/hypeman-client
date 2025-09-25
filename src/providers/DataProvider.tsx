@@ -1,8 +1,6 @@
 import { useContext, createContext, useEffect, useState, useCallback } from "react";
-import { usePublicClient } from "wagmi";
 import useContract, { ExecutionType } from "@/hooks/useContract";
 import { DIAMOND_ADDRESS } from "@/lib/utils";
-import { parseAbiItem } from "viem";
 import { useFrameContext } from "./FrameProvider";
 import axios from "axios";
 
@@ -53,40 +51,36 @@ export function useData() {
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
     const { fUser } = useFrameContext();
-    const publicClient = usePublicClient();
 
     const [promotions, setPromotions] = useState<Array<Promotion>>([]);
     const [promotionCasts, setPromotionCasts] = useState<Record<string, PromotionCasts>>({});
+
+    const get_next_promotion_id = useContract(ExecutionType.READABLE, "Data", "getNextPromotionId");
     const get_promotion = useContract(ExecutionType.READABLE, "Data", "getPromotion");
 
     useEffect(() => {
-        if (!publicClient) return
         if (!get_promotion) return;
         const load = async () => {
+            const promotions: Array<Promotion> = [];
             try {
-                const logs = await publicClient.getLogs({
-                    address: DIAMOND_ADDRESS,
-                    event: parseAbiItem("event PromotionCreated(bytes32 indexed id, address indexed creator, uint256 indexed creatorFid, string name, uint256 totalBudget, address token, bool isOpenPromotion, uint256 timestamp)"),
-                    fromBlock: 35898459n,
-                    toBlock: 35908459n
-                });
-                const processed_promotions = await Promise.all(logs.map(async (l) => {
-                    const p = await get_promotion([l.args.id]);
-                    return {
-                        ...p,
-                        created_time: new Date(parseInt(p.created_time.toString())),
-                        creator_fid: parseInt(p.creator_fid.toString()),
-                        remaining_budget: parseInt(p.remaining_budget.toString()),
-                        total_budget: parseInt(p.total_budget.toString())
-                    }
-                }));
-                setPromotions(processed_promotions.filter((l) => l.state === PromotionState.ACTIVE));
+                const next_promotion_id = await get_next_promotion_id([]);
+                for (let i = 0; i < next_promotion_id; i++) {
+                    const promotion = await get_promotion([i]);
+                    promotions.push({
+                        ...promotion,
+                        created_time: new Date(parseInt(promotion.created_time.toString())),
+                        creator_fid: parseInt(promotion.creator_fid.toString()),
+                        remaining_budget: parseInt(promotion.remaining_budget.toString()),
+                        total_budget: parseInt(promotion.total_budget.toString())
+                    })
+                }
+                setPromotions(promotions);
             } catch (e: any) {
                 throw new Error(e.message);
             }
         }
         load();
-    }, [publicClient, get_promotion]);
+    }, [get_promotion, get_next_promotion_id]);
 
     useEffect(() => {
         if (!fUser) return;

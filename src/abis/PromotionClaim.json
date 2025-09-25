@@ -19,9 +19,9 @@
     "inputs": [
       {
         "indexed": true,
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotionId",
-        "type": "bytes32"
+        "type": "uint256"
       },
       {
         "indexed": true,
@@ -81,9 +81,9 @@
     "inputs": [
       {
         "indexed": true,
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotionId",
-        "type": "bytes32"
+        "type": "uint256"
       },
       {
         "indexed": true,
@@ -148,9 +148,9 @@
     "inputs": [
       {
         "indexed": true,
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotionId",
-        "type": "bytes32"
+        "type": "uint256"
       },
       {
         "indexed": true,
@@ -191,9 +191,9 @@
     "inputs": [
       {
         "indexed": true,
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotionId",
-        "type": "bytes32"
+        "type": "uint256"
       },
       {
         "indexed": true,
@@ -232,9 +232,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotion_id",
-        "type": "bytes32"
+        "type": "uint256"
       },
       {
         "components": [
@@ -287,9 +287,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotion_id",
-        "type": "bytes32"
+        "type": "uint256"
       },
       {
         "internalType": "address",
@@ -311,9 +311,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotion_id",
-        "type": "bytes32"
+        "type": "uint256"
       },
       {
         "internalType": "bytes32",
@@ -347,9 +347,9 @@
   {
     "inputs": [
       {
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "promotion_id",
-        "type": "bytes32"
+        "type": "uint256"
       }
     ],
     "name": "rejectPromotion",

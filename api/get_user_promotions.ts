@@ -17,6 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const user_cast_data = await redisClient.get(
         `user_cast:${fid}:${promotion.id}`
       );
+      console.log(user_cast_data);
       if (!user_cast_data) {
         const initialCast = await hypeman_ai.generateInitialCast(
           fid,
