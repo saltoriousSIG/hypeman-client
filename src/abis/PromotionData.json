@@ -286,6 +286,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "getNextPromotionId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "next_promotion_id",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",

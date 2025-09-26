@@ -25,7 +25,7 @@ const creators = []
 const searchResults = [];
 
 export default function BuyersPage() {
-    const { address } = useFrameContext();
+    const { address, fUser } = useFrameContext();
 
     const [promotionType, setPromotionType] = useState<"open" | "targeted">("open")
     const [selectedCreators, setSelectedCreators] = useState<number[]>([])
@@ -48,8 +48,6 @@ export default function BuyersPage() {
     const [showShareModal, setShowShareModal] = useState<boolean>(false);
 
     const handleShowShareModal = (state: boolean) => setShowShareModal(state);
-
-    const { fUser } = useFrameContext();
 
     const allowance = useContract(ExecutionType.READABLE, "ERC20", "allowance", USDC_ADDRESS);
     const approve = useContract(ExecutionType.WRITABLE, "ERC20", "approve", USDC_ADDRESS);

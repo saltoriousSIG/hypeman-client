@@ -68,6 +68,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                     const promotion = await get_promotion([i]);
                     promotions.push({
                         ...promotion,
+                        id: promotion.id.toString(),
                         created_time: new Date(parseInt(promotion.created_time.toString())),
                         creator_fid: parseInt(promotion.creator_fid.toString()),
                         remaining_budget: parseInt(promotion.remaining_budget.toString()),
@@ -85,6 +86,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (!fUser) return;
         if (!promotions || promotions.length === 0) return
+        console.log(promotions)
         const load = async () => {
             try {
                 const casts_obj = {}
@@ -93,6 +95,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                     username: fUser.username,
                     promotions
                 });
+                console.log(user_casts)
                 user_casts.map((x) => casts_obj[x.id] = {
                     ...x
                 })

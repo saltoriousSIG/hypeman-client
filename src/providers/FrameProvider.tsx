@@ -48,6 +48,7 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
 
     const { isConnected, address } = useAccount();
     const { connect, connectors } = useConnect();
+    console.log(isConnected);
 
     const handleSetIsFrameAdding = (state: boolean) => setIsFrameAdding(state);
 
@@ -70,11 +71,9 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     useEffect(() => {
-        if (!isConnected) {
-            connect({
-                connector: connectors[0]
-            });
-        }
+        connect({
+            connector: connectors[0]
+        });
     }, [])
 
 
@@ -100,6 +99,8 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (!fUser) return;
+        console.log(fUser);
+        console.log(address);
         const load = async () => {
             try {
                 const { data } = await axios.post("/api/fetch_user", {
