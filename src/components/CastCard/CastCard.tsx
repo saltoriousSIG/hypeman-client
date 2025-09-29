@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Card, CardContent } from "../ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Zap, X } from "lucide-react";
 
 interface CastCardProps {
@@ -18,10 +18,11 @@ const CastCard: React.FC<CastCardProps> = ({ promotion, cast_text, isAuthenticat
     const holdState = holdStates[promotion.id] || { isHolding: false, progress: 0 }
     const isShowingReroll = showRerollInput === promotion.id
 
-    const holdTimers = useRef<{ [key: number]: NodeJS.Timeout }>({})
-    const progressIntervals = useRef<{ [key: number]: NodeJS.Timeout }>({})
+    const holdTimers = useRef<{ [key: number]: ReturnType<typeof setTimeout> }>({})
+    const progressIntervals = useRef<{ [key: number]: ReturnType<typeof setInterval> }>({})
 
     const handleHoldEnd = (castId: number) => {
+        // Immediately clear timers and intervals
         if (holdTimers.current[castId]) {
             clearTimeout(holdTimers.current[castId])
             delete holdTimers.current[castId]
@@ -30,10 +31,15 @@ const CastCard: React.FC<CastCardProps> = ({ promotion, cast_text, isAuthenticat
             clearInterval(progressIntervals.current[castId])
             delete progressIntervals.current[castId]
         }
-        setHoldStates((prev) => ({
-            ...prev,
-            [castId]: { isHolding: false, progress: 0 },
-        }))
+
+        // Force immediate state reset
+        setHoldStates((prev) => {
+            const newState = {
+                ...prev,
+                [castId]: { isHolding: false, progress: 0 },
+            };
+            return newState;
+        })
     }
 
     const handleTap = (castId: number) => {
@@ -65,12 +71,28 @@ const CastCard: React.FC<CastCardProps> = ({ promotion, cast_text, isAuthenticat
         // Add post functionality here - automatically sends payment upon successful post
     }
 
-    const handleHoldStart = (castId: number) => {
+    const handleHoldStart = (castId: number, e?: React.MouseEvent | React.TouchEvent) => {
+        if (e) {
+            e.preventDefault()
+            e.stopPropagation()
+        }
+
         if (!isAuthenticated) {
             handleShowLoginModal(true)
             return
         }
 
+        // Clear any existing timers first
+        if (holdTimers.current[castId]) {
+            clearTimeout(holdTimers.current[castId])
+            delete holdTimers.current[castId]
+        }
+        if (progressIntervals.current[castId]) {
+            clearInterval(progressIntervals.current[castId])
+            delete progressIntervals.current[castId]
+        }
+
+        // Reset and start fresh
         setHoldStates((prev) => ({
             ...prev,
             [castId]: { isHolding: true, progress: 0 },
@@ -88,8 +110,9 @@ const CastCard: React.FC<CastCardProps> = ({ promotion, cast_text, isAuthenticat
         holdTimers.current[castId] = setTimeout(() => {
             handlePost(castId)
             handleHoldEnd(castId)
-        }, 1000) // 1 second hold
+        }, 2000) // 1 second hold
     }
+
     return (
         <div key={promotion.id} className="space-y-3 mb-5">
             <Card
@@ -177,13 +200,16 @@ const CastCard: React.FC<CastCardProps> = ({ promotion, cast_text, isAuthenticat
 
                             <button
                                 onClick={(e) => e.stopPropagation()}
-                                onMouseDown={() => handleHoldStart(promotion.id)}
+                                onMouseDown={(e) => handleHoldStart(promotion.id, e)}
                                 onMouseUp={() => handleHoldEnd(promotion.id)}
                                 onMouseLeave={() => handleHoldEnd(promotion.id)}
-                                onTouchStart={() => handleHoldStart(promotion.id)}
+                                onTouchStart={(e) => handleHoldStart(promotion.id, e)}
                                 onTouchEnd={() => handleHoldEnd(promotion.id)}
+                                onTouchCancel={() => handleHoldEnd(promotion.id)}
+                                onContextMenu={(e) => e.preventDefault()}
                                 className={`w-full relative overflow-hidden py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-2xl text-white font-semibold transition-all duration-300 active:scale-[0.98] ${holdState.isHolding ? "shadow-lg shadow-purple-500/50 ring-2 ring-purple-400/50" : ""
                                     }`}
+                                style={{ touchAction: 'none', userSelect: 'none' }}
                             >
                                 <div
                                     className="absolute inset-0 bg-gradient-to-r from-green-400/80 to-emerald-500/80 transition-all duration-75 ease-out"
@@ -231,8 +257,7 @@ const CastCard: React.FC<CastCardProps> = ({ promotion, cast_text, isAuthenticat
                 </CardContent>
             </Card>
         </div>
-
     );
 }
 
-export default CastCard; 
+export default CastCard;
