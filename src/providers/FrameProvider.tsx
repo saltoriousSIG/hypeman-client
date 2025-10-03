@@ -2,20 +2,6 @@ import { createContext, useEffect, useState, useContext, useCallback } from "rea
 import sdk from "@farcaster/frame-sdk";
 import { MiniAppSDK } from "@farcaster/miniapp-sdk/dist/types";
 import { useAccount, useConnect } from "wagmi";
-import { Cast } from "@neynar/nodejs-sdk/build/api";
-
-
-
-type ConnectedUserData = {
-    score: number;
-    follower_count: number;
-    avgLikes: number;
-    avgRecasts: number;
-    avgReplies: number;
-    casts: Cast[];
-    nextCursor?: string | null;
-
-}
 
 interface FrameContextValue {
     errors: Record<string, Error> | null;

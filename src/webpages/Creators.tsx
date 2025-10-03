@@ -100,7 +100,6 @@ export default function BuyersPage() {
     // Handle create promotion
     const handleCreatePromotion = useCallback(async () => {
         if (!fUser || !selectedCast) return;
-
         if (budget < pricing_tiers.tier1) {
             return toast.error(`Minimum budget is ${pricing_tiers.tier1} USDC`);
         }
