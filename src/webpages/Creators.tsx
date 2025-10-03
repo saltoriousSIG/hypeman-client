@@ -1,8 +1,17 @@
 import { useEffect, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
+import {
+    Drawer,
+    DrawerClose,
+    DrawerContent,
+    DrawerDescription,
+    DrawerFooter,
+    DrawerHeader,
+    DrawerTitle,
+} from "@/components/ui/drawer"
 import { ArrowLeft, History, Quote } from "lucide-react"
 import { toast } from "sonner"
 import { NavLink } from "react-router-dom"
@@ -45,6 +54,7 @@ export default function BuyersPage() {
     const [budget, setBudget] = useState<number>(10);
     const [isApproved, setIsApproved] = useState<boolean>(false);
     const [showShareModal, setShowShareModal] = useState<boolean>(false);
+    const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
 
     const handleShowShareModal = (state: boolean) => setShowShareModal(state);
 
@@ -108,7 +118,8 @@ export default function BuyersPage() {
             toast.success("Promotion created successfully!");
             handleShowShareModal(true);
 
-            // Reset state
+            // Reset state and close drawer
+            setIsDrawerOpen(false);
             setSelectedCast(null);
             setBudget(10);
             setIsApproved(false);
@@ -123,13 +134,20 @@ export default function BuyersPage() {
         setSelectedCast(cast);
         setIsApproved(false);
         setBudget(10);
+        setIsDrawerOpen(true);
     };
 
-    // Cancel promotion creation
-    const handleCancel = () => {
-        setSelectedCast(null);
-        setBudget(10);
-        setIsApproved(false);
+    // Handle drawer close
+    const handleDrawerClose = (open: boolean) => {
+        setIsDrawerOpen(open);
+        if (!open) {
+            // Reset state when drawer closes
+            setTimeout(() => {
+                setSelectedCast(null);
+                setBudget(10);
+                setIsApproved(false);
+            }, 300); // Wait for drawer animation
+        }
     };
 
     const userCasts = connectedUserData?.casts || [];
@@ -171,165 +189,157 @@ export default function BuyersPage() {
             </header>
 
             <div className="relative z-10 px-4 pb-20 space-y-4">
-                {/* If no cast is selected, show the list of casts */}
-                {!selectedCast && (
-                    <>
-                        {userCasts.length === 0 ? (
-                            <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-                                <CardContent className="p-8 text-center">
-                                    <p className="text-white/60">No casts found. Create some casts first!</p>
-                                </CardContent>
-                            </Card>
-                        ) : (
-                            <div className="space-y-2">
-                                {userCasts.map((cast: NeynarCast) => (
-                                    <div
-                                        key={cast.hash}
-                                        className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-all"
-                                    >
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div className="flex-1 min-w-0">
-                                                {/* Username and date */}
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <span className="text-white/80 text-sm font-medium">
-                                                        @{cast.author?.username || fUser?.username || 'user'}
-                                                    </span>
-                                                    <span className="text-white/40 text-xs">
-                                                        • {new Date((cast as any).timestamp || Date.now()).toLocaleDateString()}
-                                                    </span>
-                                                </div>
+                {/* Cast list - always visible */}
+                {userCasts.length === 0 ? (
+                    <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+                        <CardContent className="p-8 text-center">
+                            <p className="text-white/60">No casts found. Create some casts first!</p>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="space-y-2">
+                        {userCasts.map((cast: NeynarCast) => (
+                            <div
+                                key={cast.hash}
+                                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-all"
+                            >
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                        {/* Username and date */}
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-white/80 text-sm font-medium">
+                                                @{cast.author?.username || fUser?.username || 'user'}
+                                            </span>
+                                            <span className="text-white/40 text-xs">
+                                                • {new Date((cast as any).timestamp || Date.now()).toLocaleDateString()}
+                                            </span>
+                                        </div>
 
-                                                {/* Cast text */}
-                                                <p className="text-white text-base leading-relaxed mb-3">
-                                                    {cast.text}
-                                                </p>
+                                        {/* Cast text */}
+                                        <p className="text-white text-base leading-relaxed mb-3">
+                                            {cast.text}
+                                        </p>
 
-                                                {/* Engagement metrics */}
-                                                <div className="flex items-center gap-4 text-sm">
-                                                    <div className="flex items-center gap-1.5 text-cyan-400">
-                                                        <Quote className="w-4 h-4" />
-                                                        <span>{(cast as any).reactions?.quotes_count || 0}</span>
-                                                    </div>
-                                                </div>
+                                        {/* Engagement metrics */}
+                                        <div className="flex items-center gap-4 text-sm">
+                                            <div className="flex items-center gap-1.5 text-cyan-400">
+                                                <Quote className="w-4 h-4" />
+                                                <span>{(cast as any).reactions?.quotes_count || 0}</span>
                                             </div>
-
-                                            {/* Promote button */}
-                                            <Button
-                                                onClick={() => handleSelectCast(cast)}
-                                                className="bg-white/10 hover:bg-purple-600 border border-white/20 hover:border-purple-600 text-white font-semibold px-8 h-10 rounded-full transition-all active:scale-[0.95] whitespace-nowrap cursor-pointer"
-                                            >
-                                                Promote
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </>
-                )}
-
-                {/* If a cast is selected, show the promotion form */}
-                {selectedCast && (
-                    <div className="space-y-4">
-                        {/* Selected cast preview */}
-                        <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-sm border-purple-400/30">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-white text-base">
-                                    Selected Cast
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                                <p className="text-white/80 text-sm leading-relaxed mb-3">
-                                    {selectedCast.text}
-                                </p>
-                                <div className="flex items-center gap-4 text-xs text-white/60">
-                                    <div className="flex items-center gap-1">
-                                        <Quote className="w-3.5 h-3.5" />
-                                        <span>{(selectedCast as any).reactions?.quotes_count || 0}</span>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Promotion details */}
-                        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-                            <CardHeader className="pb-4">
-                                <CardTitle className="text-white text-lg">Set Your Budget</CardTitle>
-                                <CardDescription className="text-white/60 text-sm">
-                                    Slide to set your promotion budget
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="pt-0 space-y-4">
-                                {/* Budget Slider */}
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <Label htmlFor="budget" className="text-white/80 text-sm">
-                                            Total Budget (USDC)
-                                        </Label>
-                                        <div className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                                            {budget} USDC
                                         </div>
                                     </div>
 
-                                    <Slider
-                                        id="budget"
-                                        min={3}
-                                        max={30}
-                                        step={1}
-                                        value={[budget]}
-                                        onValueChange={(value) => setBudget(value[0])}
-                                        className="w-full"
-                                    />
-
-                                    <div className="flex justify-between text-xs text-white/40">
-                                        <span>3 USDC</span>
-                                        <span>30 USDC</span>
-                                    </div>
-
-                                    {budget < pricing_tiers.tier1 && (
-                                        <p className="text-amber-400 text-xs mt-2 flex items-center gap-1">
-                                            ⚠️ Minimum recommended: {pricing_tiers.tier1} USDC
-                                        </p>
-                                    )}
-                                    {budget >= pricing_tiers.tier1 && (
-                                        <p className="text-xs text-green-400 mt-2">
-                                            ✓ ~{Math.floor(budget / 1.5)} posts available
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Action buttons */}
-                                <div className="flex gap-3 pt-2">
+                                    {/* Promote button */}
                                     <Button
-                                        onClick={handleCancel}
-                                        variant="outline"
-                                        className="flex-1 bg-white/5 border-white/20 text-white hover:bg-white/10 h-11"
+                                        onClick={() => handleSelectCast(cast)}
+                                        className="bg-white/10 hover:bg-purple-600 border border-white/20 hover:border-purple-600 text-white font-semibold px-8 h-10 rounded-full transition-all active:scale-[0.95] whitespace-nowrap cursor-pointer"
                                     >
-                                        Cancel
+                                        Promote
                                     </Button>
-
-                                    {!isApproved ? (
-                                        <Button
-                                            onClick={handleApprove}
-                                            disabled={budget < pricing_tiers.tier1}
-                                            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-11 text-white font-medium active:scale-[0.98] transition-all border-0"
-                                        >
-                                            Approve {budget} USDC
-                                        </Button>
-                                    ) : (
-                                        <Button
-                                            onClick={handleCreatePromotion}
-                                            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-11 text-white font-medium active:scale-[0.98] transition-all border-0"
-                                        >
-                                            Create Promotion
-                                        </Button>
-                                    )}
                                 </div>
-                            </CardContent>
-                        </Card>
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>
+
+            {/* Promotion Drawer */}
+            <Drawer open={isDrawerOpen} onOpenChange={handleDrawerClose}>
+                <DrawerContent className="bg-gradient-to-b from-gray-900 to-black border-t border-white/20">
+                    <DrawerHeader>
+                        <DrawerTitle className="text-white text-xl">Set Your Budget</DrawerTitle>
+                        <DrawerDescription className="text-white/60">
+                            Slide to set your promotion budget for this cast
+                        </DrawerDescription>
+                    </DrawerHeader>
+
+                    <div className="px-4 pb-4 space-y-6">
+                        {/* Selected cast preview */}
+                        {selectedCast && (
+                            <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                                <p className="text-white/80 text-sm leading-relaxed mb-2 line-clamp-2">
+                                    {selectedCast.text}
+                                </p>
+                                <div className="flex items-center gap-2 text-xs text-white/60">
+                                    <Quote className="w-3 h-3" />
+                                    <span>{(selectedCast as any).reactions?.quotes_count || 0} quotes</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Budget Slider */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="drawer-budget" className="text-white/80 text-sm">
+                                    Total Budget (USDC)
+                                </Label>
+                                <div className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                                    {budget} USDC
+                                </div>
+                            </div>
+
+                            <Slider
+                                id="drawer-budget"
+                                min={3}
+                                max={30}
+                                step={1}
+                                value={[budget]}
+                                onValueChange={(value) => setBudget(value[0])}
+                                className="w-full"
+                            />
+
+                            <div className="flex justify-between text-xs text-white/40">
+                                <span>3 USDC</span>
+                                <span>30 USDC</span>
+                            </div>
+
+                            {budget < pricing_tiers.tier1 && (
+                                <p className="text-amber-400 text-xs flex items-center gap-1">
+                                    ⚠️ Minimum recommended: {pricing_tiers.tier1} USDC
+                                </p>
+                            )}
+                            {budget >= pricing_tiers.tier1 && (
+                                <p className="text-xs text-green-400">
+                                    ✓ ~{Math.floor(budget / 1.5)} posts available
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    <DrawerFooter className="pt-4">
+                        {!isApproved ? (
+                            <>
+                                <Button
+                                    onClick={handleApprove}
+                                    disabled={budget < pricing_tiers.tier1}
+                                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-white font-medium active:scale-[0.98] transition-all border-0"
+                                >
+                                    Approve {budget} USDC
+                                </Button>
+                                <DrawerClose asChild>
+                                    <Button variant="outline" className="w-full bg-white/5 border-white/20 text-white hover:bg-white/10 h-12">
+                                        Cancel
+                                    </Button>
+                                </DrawerClose>
+                            </>
+                        ) : (
+                            <>
+                                <Button
+                                    onClick={handleCreatePromotion}
+                                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-white font-medium active:scale-[0.98] transition-all border-0"
+                                >
+                                    Create Promotion
+                                </Button>
+                                <DrawerClose asChild>
+                                    <Button variant="outline" className="w-full bg-white/5 border-white/20 text-white hover:bg-white/10 h-12">
+                                        Cancel
+                                    </Button>
+                                </DrawerClose>
+                            </>
+                        )}
+                    </DrawerFooter>
+                </DrawerContent>
+            </Drawer>
 
             <ShareModal
                 promotion_title=""
