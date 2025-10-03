@@ -4,13 +4,26 @@ import { MiniAppSDK } from "@farcaster/miniapp-sdk/dist/types";
 import { useAccount, useConnect } from "wagmi";
 import axios from "axios";
 
-type ConnectedUserData = {
-    score: number,
-    follower_count: number,
-    avgLikes: number,
-    avgRecasts: number,
-    avgReplies: number
+type NeynarCast = {
+    hash: string;
+    text: string;
+    reactions: {
+        likes_count: number;
+        recasts_count: number;
+    };
+    replies: {
+        count: number;
+    };
+    [key: string]: unknown;
+}
 
+type ConnectedUserData = {
+    score: number;
+    follower_count: number;
+    avgLikes: number;
+    avgRecasts: number;
+    avgReplies: number;
+    casts: NeynarCast[];
 }
 
 interface FrameContextValue {
@@ -109,22 +122,38 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
                 const { data: casts } = await axios.post("/api/fetch_user_casts", {
                     fid: fUser.fid
                 })
-                const avgLikes = casts.casts.reduce((acc, curr) => {
-                    return acc + curr.reactions.likes_count
-                }, 0) / casts.casts.length;
-                const avgRecasts = casts.casts.reduce((acc, curr) => {
-                    return acc + curr.reactions.recasts_count
-                }, 0) / casts.casts.length;
-                const avgReplies = casts.casts.reduce((acc, curr) => {
-                    return acc + curr.replies.count
-                }, 0) / casts.casts.length;
+                const userCasts = casts.casts as NeynarCast[];
+                if (userCasts.length === 0) {
+                    setConnectedUserData({
+                        score: data.user.score,
+                        follower_count: data.user.follower_count,
+                        avgLikes: 0,
+                        avgRecasts: 0,
+                        avgReplies: 0,
+                        casts: userCasts,
+                    });
+                    return;
+                }
+
+                const totals = userCasts.reduce((acc, curr) => {
+                    return {
+                        likes: acc.likes + curr.reactions.likes_count,
+                        recasts: acc.recasts + curr.reactions.recasts_count,
+                        replies: acc.replies + curr.replies.count,
+                    };
+                }, { likes: 0, recasts: 0, replies: 0 });
+
+                const avgLikes = totals.likes / userCasts.length;
+                const avgRecasts = totals.recasts / userCasts.length;
+                const avgReplies = totals.replies / userCasts.length;
 
                 setConnectedUserData({
                     score: data.user.score,
                     follower_count: data.user.follower_count,
                     avgLikes,
                     avgRecasts,
-                    avgReplies
+                    avgReplies,
+                    casts: userCasts,
                 });
             } catch (e: any) {
                 setErrors({
