@@ -5,13 +5,26 @@ import { useAccount, useConnect } from "wagmi";
 import { getUserStats } from "@/lib/getUserStats";
 
 
-type ConnectedUserData = {
-    score: number,
-    follower_count: number,
-    avgLikes: number,
-    avgRecasts: number,
-    avgReplies: number
+type NeynarCast = {
+    hash: string;
+    text: string;
+    reactions: {
+        likes_count: number;
+        recasts_count: number;
+    };
+    replies: {
+        count: number;
+    };
+    [key: string]: unknown;
+}
 
+type ConnectedUserData = {
+    score: number;
+    follower_count: number;
+    avgLikes: number;
+    avgRecasts: number;
+    avgReplies: number;
+    casts: NeynarCast[];
 }
 
 interface FrameContextValue {
@@ -103,13 +116,14 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
         console.log(address);
         const load = async () => {
             try {
-                const { score, follower_count, avgLikes, avgRecasts, avgReplies } = await getUserStats(fUser.fid);
+                const { score, follower_count, avgLikes, avgRecasts, avgReplies, casts } = await getUserStats(fUser.fid);
                 setConnectedUserData({
                     score,
                     follower_count,
                     avgLikes,
                     avgRecasts,
-                    avgReplies
+                    avgReplies,
+                    casts,
                 });
             } catch (e: any) {
                 setErrors({

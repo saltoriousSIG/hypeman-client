@@ -33,6 +33,7 @@ export const getUserStats = async (fid: number, host?: string) => {
       avgLikes,
       avgRecasts,
       avgReplies,
+      casts,
     };
   } catch (e: any) {
     throw new Error(e.message);
