@@ -1,0 +1,87 @@
+%!Adobe-FontList 1.24
+%Locale:0x409
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Invalid
+OutlineFileName:/Users/matthewmckenzie/Library/CloudStorage/Dropbox/COINBASE/2025/ONCHAIN INTERFACE/04_FINAL/ONCHAIN_REGISTRATION_LIGHT_170325 Folder/Document fonts/AdobeFnt24.lst
+FileLength:2016
+FileModTime:763930972
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Type1
+FontName:CoinbaseDisplay-Regular
+FamilyName:Coinbase Display
+StyleName:Regular
+MenuName:Coinbase Display
+StyleBits:0
+WeightClass:400
+WidthClass:5
+AngleClass:0
+FullName:Coinbase Display
+WritingScript:Roman
+OutlineFileName:/Users/matthewmckenzie/Library/CloudStorage/Dropbox/COINBASE/2025/ONCHAIN INTERFACE/04_FINAL/ONCHAIN_REGISTRATION_LIGHT_170325 Folder/Document fonts/CoinbaseDisplay-Regular-1.32.otf
+DataFormat:sfntData
+UsesStandardEncoding:yes
+isCFF:yes
+hasSVG:no
+hasSBIX:no
+hasCOLR:no
+VariableFontType:NonVariableFont
+FileLength:70208
+FileModTime:654008272
+NameArray:0,Mac,4,Coinbase Display
+NameArray:0,Win,1,Coinbase Display
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:TrueType
+FontName:CoinbaseText-Medium
+FamilyName:Coinbase Text
+StyleName:Medium
+MenuName:Coinbase Text Medium
+StyleBits:0
+WeightClass:500
+WidthClass:5
+AngleClass:0
+FullName:Coinbase Text Medium
+WritingScript:Roman
+OutlineFileName:/Users/matthewmckenzie/Library/CloudStorage/Dropbox/COINBASE/2025/ONCHAIN INTERFACE/04_FINAL/ONCHAIN_REGISTRATION_LIGHT_170325 Folder/Document fonts/CoinbaseText-Medium.ttf
+DataFormat:sfntData
+hasSVG:no
+hasSBIX:no
+hasCOLR:no
+VariableFontType:NonVariableFont
+FileLength:113672
+NameArray:0,Mac,4,Coinbase Text Medium
+NameArray:0,Win,1,Coinbase Text Medium
+NameArray:0,Win,16,Coinbase Text
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:TrueType
+FontName:CoinbaseText-Regular
+FamilyName:Coinbase Text
+StyleName:Regular
+MenuName:Coinbase Text
+StyleBits:0
+WeightClass:400
+WidthClass:5
+AngleClass:0
+FullName:Coinbase Text
+WritingScript:Roman
+OutlineFileName:/Users/matthewmckenzie/Library/CloudStorage/Dropbox/COINBASE/2025/ONCHAIN INTERFACE/04_FINAL/ONCHAIN_REGISTRATION_LIGHT_170325 Folder/Document fonts/CoinbaseText-Regular.ttf
+DataFormat:sfntData
+hasSVG:no
+hasSBIX:no
+hasCOLR:no
+VariableFontType:NonVariableFont
+FileLength:113852
+NameArray:0,Mac,4,Coinbase Text
+NameArray:0,Win,1,Coinbase Text
+%EndFont
+
