@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
+import { Switch } from "@/components/ui/switch"
 import {
     Drawer,
     DrawerClose,
@@ -52,9 +53,12 @@ export default function BuyersPage() {
 
     const [selectedCast, setSelectedCast] = useState<NeynarCast | null>(null);
     const [budget, setBudget] = useState<number>(10);
+    const [neynarScore, setNeynarScore] = useState<number>(0.5);
+    const [proUser, setProUser] = useState<boolean>(false);
     const [isApproved, setIsApproved] = useState<boolean>(false);
     const [showShareModal, setShowShareModal] = useState<boolean>(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+    const [drawerStep, setDrawerStep] = useState<1 | 2>(1);
 
     const handleShowShareModal = (state: boolean) => setShowShareModal(state);
 
@@ -101,9 +105,6 @@ export default function BuyersPage() {
             const castUrl = `https://warpcast.com/${username}/${selectedCast.hash}`;
 
             const createParams = {
-                name: "",
-                description: selectedCast.text,
-                project_url: "",
                 cast_url: castUrl,
                 profile_mentions: [],
                 promoters: [],
@@ -112,6 +113,8 @@ export default function BuyersPage() {
                 creator_fid: fUser.fid,
                 creator: address,
                 is_open_promotion: true,
+                neynar_score: neynarScore,
+                pro_user: proUser,
             };
 
             await create_promotion([createParams]);
@@ -122,18 +125,24 @@ export default function BuyersPage() {
             setIsDrawerOpen(false);
             setSelectedCast(null);
             setBudget(10);
+            setNeynarScore(0.5);
+            setProUser(false);
             setIsApproved(false);
+            setDrawerStep(1);
         } catch (e: any) {
             console.error(e, e.message);
             toast.error("Failed to create promotion");
         }
-    }, [fUser, selectedCast, budget, create_promotion, address]);
+    }, [fUser, selectedCast, budget, neynarScore, proUser, create_promotion, address]);
 
     // Handle selecting a cast to promote
     const handleSelectCast = (cast: NeynarCast) => {
         setSelectedCast(cast);
         setIsApproved(false);
         setBudget(10);
+        setNeynarScore(0.5);
+        setProUser(false);
+        setDrawerStep(1);
         setIsDrawerOpen(true);
     };
 
@@ -145,7 +154,10 @@ export default function BuyersPage() {
             setTimeout(() => {
                 setSelectedCast(null);
                 setBudget(10);
+                setNeynarScore(0.5);
+                setProUser(false);
                 setIsApproved(false);
+                setDrawerStep(1);
             }, 300); // Wait for drawer animation
         }
     };
@@ -247,9 +259,14 @@ export default function BuyersPage() {
             <Drawer open={isDrawerOpen} onOpenChange={handleDrawerClose}>
                 <DrawerContent className="bg-gradient-to-b from-gray-900 to-black border-t border-white/20">
                     <DrawerHeader>
-                        <DrawerTitle className="text-white text-xl">Set Your Budget</DrawerTitle>
+                        <DrawerTitle className="text-white text-xl">
+                            {drawerStep === 1 ? "Target Audience" : "Set Budget"}
+                        </DrawerTitle>
                         <DrawerDescription className="text-white/60">
-                            Slide to set your promotion budget for this cast
+                            {drawerStep === 1
+                                ? "Define who can promote your cast"
+                                : "Set your total promotion budget"
+                            }
                         </DrawerDescription>
                     </DrawerHeader>
 
@@ -267,47 +284,127 @@ export default function BuyersPage() {
                             </div>
                         )}
 
-                        {/* Budget Slider */}
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="drawer-budget" className="text-white/80 text-sm">
-                                    Total Budget (USDC)
-                                </Label>
-                                <div className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                                    {budget} USDC
+                        {/* Step 1: Audience Section */}
+                        {drawerStep === 1 && (
+                            <div className="space-y-6">
+                                {/* Neynar Score Slider */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="neynar-score" className="text-white/80 text-sm">
+                                            Minimum Neynar Score
+                                        </Label>
+                                        <div className="text-lg font-bold text-purple-400">
+                                            {neynarScore.toFixed(2)}
+                                        </div>
+                                    </div>
+
+                                    <Slider
+                                        id="neynar-score"
+                                        min={0}
+                                        max={1}
+                                        step={0.01}
+                                        value={[neynarScore]}
+                                        onValueChange={(value) => setNeynarScore(value[0])}
+                                        className="w-full"
+                                    />
+
+                                    <div className="flex justify-between text-xs text-white/40">
+                                        <span>0.00</span>
+                                        <span>1.00</span>
+                                    </div>
+
+                                    <p className="text-xs text-white/60">
+                                        Higher scores target more active and reputable users
+                                    </p>
+                                </div>
+
+                                {/* Pro User Toggle */}
+                                <div className="flex items-center justify-between py-2 bg-white/5 rounded-lg px-4 border border-white/10">
+                                    <div className="space-y-1">
+                                        <Label htmlFor="pro-user" className="text-white/80 text-sm cursor-pointer">
+                                            Pro Users Only
+                                        </Label>
+                                        <p className="text-xs text-white/60">
+                                            Limit promotions to verified pro accounts
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        id="pro-user"
+                                        checked={proUser}
+                                        onCheckedChange={setProUser}
+                                    />
                                 </div>
                             </div>
+                        )}
 
-                            <Slider
-                                id="drawer-budget"
-                                min={3}
-                                max={30}
-                                step={1}
-                                value={[budget]}
-                                onValueChange={(value) => setBudget(value[0])}
-                                className="w-full"
-                            />
+                        {/* Step 2: Budget Section */}
+                        {drawerStep === 2 && (
+                            <div className="space-y-6">
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="drawer-budget" className="text-white/80 text-sm">
+                                            Total Budget (USDC)
+                                        </Label>
+                                        <div className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                                            {budget} USDC
+                                        </div>
+                                    </div>
 
-                            <div className="flex justify-between text-xs text-white/40">
-                                <span>3 USDC</span>
-                                <span>30 USDC</span>
+                                    <Slider
+                                        id="drawer-budget"
+                                        min={3}
+                                        max={30}
+                                        step={1}
+                                        value={[budget]}
+                                        onValueChange={(value) => setBudget(value[0])}
+                                        className="w-full"
+                                    />
+
+                                    <div className="flex justify-between text-xs text-white/40">
+                                        <span>3 USDC</span>
+                                        <span>30 USDC</span>
+                                    </div>
+
+                                    {budget < pricing_tiers.tier1 && (
+                                        <p className="text-amber-400 text-xs flex items-center gap-1">
+                                            ⚠️ Minimum recommended: {pricing_tiers.tier1} USDC
+                                        </p>
+                                    )}
+                                    {budget >= pricing_tiers.tier1 && (
+                                        <p className="text-xs text-green-400">
+                                            ✓ ~{Math.floor(budget / 1.5)} posts available
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Summary of audience settings */}
+                                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                                    <p className="text-white/80 text-xs font-semibold mb-2">Audience Settings</p>
+                                    <div className="space-y-1 text-xs text-white/60">
+                                        <p>Minimum Neynar Score: <span className="text-purple-400 font-medium">{neynarScore.toFixed(2)}</span></p>
+                                        <p>Pro Users Only: <span className="text-purple-400 font-medium">{proUser ? "Yes" : "No"}</span></p>
+                                    </div>
+                                </div>
                             </div>
-
-                            {budget < pricing_tiers.tier1 && (
-                                <p className="text-amber-400 text-xs flex items-center gap-1">
-                                    ⚠️ Minimum recommended: {pricing_tiers.tier1} USDC
-                                </p>
-                            )}
-                            {budget >= pricing_tiers.tier1 && (
-                                <p className="text-xs text-green-400">
-                                    ✓ ~{Math.floor(budget / 1.5)} posts available
-                                </p>
-                            )}
-                        </div>
+                        )}
                     </div>
 
                     <DrawerFooter className="pt-4">
-                        {!isApproved ? (
+                        {drawerStep === 1 ? (
+                            <>
+                                <Button
+                                    onClick={() => setDrawerStep(2)}
+                                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-white font-medium active:scale-[0.98] transition-all border-0"
+                                >
+                                    Next: Set Budget
+                                </Button>
+                                <DrawerClose asChild>
+                                    <Button variant="outline" className="w-full bg-white/5 border-white/20 text-white hover:bg-white/10 h-12">
+                                        Cancel
+                                    </Button>
+                                </DrawerClose>
+                            </>
+                        ) : !isApproved ? (
                             <>
                                 <Button
                                     onClick={handleApprove}
@@ -316,11 +413,13 @@ export default function BuyersPage() {
                                 >
                                     Approve {budget} USDC
                                 </Button>
-                                <DrawerClose asChild>
-                                    <Button variant="outline" className="w-full bg-white/5 border-white/20 text-white hover:bg-white/10 h-12">
-                                        Cancel
-                                    </Button>
-                                </DrawerClose>
+                                <Button
+                                    onClick={() => setDrawerStep(1)}
+                                    variant="outline"
+                                    className="w-full bg-white/5 border-white/20 text-white hover:bg-white/10 h-12"
+                                >
+                                    Back
+                                </Button>
                             </>
                         ) : (
                             <>
@@ -330,11 +429,13 @@ export default function BuyersPage() {
                                 >
                                     Create Promotion
                                 </Button>
-                                <DrawerClose asChild>
-                                    <Button variant="outline" className="w-full bg-white/5 border-white/20 text-white hover:bg-white/10 h-12">
-                                        Cancel
-                                    </Button>
-                                </DrawerClose>
+                                <Button
+                                    onClick={() => setDrawerStep(1)}
+                                    variant="outline"
+                                    className="w-full bg-white/5 border-white/20 text-white hover:bg-white/10 h-12"
+                                >
+                                    Back
+                                </Button>
                             </>
                         )}
                     </DrawerFooter>
