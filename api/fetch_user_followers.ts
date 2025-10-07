@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     );
     return res.status(200).json({
-      users: data.users.map((u) => ({
+      users: data.users.map((u: { user: { fid: number; display_name: string; username: string; pfp_url: string; follower_count: number } }) => ({
         id: u.user.fid,
         name: u.user.display_name,
         handle: u.user.username,
