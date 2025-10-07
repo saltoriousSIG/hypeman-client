@@ -32,12 +32,13 @@ interface ValidationResult {
 export class HypemanAI {
   private fastModel;
   private qualityModel;
-  private user_casts: any;
+  private user_casts: Cast[];
 
   constructor() {
     // Initialize models for two-tier system
     this.fastModel = anthropic("claude-3-5-haiku-latest");
     this.qualityModel = openai("gpt-5");
+    this.user_casts = [];
   }
 
   /**
@@ -87,8 +88,7 @@ export class HypemanAI {
     fcUsername: string,
     promotionName: string,
     promotionDescription: string,
-    promotionUrl: string,
-    promotionCast?: string
+    promotionUrl: string
   ) {
     return [
       {
@@ -153,8 +153,7 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
         username,
         promotionName,
         promotionDescription,
-        promotionUrl,
-        promotionCast
+        promotionUrl
       );
 
       const result = await generateText({
@@ -214,8 +213,7 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
         username,
         promotionName,
         promotionDescription,
-        promotionUrl,
-        promotionCast
+        promotionUrl
       );
 
       const messages = [
@@ -261,14 +259,12 @@ Make it sound more authentic to my voice while addressing the feedback. Keep und
    * Generate multiple variations for A/B testing
    */
   async generateVariations(
-    fid: number,
     username: string,
     count: number = 3,
     promotionName: string,
     promotionDescription: string,
     promotionUrl: string,
-    promotionCast?: string,
-    options?: GenerationOptions
+    promotionCast?: string
   ): Promise<GenerationResult[]> {
     const variations: GenerationResult[] = [];
 
@@ -291,8 +287,7 @@ Make it sound more authentic to my voice while addressing the feedback. Keep und
           username,
           promotionName,
           promotionDescription,
-          promotionUrl,
-          promotionCast
+          promotionUrl
         );
 
         const result = await generateText({
