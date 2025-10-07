@@ -180,7 +180,6 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
    * Uses cached cast data and Claude for better voice mimicry
    */
   async refineCast(
-    fid: number,
     username: string,
     promotionName: string,
     promotionDescription: string,
