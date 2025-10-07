@@ -32,7 +32,7 @@ interface ValidationResult {
 export class HypemanAI {
   private fastModel;
   private qualityModel;
-  private user_casts;
+  private user_casts: Cast[];
 
   constructor() {
     // Initialize models for two-tier system
@@ -87,8 +87,7 @@ export class HypemanAI {
     fcUsername: string,
     promotionName: string,
     promotionDescription: string,
-    promotionUrl: string,
-    promotionCast?: string
+    promotionUrl: string
   ) {
     return [
       {
@@ -153,8 +152,7 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
         username,
         promotionName,
         promotionDescription,
-        promotionUrl,
-        promotionCast
+        promotionUrl
       );
 
       const result = await generateText({
@@ -186,7 +184,6 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
    * Uses cached cast data and Claude for better voice mimicry
    */
   async refineCast(
-    fid: number,
     username: string,
     promotionName: string,
     promotionDescription: string,
@@ -212,8 +209,7 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
         username,
         promotionName,
         promotionDescription,
-        promotionUrl,
-        promotionCast
+        promotionUrl
       );
 
       const messages = [
@@ -259,14 +255,12 @@ Make it sound more authentic to my voice while addressing the feedback. Keep und
    * Generate multiple variations for A/B testing
    */
   async generateVariations(
-    fid: number,
     username: string,
     count: number = 3,
     promotionName: string,
     promotionDescription: string,
     promotionUrl: string,
-    promotionCast?: string,
-    options?: GenerationOptions
+    promotionCast?: string
   ): Promise<GenerationResult[]> {
     const variations: GenerationResult[] = [];
 
@@ -289,8 +283,7 @@ Make it sound more authentic to my voice while addressing the feedback. Keep und
           username,
           promotionName,
           promotionDescription,
-          promotionUrl,
-          promotionCast
+          promotionUrl
         );
 
         const result = await generateText({
