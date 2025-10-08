@@ -328,6 +328,14 @@ export default function BuyersPage() {
                                         <div className="text-lg font-bold text-purple-400">
                                             {neynarScore.toFixed(2)}
                                         </div>
+
+                                        {/* Promote button - right */}
+                                        <Button
+                                            onClick={() => handleSelectCast(selectedCast as Cast)}
+                                            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-xs font-semibold px-4 h-8 rounded-lg transition-all active:scale-[0.95] cursor-pointer shrink-0"
+                                        >
+                                            Promote
+                                        </Button>
                                     </div>
 
                                     <Slider
