@@ -23,35 +23,12 @@ import { parseUnits } from "viem"
 import { pricing_tiers } from "@/lib/calculateUserScore";
 import ShareModal from "@/components/ShareModal/ShareModal"
 import Footer from "@/components/Footer/Footer"
-
-
-// Mock creator data
-const creators: any = []
-
-// Mock search results for any user search
-const searchResults: any = [];
-type NeynarCast = {
-    hash: string;
-    text: string;
-    author?: {
-        username: string;
-        display_name: string;
-        pfp_url: string;
-    };
-    reactions: {
-        likes_count: number;
-        recasts_count: number;
-    };
-    replies: {
-        count: number;
-    };
-    [key: string]: unknown;
-}
+import { Cast } from "@neynar/nodejs-sdk/build/api"
 
 export default function BuyersPage() {
     const { address, fUser, connectedUserData } = useFrameContext();
 
-    const [selectedCast, setSelectedCast] = useState<NeynarCast | null>(null);
+    const [selectedCast, setSelectedCast] = useState<Cast | null>(null);
     const [budget, setBudget] = useState<number>(10);
     const [neynarScore, setNeynarScore] = useState<number>(0.5);
     const [proUser, setProUser] = useState<boolean>(false);
@@ -103,10 +80,9 @@ export default function BuyersPage() {
             // Construct cast URL - use fUser's username if cast author is not available
             const username = selectedCast.author?.username || fUser?.username || 'user';
             const castUrl = `https://warpcast.com/${username}/${selectedCast.hash}`;
-
             const createParams = {
                 cast_url: castUrl,
-                profile_mentions: [],
+                profile_mentions: selectedCast.mentioned_profiles.map((pm: any) => pm.fid),
                 promoters: [],
                 total_budget: parseUnits(budget.toString(), 6),
                 token: USDC_ADDRESS,
@@ -136,7 +112,7 @@ export default function BuyersPage() {
     }, [fUser, selectedCast, budget, neynarScore, proUser, create_promotion, address]);
 
     // Handle selecting a cast to promote
-    const handleSelectCast = (cast: NeynarCast) => {
+    const handleSelectCast = (cast: Cast) => {
         setSelectedCast(cast);
         setIsApproved(false);
         setBudget(10);
@@ -210,7 +186,7 @@ export default function BuyersPage() {
                     </Card>
                 ) : (
                     <div className="space-y-2">
-                        {userCasts.map((cast: NeynarCast) => (
+                        {userCasts.map((cast: Cast) => (
                             <div
                                 key={cast.hash}
                                 className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-all"
