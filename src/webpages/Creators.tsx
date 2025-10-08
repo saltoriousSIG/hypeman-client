@@ -191,39 +191,28 @@ export default function BuyersPage() {
                                 key={cast.hash}
                                 className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-all"
                             >
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1 min-w-0">
-                                        {/* Username and date */}
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-white/80 text-sm font-medium">
-                                                @{cast.author?.username || fUser?.username || 'user'}
-                                            </span>
-                                            <span className="text-white/40 text-xs">
-                                                • {new Date((cast as any).timestamp || Date.now()).toLocaleDateString()}
-                                            </span>
+                                <div className="flex flex-col gap-3">
+                                    {/* Top row: Quote count on left, Promote button on right */}
+                                    <div className="flex items-center justify-between gap-3">
+                                        {/* Quote count - left */}
+                                        <div className="flex items-center gap-1.5 text-cyan-400 text-sm font-semibold">
+                                            <Quote className="w-4 h-4" />
+                                            <span>{(cast as any).reactions?.quotes_count || 0}</span>
                                         </div>
-
-                                        {/* Cast text */}
-                                        <p className="text-white text-base leading-relaxed mb-3">
-                                            {cast.text}
-                                        </p>
-
-                                        {/* Engagement metrics */}
-                                        <div className="flex items-center gap-4 text-sm">
-                                            <div className="flex items-center gap-1.5 text-cyan-400">
-                                                <Quote className="w-4 h-4" />
-                                                <span>{(cast as any).reactions?.quotes_count || 0}</span>
-                                            </div>
-                                        </div>
+                                        
+                                        {/* Promote button - right */}
+                                        <Button
+                                            onClick={() => handleSelectCast(cast)}
+                                            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-xs font-semibold px-4 h-8 rounded-lg transition-all active:scale-[0.95] cursor-pointer shrink-0"
+                                        >
+                                            Promote
+                                        </Button>
                                     </div>
 
-                                    {/* Promote button */}
-                                    <Button
-                                        onClick={() => handleSelectCast(cast)}
-                                        className="bg-white/10 hover:bg-purple-600 border border-white/20 hover:border-purple-600 text-white font-semibold px-8 h-10 rounded-full transition-all active:scale-[0.95] whitespace-nowrap cursor-pointer"
-                                    >
-                                        Promote
-                                    </Button>
+                                    {/* Cast text - full width */}
+                                    <p className="text-white text-sm leading-normal break-words overflow-hidden">
+                                        {cast.text}
+                                    </p>
                                 </div>
                             </div>
                         ))}
