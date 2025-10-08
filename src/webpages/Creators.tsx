@@ -14,15 +14,15 @@ import useContract, { ExecutionType } from "@/hooks/useContract"
 import { USDC_ADDRESS, DIAMOND_ADDRESS } from "@/lib/utils"
 import { useFrameContext } from "@/providers/FrameProvider"
 import { parseUnits } from "viem"
-import { pricing_tiers } from "@/hooks/useGetPostPricing"
+import { pricing_tiers } from "@/lib/calculateUserScore";
 import ShareModal from "@/components/ShareModal/ShareModal"
 
 
 // Mock creator data
-const creators = []
+const creators: any = []
 
 // Mock search results for any user search
-const searchResults = [];
+const searchResults: any = [];
 
 export default function BuyersPage() {
     const { address, fUser } = useFrameContext();
@@ -56,7 +56,9 @@ export default function BuyersPage() {
     useEffect(() => {
         const load = async () => {
             const user_allowance = await allowance([address, DIAMOND_ADDRESS]);
-            setIsApproved(parseInt(user_allowance.toString()) >= parseUnits(projectDetails.totalBudget, 6));
+            const fee = projectDetails.totalBudget ? parseFloat(projectDetails.totalBudget) * 0.1 : 0;
+            const calculated_allowance = parseFloat(projectDetails.totalBudget) + fee;
+            setIsApproved(parseInt(user_allowance.toString()) >= parseUnits(`${calculated_allowance}`, 6));
         }
         load();
     }, [allowance, address, projectDetails.totalBudget]);
@@ -66,7 +68,9 @@ export default function BuyersPage() {
             return toast.error(`Increase total budget to at least ${pricing_tiers.tier1} USDC`);
         }
         try {
-            await approve([DIAMOND_ADDRESS, parseUnits(projectDetails.totalBudget, 6)]);
+            const fee = projectDetails.totalBudget ? parseFloat(projectDetails.totalBudget) * 0.1 : 0;
+            const calculated_allowance = parseFloat(projectDetails.totalBudget) + fee;
+            await approve([DIAMOND_ADDRESS, parseUnits(`${calculated_allowance}`, 6)]);
             setIsApproved(true);
         } catch (e: any) {
             console.error(e, e.message);
@@ -585,7 +589,7 @@ export default function BuyersPage() {
                                                             <AvatarFallback className="bg-white/20 text-white text-sm">
                                                                 {user.name
                                                                     .split(" ")
-                                                                    .map((n) => n[0])
+                                                                    .map((n: any) => n[0])
                                                                     .join("")}
                                                             </AvatarFallback>
                                                         </Avatar>
@@ -639,7 +643,7 @@ export default function BuyersPage() {
                                                             <AvatarFallback className="bg-white/20 text-white text-xs">
                                                                 {creator.name
                                                                     .split(" ")
-                                                                    .map((n) => n[0])
+                                                                    .map((n: any) => n[0])
                                                                     .join("")}
                                                             </AvatarFallback>
                                                         </Avatar>
@@ -735,7 +739,7 @@ export default function BuyersPage() {
                                                             <AvatarFallback className="bg-white/20 text-white text-sm">
                                                                 {creator.name
                                                                     .split(" ")
-                                                                    .map((n) => n[0])
+                                                                    .map((n: any) => n[0])
                                                                     .join("")}
                                                             </AvatarFallback>
                                                         </Avatar>

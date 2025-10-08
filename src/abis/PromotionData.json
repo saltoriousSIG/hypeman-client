@@ -2,30 +2,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "promotionId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "promoterAddress",
-        "type": "address"
-      }
-    ],
-    "name": "canPromoterClaim",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "canClaim",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "creator",
         "type": "address"
@@ -101,7 +77,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "remaining_budget",
+            "name": "amount_paid_out",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "committed_budget",
             "type": "uint256"
           },
           {
@@ -253,7 +234,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "remaining_budget",
+            "name": "amount_paid_out",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "committed_budget",
             "type": "uint256"
           },
           {
@@ -292,6 +278,19 @@
       {
         "internalType": "uint256",
         "name": "next_promotion_id",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getPlatformFee",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "fee",
         "type": "uint256"
       }
     ],
@@ -437,7 +436,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "remaining_budget",
+            "name": "amount_paid_out",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "committed_budget",
             "type": "uint256"
           },
           {
@@ -552,7 +556,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "remaining_budget",
+            "name": "amount_paid_out",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "committed_budget",
             "type": "uint256"
           },
           {
@@ -647,7 +656,7 @@
             "type": "bool"
           }
         ],
-        "internalType": "struct PromotionData.PromotionInsights",
+        "internalType": "struct IPromotionData.PromotionInsights",
         "name": "insights",
         "type": "tuple"
       }

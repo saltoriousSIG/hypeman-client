@@ -32,7 +32,7 @@ interface ValidationResult {
 export class HypemanAI {
   private fastModel;
   private qualityModel;
-  private user_casts;
+  private user_casts: any;
 
   constructor() {
     // Initialize models for two-tier system
@@ -206,6 +206,8 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
           model: "claude-3.5-sonnet",
         };
       }
+
+      await this.fetchUserCasts(fid);
 
       const baseMessages = this.buildVoiceLearningPrompt(
         this.user_casts,

@@ -10,9 +10,10 @@ import PromotionData from "../abis/PromotionData.json";
 import PromotionClaim from "../abis/PromotionClaim.json";
 import PromotionCreate from "../abis/PromotionCreate.json";
 import PromotionManage from "../abis/PromotionManage.json";
+import PromotionIntents from "../abis/PromotionIntents.json";
 import ERC20 from "../abis/ERC20.json";
 
-type Facets = "Create" | "Claim" | "Data" | "Manage" | "ERC20";
+type Facets = "Create" | "Claim" | "Data" | "Manage" | "Intents" | "ERC20";
 
 export enum ExecutionType {
   READABLE,
@@ -45,6 +46,9 @@ const useContract = <T extends ExecutionType, R = any>(
         break;
       case "Manage":
         return PromotionManage;
+        break;
+      case "Intents":
+        return PromotionIntents;
         break;
       case "ERC20":
         return ERC20;

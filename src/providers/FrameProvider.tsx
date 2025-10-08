@@ -2,7 +2,8 @@ import { createContext, useEffect, useState, useContext, useCallback } from "rea
 import sdk from "@farcaster/frame-sdk";
 import { MiniAppSDK } from "@farcaster/miniapp-sdk/dist/types";
 import { useAccount, useConnect } from "wagmi";
-import axios from "axios";
+import { getUserStats } from "@/lib/getUserStats";
+
 
 type ConnectedUserData = {
     score: number,
@@ -48,7 +49,6 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
 
     const { isConnected, address } = useAccount();
     const { connect, connectors } = useConnect();
-    console.log(isConnected);
 
     const handleSetIsFrameAdding = (state: boolean) => setIsFrameAdding(state);
 
@@ -103,25 +103,10 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
         console.log(address);
         const load = async () => {
             try {
-                const { data } = await axios.post("/api/fetch_user", {
-                    fid: fUser.fid
-                });
-                const { data: casts } = await axios.post("/api/fetch_user_casts", {
-                    fid: fUser.fid
-                })
-                const avgLikes = casts.casts.reduce((acc, curr) => {
-                    return acc + curr.reactions.likes_count
-                }, 0) / casts.casts.length;
-                const avgRecasts = casts.casts.reduce((acc, curr) => {
-                    return acc + curr.reactions.recasts_count
-                }, 0) / casts.casts.length;
-                const avgReplies = casts.casts.reduce((acc, curr) => {
-                    return acc + curr.replies.count
-                }, 0) / casts.casts.length;
-
+                const { score, follower_count, avgLikes, avgRecasts, avgReplies } = await getUserStats(fUser.fid);
                 setConnectedUserData({
-                    score: data.user.score,
-                    follower_count: data.user.follower_count,
+                    score,
+                    follower_count,
                     avgLikes,
                     avgRecasts,
                     avgReplies

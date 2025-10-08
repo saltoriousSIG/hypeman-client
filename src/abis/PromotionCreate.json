@@ -1,5 +1,34 @@
 [
   {
+    "inputs": [],
+    "name": "Ownable__NotOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "Ownable__NotTransitiveOwner",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -182,7 +211,7 @@
             "type": "bool"
           }
         ],
-        "internalType": "struct PromotionCreate.CreatePromotionArgs",
+        "internalType": "struct IPromotionCreate.CreatePromotionArgs",
         "name": "args",
         "type": "tuple"
       }
@@ -251,7 +280,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "remaining_budget",
+            "name": "amount_paid_out",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "committed_budget",
             "type": "uint256"
           },
           {
@@ -319,6 +353,32 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]

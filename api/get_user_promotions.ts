@@ -17,7 +17,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const user_cast_data = await redisClient.get(
         `user_cast:${fid}:${promotion.id}`
       );
-      console.log(user_cast_data);
       if (!user_cast_data) {
         const initialCast = await hypeman_ai.generateInitialCast(
           fid,
@@ -37,10 +36,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         );
         user_casts.push(cast_obj);
       } else {
-        console.log(user_cast_data);
-        user_casts.push(user_cast_data);
+        const data =
+          typeof user_cast_data === "string"
+            ? JSON.parse(user_cast_data)
+            : user_cast_data;
+        user_casts.push(data);
       }
     }
+
     return res.status(200).json({ user_casts });
   } catch (e: any) {
     console.error(e.message, e);

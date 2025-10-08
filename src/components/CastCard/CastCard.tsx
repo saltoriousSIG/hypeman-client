@@ -1,6 +1,9 @@
 import React, { useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Zap, X } from "lucide-react";
+import axios from "axios";
+import { useFrameContext } from "@/providers/FrameProvider";
+import useContract, { ExecutionType } from "@/hooks/useContract";
 
 interface CastCardProps {
     promotion: any;
@@ -20,6 +23,10 @@ const CastCard: React.FC<CastCardProps> = ({ promotion, cast_text, isAuthenticat
 
     const holdTimers = useRef<{ [key: number]: ReturnType<typeof setTimeout> }>({})
     const progressIntervals = useRef<{ [key: number]: ReturnType<typeof setInterval> }>({})
+
+    const { fUser, address } = useFrameContext();
+
+    const submit_intent = useContract(ExecutionType.WRITABLE, "Intents", "submitIntent");
 
     const handleHoldEnd = (castId: number) => {
         // Immediately clear timers and intervals
@@ -66,20 +73,25 @@ const CastCard: React.FC<CastCardProps> = ({ promotion, cast_text, isAuthenticat
         setRerollNotes((prev) => ({ ...prev, [castId]: "" }))
     }
 
-    const handlePost = (castId: number) => {
-        console.log(`[v0] Posting cast ${castId} and sending $${promotion.total_budget} payment immediately`)
-        // Add post functionality here - automatically sends payment upon successful post
+    const handlePost = async (castId: number) => {
+        if (!fUser || !address) return;
+        const { data } = await axios.post('/api/generate_intent_signature', {
+            promotion_id: promotion.id,
+            wallet: address,
+            fid: fUser.fid,
+        });
+        console.log("Generated intent and signature:", data);
+        await submit_intent([
+            data.intent,
+            data.signature
+        ]);
+
     }
 
-    const handleHoldStart = (castId: number, e?: React.MouseEvent | React.TouchEvent) => {
+    const handleHoldStart = async (castId: number, e?: React.MouseEvent | React.TouchEvent) => {
         if (e) {
             e.preventDefault()
             e.stopPropagation()
-        }
-
-        if (!isAuthenticated) {
-            handleShowLoginModal(true)
-            return
         }
 
         // Clear any existing timers first
@@ -100,7 +112,7 @@ const CastCard: React.FC<CastCardProps> = ({ promotion, cast_text, isAuthenticat
 
         let progress = 0
         progressIntervals.current[castId] = setInterval(() => {
-            progress += 5
+            progress += 8
             setHoldStates((prev) => ({
                 ...prev,
                 [castId]: { ...prev[castId], progress },
