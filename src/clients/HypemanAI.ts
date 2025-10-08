@@ -2,12 +2,7 @@ import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import axios from "axios";
-
-interface Cast {
-  text: string;
-  timestamp?: string;
-  hash?: string;
-}
+import { Cast } from "@neynar/nodejs-sdk/build/api";
 
 interface GenerationOptions {
   temperature?: number;
