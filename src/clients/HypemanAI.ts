@@ -2,12 +2,7 @@ import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import axios from "axios";
-
-interface Cast {
-  text: string;
-  timestamp?: string;
-  hash?: string;
-}
+import { Cast } from "@neynar/nodejs-sdk/build/api";
 
 interface GenerationOptions {
   temperature?: number;
@@ -38,6 +33,7 @@ export class HypemanAI {
     // Initialize models for two-tier system
     this.fastModel = anthropic("claude-3-5-haiku-latest");
     this.qualityModel = openai("gpt-5");
+    this.user_casts = [];
   }
 
   /**
