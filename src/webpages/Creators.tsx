@@ -23,29 +23,12 @@ import { parseUnits } from "viem"
 import { pricing_tiers } from "@/hooks/useGetPostPricing"
 import ShareModal from "@/components/ShareModal/ShareModal"
 import Footer from "@/components/Footer/Footer"
-
-type NeynarCast = {
-    hash: string;
-    text: string;
-    author?: {
-        username: string;
-        display_name: string;
-        pfp_url: string;
-    };
-    reactions: {
-        likes_count: number;
-        recasts_count: number;
-    };
-    replies: {
-        count: number;
-    };
-    [key: string]: unknown;
-}
+import { Cast } from "@neynar/nodejs-sdk/build/api"
 
 export default function BuyersPage() {
     const { address, fUser, connectedUserData } = useFrameContext();
 
-    const [selectedCast, setSelectedCast] = useState<NeynarCast | null>(null);
+    const [selectedCast, setSelectedCast] = useState<Cast | null>(null);
     const [budget, setBudget] = useState<number>(10);
     const [neynarScore, setNeynarScore] = useState<number>(0.5);
     const [proUser, setProUser] = useState<boolean>(false);
@@ -88,7 +71,7 @@ export default function BuyersPage() {
     // Handle create promotion
     const handleCreatePromotion = useCallback(async () => {
         if (!fUser || !selectedCast) return;
-        
+
         if (budget < pricing_tiers.tier1) {
             return toast.error(`Minimum budget is ${pricing_tiers.tier1} USDC`);
         }
@@ -97,10 +80,9 @@ export default function BuyersPage() {
             // Construct cast URL - use fUser's username if cast author is not available
             const username = selectedCast.author?.username || fUser?.username || 'user';
             const castUrl = `https://warpcast.com/${username}/${selectedCast.hash}`;
-            
             const createParams = {
                 cast_url: castUrl,
-                profile_mentions: [],
+                profile_mentions: selectedCast.mentioned_profiles.map((pm: any) => pm.fid),
                 promoters: [],
                 total_budget: parseUnits(budget.toString(), 6),
                 token: USDC_ADDRESS,
@@ -114,7 +96,7 @@ export default function BuyersPage() {
             await create_promotion([createParams]);
             toast.success("Promotion created successfully!");
             handleShowShareModal(true);
-            
+
             // Reset state and close drawer
             setIsDrawerOpen(false);
             setSelectedCast(null);
@@ -130,7 +112,7 @@ export default function BuyersPage() {
     }, [fUser, selectedCast, budget, neynarScore, proUser, create_promotion, address]);
 
     // Handle selecting a cast to promote
-    const handleSelectCast = (cast: NeynarCast) => {
+    const handleSelectCast = (cast: Cast) => {
         setSelectedCast(cast);
         setIsApproved(false);
         setBudget(10);
@@ -204,9 +186,9 @@ export default function BuyersPage() {
                     </Card>
                 ) : (
                     <div className="space-y-2">
-                        {userCasts.map((cast: NeynarCast) => (
-                            <div 
-                                key={cast.hash} 
+                        {userCasts.map((cast: Cast) => (
+                            <div
+                                key={cast.hash}
                                 className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-all"
                             >
                                 <div className="flex items-start justify-between gap-4">
@@ -257,13 +239,13 @@ export default function BuyersPage() {
                             {drawerStep === 1 ? "Target Audience" : "Set Budget"}
                         </DrawerTitle>
                         <DrawerDescription className="text-white/60">
-                            {drawerStep === 1 
+                            {drawerStep === 1
                                 ? "Define who can promote your cast"
                                 : "Set your total promotion budget"
                             }
                         </DrawerDescription>
                     </DrawerHeader>
-                    
+
                     <div className="px-4 pb-4 space-y-6">
                         {/* Selected cast preview */}
                         {selectedCast && (
@@ -291,7 +273,7 @@ export default function BuyersPage() {
                                             {neynarScore.toFixed(2)}
                                         </div>
                                     </div>
-                                    
+
                                     <Slider
                                         id="neynar-score"
                                         min={0}
@@ -301,12 +283,12 @@ export default function BuyersPage() {
                                         onValueChange={(value) => setNeynarScore(value[0])}
                                         className="w-full"
                                     />
-                                    
+
                                     <div className="flex justify-between text-xs text-white/40">
                                         <span>0.00</span>
                                         <span>1.00</span>
                                     </div>
-                                    
+
                                     <p className="text-xs text-white/60">
                                         Higher scores target more active and reputable users
                                     </p>
@@ -343,7 +325,7 @@ export default function BuyersPage() {
                                             {budget} USDC
                                         </div>
                                     </div>
-                                    
+
                                     <Slider
                                         id="drawer-budget"
                                         min={3}
@@ -353,12 +335,12 @@ export default function BuyersPage() {
                                         onValueChange={(value) => setBudget(value[0])}
                                         className="w-full"
                                     />
-                                    
+
                                     <div className="flex justify-between text-xs text-white/40">
                                         <span>3 USDC</span>
                                         <span>30 USDC</span>
                                     </div>
-                                    
+
                                     {budget < pricing_tiers.tier1 && (
                                         <p className="text-amber-400 text-xs flex items-center gap-1">
                                             ⚠️ Minimum recommended: {pricing_tiers.tier1} USDC

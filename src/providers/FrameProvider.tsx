@@ -3,19 +3,7 @@ import sdk from "@farcaster/frame-sdk";
 import { MiniAppSDK } from "@farcaster/miniapp-sdk/dist/types";
 import { useAccount, useConnect } from "wagmi";
 import axios from "axios";
-
-type NeynarCast = {
-    hash: string;
-    text: string;
-    reactions: {
-        likes_count: number;
-        recasts_count: number;
-    };
-    replies: {
-        count: number;
-    };
-    [key: string]: unknown;
-}
+import { Cast } from "@neynar/nodejs-sdk/build/api";
 
 type ConnectedUserData = {
     score: number;
@@ -23,7 +11,7 @@ type ConnectedUserData = {
     avgLikes: number;
     avgRecasts: number;
     avgReplies: number;
-    casts: NeynarCast[];
+    casts: Cast[];
 }
 
 interface FrameContextValue {
@@ -122,7 +110,7 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
                 const { data: casts } = await axios.post("/api/fetch_user_casts", {
                     fid: fUser.fid
                 })
-                const userCasts = casts.casts as NeynarCast[];
+                const userCasts = casts.casts as Cast[];
                 if (userCasts.length === 0) {
                     setConnectedUserData({
                         score: data.user.score,
