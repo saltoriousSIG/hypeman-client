@@ -25,7 +25,6 @@ import ShareModal from "@/components/ShareModal/ShareModal"
 import Footer from "@/components/Footer/Footer"
 import { Cast } from "@neynar/nodejs-sdk/build/api"
 
-
 export default function BuyersPage() {
     const { address, fUser, connectedUserData } = useFrameContext();
 
