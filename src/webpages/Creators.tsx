@@ -506,7 +506,7 @@ export default function BuyersPage() {
                                 </p>
                                 <div className="flex items-center gap-2 text-xs text-white/60">
                                     <Quote className="w-3 h-3" />
-                                    <span>{(selectedCast as any).reactions?.quotes_count || 0} quotes</span>
+                                    <span>{selectedCastQuoteData?.quoteCount ?? 0} quotes</span>
                                 </div>
                             </div>
                         )}

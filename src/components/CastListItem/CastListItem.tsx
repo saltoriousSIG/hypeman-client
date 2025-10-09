@@ -34,11 +34,11 @@ export default function CastListItem({ cast, onPromote, onView }: CastListItemPr
   const { data, isLoading, isError } = useCastQuoteCount(cast.hash);
 
   // Determine what to display for quote count
-  const quoteCountDisplay = isLoading 
-    ? '...' 
-    : isError 
-    ? '0' 
-    : (data?.quoteCount ?? 0);
+  const quoteCountDisplay = isLoading
+    ? '...'
+    : isError
+      ? '0'
+      : (data?.quoteCount ?? 0);
 
   // Extract images from embeds with proper type safety
   const embeds = (cast.embeds as unknown as CastEmbed[]) ?? [];
@@ -57,7 +57,7 @@ export default function CastListItem({ cast, onPromote, onView }: CastListItemPr
             <Quote className="w-4 h-4" />
             <span>{quoteCountDisplay}</span>
           </div>
-          
+
           {/* Action buttons - right */}
           <div className="flex items-center gap-2">
             <Button
@@ -87,7 +87,7 @@ export default function CastListItem({ cast, onPromote, onView }: CastListItemPr
             {images.map((embed, index) => {
               const width = embed.metadata?.image?.width_px;
               const height = embed.metadata?.image?.height_px;
-              
+
               return (
                 <div
                   key={`${cast.hash}-image-${index}`}
