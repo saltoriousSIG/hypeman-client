@@ -24,6 +24,9 @@ import { pricing_tiers } from "@/lib/calculateUserScore";
 import ShareModal from "@/components/ShareModal/ShareModal"
 import Footer from "@/components/Footer/Footer"
 import { Cast } from "@neynar/nodejs-sdk/build/api"
+import sdk from "@farcaster/frame-sdk"
+import CastListItem from "@/components/CastListItem/CastListItem"
+import { useCastQuoteCount } from "@/hooks/useCastQuoteCount"
 
 export default function BuyersPage() {
     const { address, fUser, connectedUserData } = useFrameContext();
@@ -140,7 +143,25 @@ export default function BuyersPage() {
         }
     };
 
+    // Handle viewing a cast in Farcaster client
+    const handleViewCast = async (cast: Cast) => {
+        try {
+            await sdk.actions.viewCast({
+                hash: cast.hash,
+            });
+        } catch (e: any) {
+            console.error("Error viewing cast:", e);
+            toast.error("Failed to open cast");
+        }
+    };
+
     const userCasts = connectedUserData?.casts || [];
+
+    // Use React Query for selected cast quote count in drawer
+    const { data: selectedCastQuoteData } = useCastQuoteCount(
+        selectedCast?.hash ?? '',
+        !!selectedCast // Only fetch when a cast is selected
+    );
 
     return (
         <div className="min-h-screen bg-black text-white relative overflow-hidden">
@@ -187,34 +208,12 @@ export default function BuyersPage() {
                 ) : (
                     <div className="space-y-2">
                         {userCasts.map((cast: Cast) => (
-                            <div
+                            <CastListItem
                                 key={cast.hash}
-                                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-all"
-                            >
-                                <div className="flex flex-col gap-3">
-                                    {/* Top row: Quote count on left, Promote button on right */}
-                                    <div className="flex items-center justify-between gap-3">
-                                        {/* Quote count - left */}
-                                        <div className="flex items-center gap-1.5 text-cyan-400 text-sm font-semibold">
-                                            <Quote className="w-4 h-4" />
-                                            <span>{(cast as any).reactions?.quotes_count || 0}</span>
-                                        </div>
-                                        
-                                        {/* Promote button - right */}
-                                        <Button
-                                            onClick={() => handleSelectCast(cast)}
-                                            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-xs font-semibold px-4 h-8 rounded-lg transition-all active:scale-[0.95] cursor-pointer shrink-0"
-                                        >
-                                            Promote
-                                        </Button>
-                                    </div>
-
-                                    {/* Cast text - full width */}
-                                    <p className="text-white text-sm leading-normal break-words overflow-hidden">
-                                        {cast.text}
-                                    </p>
-                                </div>
-                            </div>
+                                cast={cast}
+                                onPromote={handleSelectCast}
+                                onView={handleViewCast}
+                            />
                         ))}
                     </div>
                 )}
@@ -244,7 +243,7 @@ export default function BuyersPage() {
                                 </p>
                                 <div className="flex items-center gap-2 text-xs text-white/60">
                                     <Quote className="w-3 h-3" />
-                                    <span>{(selectedCast as any).reactions?.quotes_count || 0} quotes</span>
+                                    <span>{selectedCastQuoteData?.quoteCount ?? 0} quotes</span>
                                 </div>
                             </div>
                         )}
