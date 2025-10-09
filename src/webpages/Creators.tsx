@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
+import type { InfiniteData } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -13,7 +14,7 @@ import {
     DrawerHeader,
     DrawerTitle,
 } from "@/components/ui/drawer"
-import { ArrowLeft, History, Quote } from "lucide-react"
+import { ArrowLeft, History, Quote, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { NavLink } from "react-router-dom"
 import useContract, { ExecutionType } from "@/hooks/useContract"
@@ -27,9 +28,10 @@ import { Cast } from "@neynar/nodejs-sdk/build/api"
 import sdk from "@farcaster/frame-sdk"
 import CastListItem from "@/components/CastListItem/CastListItem"
 import { useCastQuoteCount } from "@/hooks/useCastQuoteCount"
+import { useUserCasts } from "@/hooks/useUserCasts"
 
 export default function BuyersPage() {
-    const { address, fUser, connectedUserData } = useFrameContext();
+    const { address, fUser } = useFrameContext();
 
     const [selectedCast, setSelectedCast] = useState<Cast | null>(null);
     const [budget, setBudget] = useState<number>(10);
@@ -41,6 +43,26 @@ export default function BuyersPage() {
     const [drawerStep, setDrawerStep] = useState<1 | 2>(1);
 
     const handleShowShareModal = (state: boolean) => setShowShareModal(state);
+
+    // Fetch user casts with React Query infinite query
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading,
+        isError,
+    } = useUserCasts({
+        fid: fUser?.fid ?? 0,
+        enabled: !!fUser?.fid,
+    });
+
+    // Flatten all pages of casts into a single array
+    const userCasts = useMemo(() => {
+        const infiniteData = data as InfiniteData<{ casts: Cast[]; next?: { cursor: string } }> | undefined;
+        if (!infiniteData?.pages) return [];
+        return infiniteData.pages.flatMap((page) => page.casts);
+    }, [data]);
 
     const allowance = useContract(ExecutionType.READABLE, "ERC20", "allowance", USDC_ADDRESS);
     const approve = useContract(ExecutionType.WRITABLE, "ERC20", "approve", USDC_ADDRESS);
@@ -153,7 +175,17 @@ export default function BuyersPage() {
         }
     };
 
-    const userCasts = connectedUserData?.casts || [];
+    // Handle load more with React Query
+    const handleLoadMore = useCallback(async () => {
+        if (hasNextPage && !isFetchingNextPage) {
+            try {
+                await fetchNextPage();
+            } catch (e: any) {
+                console.error("Error loading more casts:", e);
+                toast.error("Failed to load more casts");
+            }
+        }
+    }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
     // Use React Query for selected cast quote count in drawer
     const { data: selectedCastQuoteData } = useCastQuoteCount(
@@ -197,23 +229,59 @@ export default function BuyersPage() {
 
             <div className="relative z-10 px-4 pb-20 space-y-4">
                 {/* Cast list - always visible */}
-                {userCasts.length === 0 ? (
+                {isLoading ? (
+                    <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+                        <CardContent className="p-8 text-center">
+                            <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin text-purple-400" />
+                            <p className="text-white/60">Loading your casts...</p>
+                        </CardContent>
+                    </Card>
+                ) : isError ? (
+                    <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+                        <CardContent className="p-8 text-center">
+                            <p className="text-red-400">Failed to load casts. Please try again.</p>
+                        </CardContent>
+                    </Card>
+                ) : userCasts.length === 0 ? (
                     <Card className="bg-white/10 backdrop-blur-sm border-white/20">
                         <CardContent className="p-8 text-center">
                             <p className="text-white/60">No casts found. Create some casts first!</p>
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="space-y-2">
-                        {userCasts.map((cast: Cast) => (
-                            <CastListItem
-                                key={cast.hash}
-                                cast={cast}
-                                onPromote={handleSelectCast}
-                                onView={handleViewCast}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        <div className="space-y-2">
+                            {userCasts.map((cast: Cast) => (
+                                <CastListItem
+                                    key={cast.hash}
+                                    cast={cast}
+                                    onPromote={handleSelectCast}
+                                    onView={handleViewCast}
+                                />
+                            ))}
+                        </div>
+                        
+                        {/* Load More Button */}
+                        {hasNextPage && (
+                            <div className="flex justify-center pt-2">
+                                <Button
+                                    onClick={handleLoadMore}
+                                    disabled={isFetchingNextPage}
+                                    variant="outline"
+                                    className="bg-white/5 border-white/20 text-white hover:bg-white/10 hover:text-white transition-all min-w-[140px]"
+                                >
+                                    {isFetchingNextPage ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            Loading...
+                                        </>
+                                    ) : (
+                                        "Load More"
+                                    )}
+                                </Button>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 

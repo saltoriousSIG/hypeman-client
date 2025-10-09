@@ -12,6 +12,7 @@ type ConnectedUserData = {
     avgRecasts: number;
     avgReplies: number;
     casts: Cast[];
+    nextCursor?: string | null;
 }
 
 interface FrameContextValue {
@@ -109,6 +110,8 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
                     fid: fUser.fid
                 })
                 const userCasts = casts.casts as Cast[];
+                const nextCursor = casts.next?.cursor || null;
+                
                 if (userCasts.length === 0) {
                     setConnectedUserData({
                         score: data.user.score,
@@ -117,6 +120,7 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
                         avgRecasts: 0,
                         avgReplies: 0,
                         casts: userCasts,
+                        nextCursor: null,
                     });
                     return;
                 }
@@ -141,6 +145,7 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
                     avgRecasts,
                     avgReplies,
                     casts: userCasts,
+                    nextCursor,
                 });
             } catch (e: any) {
                 setErrors({
