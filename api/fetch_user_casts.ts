@@ -8,13 +8,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { fid } = req.body;
     const { data } = await axios.get(
-      `https://api.neynar.com/v2/farcaster/feed/user/casts/?limit=25&include_replies=true&fid=${fid}`,
+      `https://api.neynar.com/v2/farcaster/feed/user/casts/?limit=25&include_replies=false&fid=${fid}`,
       {
         headers: {
           "x-api-key": process.env.NEYNAR_API_KEY as string,
         },
       }
     );
+    
     return res.status(200).json({ casts: data.casts });
   } catch (e: any) {
     res.status(500).json({ error: "Error processing cast" });
