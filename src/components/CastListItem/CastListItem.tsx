@@ -40,6 +40,8 @@ export default function CastListItem({ cast, onPromote, onView }: CastListItemPr
       ? '0'
       : (data?.quoteCount ?? 0);
 
+
+
   // Extract images from embeds with proper type safety
   const embeds = (cast.embeds as unknown as CastEmbed[]) ?? [];
   const images = embeds.filter(
@@ -87,7 +89,6 @@ export default function CastListItem({ cast, onPromote, onView }: CastListItemPr
             {images.map((embed, index) => {
               const width = embed.metadata?.image?.width_px;
               const height = embed.metadata?.image?.height_px;
-
               return (
                 <div
                   key={`${cast.hash}-image-${index}`}
