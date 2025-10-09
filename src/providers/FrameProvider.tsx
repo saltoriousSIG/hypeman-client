@@ -100,8 +100,6 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (!fUser) return;
-        console.log(fUser);
-        console.log(address);
         const load = async () => {
             try {
                 const { data } = await axios.post("/api/fetch_user", {
@@ -128,6 +126,7 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
                         likes: acc.likes + curr.reactions.likes_count,
                         recasts: acc.recasts + curr.reactions.recasts_count,
                         replies: acc.replies + curr.replies.count,
+
                     };
                 }, { likes: 0, recasts: 0, replies: 0 });
 
