@@ -10,14 +10,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { getUserStats } from "../src/lib/getUserStats.js";
 import { calculateUserScore } from "../src/lib/calculateUserScore.js";
 import { parseUnits } from "viem";
-import { createPublicClient, http } from "viem";
-import { base } from "viem/chains";
 import { RedisClient } from "../src/clients/RedisClient.js";
-
-const publicClient = createPublicClient({
-  chain: base,
-  transport: http(process.env.RPC_URL as string),
-});
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
