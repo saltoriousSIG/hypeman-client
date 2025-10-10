@@ -128,7 +128,7 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
     promotionName: string,
     promotionDescription: string,
     promotionUrl: string,
-    promotionCast?: string,
+    _promotionCast?: string,
     options?: GenerationOptions
   ): Promise<GenerationResult> {
     try {
@@ -180,19 +180,17 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
    * Uses cached cast data and Claude for better voice mimicry
    */
   async refineCast(
-    fid: number,
     username: string,
     promotionName: string,
     promotionDescription: string,
     promotionUrl: string,
     previousCast: string,
     userFeedback: string,
-    promotionCast?: string,
+    _promotionCast?: string,
     options?: GenerationOptions
   ): Promise<GenerationResult> {
     try {
-      // Fetch and prepare user's cast history
-
+      // Use cached cast data for refinement
       if (this.user_casts.length === 0) {
         return {
           success: false,
@@ -200,8 +198,6 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
           model: "claude-3.5-sonnet",
         };
       }
-
-      await this.fetchUserCasts(fid);
 
       const baseMessages = this.buildVoiceLearningPrompt(
         this.user_casts,
@@ -259,7 +255,7 @@ Make it sound more authentic to my voice while addressing the feedback. Keep und
     promotionName: string,
     promotionDescription: string,
     promotionUrl: string,
-    promotionCast?: string
+    _promotionCast?: string
   ): Promise<GenerationResult[]> {
     const variations: GenerationResult[] = [];
 
