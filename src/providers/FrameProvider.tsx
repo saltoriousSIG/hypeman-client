@@ -4,6 +4,7 @@ import { MiniAppSDK } from "@farcaster/miniapp-sdk/dist/types";
 import { useAccount, useConnect } from "wagmi";
 import { Cast } from "@neynar/nodejs-sdk/build/api";
 import { getUserStats } from "@/lib/getUserStats";
+import axios from "axios";
 
 
 type ConnectedUserData = {
@@ -13,6 +14,8 @@ type ConnectedUserData = {
     avgRecasts: number;
     avgReplies: number;
     casts: Cast[];
+    nextCursor?: string | null;
+
 }
 
 interface FrameContextValue {
@@ -103,6 +106,11 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
         const load = async () => {
             try {
                 const { score, follower_count, avgLikes, avgRecasts, avgReplies, casts } = await getUserStats(fUser.fid);
+                const { data: castsData } = await axios.post("/api/fetch_user_casts", {
+                    fid: fUser.fid
+                });
+                const nextCursor = castsData.next?.cursor || null;
+
                 setConnectedUserData({
                     score,
                     follower_count,
@@ -110,6 +118,7 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
                     avgRecasts,
                     avgReplies,
                     casts,
+                    nextCursor
                 });
             } catch (e: any) {
                 setErrors({

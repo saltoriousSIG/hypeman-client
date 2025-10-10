@@ -31,7 +31,7 @@ import { useCastQuoteCount } from "@/hooks/useCastQuoteCount"
 import { useUserCasts } from "@/hooks/useUserCasts"
 
 export default function BuyersPage() {
-    const { address, fUser } = useFrameContext();
+    const { address, fUser, connectedUserData } = useFrameContext();
 
     const [selectedCast, setSelectedCast] = useState<Cast | null>(null);
     const [budget, setBudget] = useState<number>(10);
@@ -100,6 +100,7 @@ export default function BuyersPage() {
     // Handle create promotion
     const handleCreatePromotion = useCallback(async () => {
         if (!fUser || !selectedCast) return;
+
         if (budget < pricing_tiers.tier1) {
             return toast.error(`Minimum budget is ${pricing_tiers.tier1} USDC`);
         }
@@ -124,6 +125,7 @@ export default function BuyersPage() {
             await create_promotion([createParams]);
             toast.success("Promotion created successfully!");
             handleShowShareModal(true);
+
             // Reset state and close drawer
             setIsDrawerOpen(false);
             setSelectedCast(null);
