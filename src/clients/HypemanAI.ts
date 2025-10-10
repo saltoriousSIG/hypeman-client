@@ -128,7 +128,7 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
     promotionName: string,
     promotionDescription: string,
     promotionUrl: string,
-    promotionCast?: string,
+    _promotionCast?: string,
     options?: GenerationOptions
   ): Promise<GenerationResult> {
     try {
@@ -186,7 +186,7 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
     promotionUrl: string,
     previousCast: string,
     userFeedback: string,
-    promotionCast?: string,
+    _promotionCast?: string,
     options?: GenerationOptions
   ): Promise<GenerationResult> {
     try {
@@ -256,7 +256,7 @@ Make it sound more authentic to my voice while addressing the feedback. Keep und
     promotionName: string,
     promotionDescription: string,
     promotionUrl: string,
-    promotionCast?: string
+    _promotionCast?: string
   ): Promise<GenerationResult[]> {
     const variations: GenerationResult[] = [];
 
