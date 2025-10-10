@@ -262,7 +262,7 @@ export default function BuyersPage() {
                                 />
                             ))}
                         </div>
-                        
+
                         {/* Load More Button */}
                         {hasNextPage && (
                             <div className="flex justify-center pt-2">
