@@ -190,8 +190,7 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
     options?: GenerationOptions
   ): Promise<GenerationResult> {
     try {
-      // Fetch and prepare user's cast history
-
+      // Use cached cast data for refinement
       if (this.user_casts.length === 0) {
         return {
           success: false,
@@ -199,8 +198,6 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
           model: "claude-3.5-sonnet",
         };
       }
-
-      await this.fetchUserCasts(fid);
 
       const baseMessages = this.buildVoiceLearningPrompt(
         this.user_casts,

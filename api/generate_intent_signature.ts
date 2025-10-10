@@ -4,15 +4,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { getUserStats } from "../src/lib/getUserStats.js";
 import { calculateUserScore } from "../src/lib/calculateUserScore.js";
 import { parseUnits } from "viem";
-import { createPublicClient, http } from "viem";
-import { base } from "viem/chains";
 import { RedisClient } from "../src/clients/RedisClient.js";
-import { v4 as uuidv4 } from "uuid";
-
-const publicClient = createPublicClient({
-  chain: base,
-  transport: http(process.env.RPC_URL as string),
-});
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
@@ -65,8 +57,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         error: "Missing required fields: promotion_id, wallet, fid, fee",
       });
     }
-
-    const intent_id = uuidv4();
 
     const { score, follower_count, avgLikes, avgRecasts, avgReplies } =
       await getUserStats(parseInt(body.fid), process.env.SITE_HOST);
