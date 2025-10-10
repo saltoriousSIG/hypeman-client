@@ -14,18 +14,19 @@ export const getUserStats = async (fid: number, host?: string) => {
         fid,
       }
     );
+    const castsLength = casts.casts.length || 1;
     const avgLikes =
       casts.casts.reduce((acc: any, curr: any) => {
-        return acc + curr.reactions.likes_count;
-      }, 0) / casts.casts.length;
+        return acc + (curr.reactions?.likes_count ?? 0);
+      }, 0) / castsLength;
     const avgRecasts =
       casts.casts.reduce((acc: any, curr: any) => {
-        return acc + curr.reactions.recasts_count;
-      }, 0) / casts.casts.length;
+        return acc + (curr.reactions?.recasts_count ?? 0);
+      }, 0) / castsLength;
     const avgReplies =
       casts.casts.reduce((acc: any, curr: any) => {
-        return acc + curr.replies.count;
-      }, 0) / casts.casts.length;
+        return acc + (curr.replies?.count ?? 0);
+      }, 0) / castsLength;
 
     return {
       score: data.user.score,
