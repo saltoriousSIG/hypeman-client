@@ -21,7 +21,7 @@ import useContract, { ExecutionType } from "@/hooks/useContract"
 import { USDC_ADDRESS, DIAMOND_ADDRESS } from "@/lib/utils"
 import { useFrameContext } from "@/providers/FrameProvider"
 import { parseUnits } from "viem"
-import { pricing_tiers } from "@/hooks/useGetPostPricing"
+import { pricing_tiers } from "@/lib/calculateUserScore";
 import ShareModal from "@/components/ShareModal/ShareModal"
 import Footer from "@/components/Footer/Footer"
 import { Cast } from "@neynar/nodejs-sdk/build/api"
@@ -31,7 +31,7 @@ import { useCastQuoteCount } from "@/hooks/useCastQuoteCount"
 import { useUserCasts } from "@/hooks/useUserCasts"
 
 export default function BuyersPage() {
-    const { address, fUser } = useFrameContext();
+    const { address, fUser, connectedUserData } = useFrameContext();
 
     const [selectedCast, setSelectedCast] = useState<Cast | null>(null);
     const [budget, setBudget] = useState<number>(10);
@@ -73,7 +73,9 @@ export default function BuyersPage() {
         const load = async () => {
             if (!budget || !selectedCast) return;
             const user_allowance = await allowance([address, DIAMOND_ADDRESS]);
-            setIsApproved(parseInt(user_allowance.toString()) >= parseUnits(budget.toString(), 6));
+            const fee = budget * 0.1;
+            const calculated_allowance = budget + fee;
+            setIsApproved(parseInt(user_allowance.toString()) >= parseUnits(`${calculated_allowance}`, 6));
         }
         load();
     }, [allowance, address, budget, selectedCast]);
@@ -84,7 +86,9 @@ export default function BuyersPage() {
             return toast.error(`Minimum budget is ${pricing_tiers.tier1} USDC`);
         }
         try {
-            await approve([DIAMOND_ADDRESS, parseUnits(budget.toString(), 6)]);
+            const fee = budget * 0.1;
+            const calculated_allowance = budget + fee;
+            await approve([DIAMOND_ADDRESS, parseUnits(`${calculated_allowance}`, 6)]);
             setIsApproved(true);
             toast.success("Budget approved!");
         } catch (e: any) {

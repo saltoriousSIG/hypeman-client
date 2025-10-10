@@ -15,61 +15,57 @@ export class RedisClient {
     }
   }
 
-  // Encrypt data (simple and bulletproof)
+  // Encrypt data (Unicode-safe)
   encrypt(text: any): string {
     if (text === null || text === undefined) return "";
 
     const dataToEncrypt =
       typeof text === "object" ? JSON.stringify(text) : String(text);
 
-    // Simple XOR encryption with key
-    const key = this.key;
-    let encrypted = "";
+    // Convert to UTF-8 bytes first
+    const utf8Bytes = Buffer.from(dataToEncrypt, "utf8");
+    const key = Buffer.from(this.key, "utf8");
 
-    for (let i = 0; i < dataToEncrypt.length; i++) {
-      const char = dataToEncrypt.charCodeAt(i);
-      const keyChar = key.charCodeAt(i % key.length);
-      encrypted += String.fromCharCode(char ^ keyChar);
+    // XOR encryption
+    const encrypted = Buffer.alloc(utf8Bytes.length);
+    for (let i = 0; i < utf8Bytes.length; i++) {
+      encrypted[i] = utf8Bytes[i] ^ key[i % key.length];
     }
 
     // Base64 encode the result
-    return Buffer.from(encrypted, "binary").toString("base64");
+    return encrypted.toString("base64");
   }
 
-  // Decrypt data (simple and bulletproof)
+  // Decrypt data (Unicode-safe)
   decrypt(encryptedData: string | null): any {
     if (!encryptedData) return null;
     if (typeof encryptedData !== "string") return encryptedData;
-
-    // Handle empty string case (represents null/undefined)
     if (encryptedData === "") return null;
 
     try {
       // Base64 decode
-      const encrypted = Buffer.from(encryptedData, "base64").toString("binary");
+      const encrypted = Buffer.from(encryptedData, "base64");
+      const key = Buffer.from(this.key, "utf8");
 
-      // Simple XOR decryption with key
-      const key = this.key;
-      let decrypted = "";
-
+      // XOR decryption
+      const decrypted = Buffer.alloc(encrypted.length);
       for (let i = 0; i < encrypted.length; i++) {
-        const char = encrypted.charCodeAt(i);
-        const keyChar = key.charCodeAt(i % key.length);
-        decrypted += String.fromCharCode(char ^ keyChar);
+        decrypted[i] = encrypted[i] ^ key[i % key.length];
       }
+
+      // Convert back to UTF-8 string
+      const decryptedString = decrypted.toString("utf8");
 
       // Try to parse as JSON, fallback to string
       try {
-        return JSON.parse(decrypted);
+        return JSON.parse(decryptedString);
       } catch {
-        return decrypted;
+        return decryptedString;
       }
     } catch (error) {
-      // If anything fails, return original data
       return encryptedData;
     }
   }
-
   // === STRING OPERATIONS ===
   async set(key: string, value: any): Promise<"OK"> {
     return await this.redis.set(key, this.encrypt(value));

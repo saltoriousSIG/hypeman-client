@@ -44,12 +44,6 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "newRemainingBudget",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
         "name": "timestamp",
         "type": "uint256"
       }
@@ -162,11 +156,6 @@
       {
         "internalType": "uint256",
         "name": "totalBudget",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "remainingBudget",
         "type": "uint256"
       },
       {

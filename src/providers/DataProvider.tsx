@@ -64,15 +64,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             const promotions: Array<Promotion> = [];
             try {
                 const next_promotion_id = await get_next_promotion_id([]);
+                console.log(next_promotion_id);
                 for (let i = 0; i < next_promotion_id; i++) {
                     const promotion = await get_promotion([i]);
+                    console.log(promotion);
                     promotions.push({
                         ...promotion,
                         id: promotion.id.toString(),
                         created_time: new Date(parseInt(promotion.created_time.toString())),
                         creator_fid: parseInt(promotion.creator_fid.toString()),
-                        remaining_budget: parseInt(promotion.remaining_budget.toString()),
-                        total_budget: parseInt(promotion.total_budget.toString())
+                        committed_budget: parseInt(promotion.committed_budget.toString()),
+                        total_budget: parseInt(promotion.total_budget.toString()),
+                        amount_paid_out: parseInt(promotion.amount_paid_out.toString())
                     })
                 }
                 setPromotions(promotions);
@@ -89,14 +92,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         console.log(promotions)
         const load = async () => {
             try {
-                const casts_obj = {}
+                const casts_obj: any = {}
                 const { data: { user_casts } } = await axios.post('/api/get_user_promotions', {
                     fid: fUser.fid,
                     username: fUser.username,
                     promotions
                 });
                 console.log(user_casts)
-                user_casts.map((x) => casts_obj[x.id] = {
+                user_casts.map((x: any) => casts_obj[x.id] = {
                     ...x
                 })
                 setPromotionCasts(casts_obj);

@@ -4,6 +4,7 @@ import { MiniAppSDK } from "@farcaster/miniapp-sdk/dist/types";
 import { useAccount, useConnect } from "wagmi";
 import axios from "axios";
 import { Cast } from "@neynar/nodejs-sdk/build/api";
+import { getUserStats } from "@/lib/getUserStats";
 
 type ConnectedUserData = {
     score: number;
@@ -50,7 +51,6 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
 
     const { isConnected, address } = useAccount();
     const { connect, connectors } = useConnect();
-    console.log(isConnected);
 
     const handleSetIsFrameAdding = (state: boolean) => setIsFrameAdding(state);
 
@@ -103,48 +103,22 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
         if (!fUser) return;
         const load = async () => {
             try {
-                const { data } = await axios.post("/api/fetch_user", {
+                // Use getUserStats helper for user stats
+                const { score, follower_count, avgLikes, avgRecasts, avgReplies, casts } = await getUserStats(fUser.fid);
+                
+                // Fetch casts separately to get the cursor for pagination
+                const { data: castsData } = await axios.post("/api/fetch_user_casts", {
                     fid: fUser.fid
                 });
-                const { data: casts } = await axios.post("/api/fetch_user_casts", {
-                    fid: fUser.fid
-                })
-                const userCasts = casts.casts as Cast[];
-                const nextCursor = casts.next?.cursor || null;
-                
-                if (userCasts.length === 0) {
-                    setConnectedUserData({
-                        score: data.user.score,
-                        follower_count: data.user.follower_count,
-                        avgLikes: 0,
-                        avgRecasts: 0,
-                        avgReplies: 0,
-                        casts: userCasts,
-                        nextCursor: null,
-                    });
-                    return;
-                }
-
-                const totals = userCasts.reduce((acc, curr) => {
-                    return {
-                        likes: acc.likes + curr.reactions.likes_count,
-                        recasts: acc.recasts + curr.reactions.recasts_count,
-                        replies: acc.replies + curr.replies.count,
-
-                    };
-                }, { likes: 0, recasts: 0, replies: 0 });
-
-                const avgLikes = totals.likes / userCasts.length;
-                const avgRecasts = totals.recasts / userCasts.length;
-                const avgReplies = totals.replies / userCasts.length;
+                const nextCursor = castsData.next?.cursor || null;
 
                 setConnectedUserData({
-                    score: data.user.score,
-                    follower_count: data.user.follower_count,
+                    score,
+                    follower_count,
                     avgLikes,
                     avgRecasts,
                     avgReplies,
-                    casts: userCasts,
+                    casts,
                     nextCursor,
                 });
             } catch (e: any) {

@@ -200,6 +200,8 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
         };
       }
 
+      await this.fetchUserCasts(fid);
+
       const baseMessages = this.buildVoiceLearningPrompt(
         this.user_casts,
         username,
