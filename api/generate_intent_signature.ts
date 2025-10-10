@@ -1,5 +1,11 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
-import { encodeAbiParameters, keccak256, type Address, type Hex } from "viem";
+import {
+  encodeAbiParameters,
+  keccak256,
+  toHex,
+  type Address,
+  type Hex,
+} from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { getUserStats } from "../src/lib/getUserStats.js";
 import { calculateUserScore } from "../src/lib/calculateUserScore.js";
@@ -7,7 +13,6 @@ import { parseUnits } from "viem";
 import { createPublicClient, http } from "viem";
 import { base } from "viem/chains";
 import { RedisClient } from "../src/clients/RedisClient.js";
-import { v4 as uuidv4 } from "uuid";
 
 const publicClient = createPublicClient({
   chain: base,
@@ -39,13 +44,14 @@ interface SignIntentResponse {
   intent: {
     promotion_id: string;
     wallet: string;
+    intentHash: string;
     fid: string;
     fee: string;
     expiry: string;
     nonce: string;
   };
   signature: Hex;
-  message_hash: Hex;
+  intent_hash: Hex;
 }
 
 //TODO:
@@ -65,8 +71,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         error: "Missing required fields: promotion_id, wallet, fid, fee",
       });
     }
-
-    const intent_id = uuidv4();
 
     const { score, follower_count, avgLikes, avgRecasts, avgReplies } =
       await getUserStats(parseInt(body.fid), process.env.SITE_HOST);
@@ -144,13 +148,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       intent: {
         promotion_id: intent.promotion_id.toString(),
         wallet: intent.wallet,
+        intentHash: messageHash,
         fid: intent.fid.toString(),
         fee: intent.fee.toString(),
         expiry: intent.expiry.toString(),
         nonce: intent.nonce.toString(),
       },
       signature,
-      message_hash: messageHash,
+      intent_hash: messageHash,
     };
 
     return res.status(200).json(response);

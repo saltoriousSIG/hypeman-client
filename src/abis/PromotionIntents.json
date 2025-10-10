@@ -37,6 +37,12 @@
       },
       {
         "indexed": false,
+        "internalType": "bytes32",
+        "name": "intentHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
         "internalType": "uint256",
         "name": "fee",
         "type": "uint256"
@@ -106,6 +112,11 @@
       {
         "components": [
           {
+            "internalType": "bytes32",
+            "name": "intent_hash",
+            "type": "bytes32"
+          },
+          {
             "internalType": "uint256",
             "name": "promotion_id",
             "type": "uint256"
@@ -158,6 +169,11 @@
     "inputs": [
       {
         "components": [
+          {
+            "internalType": "bytes32",
+            "name": "intentHash",
+            "type": "bytes32"
+          },
           {
             "internalType": "uint256",
             "name": "promotion_id",

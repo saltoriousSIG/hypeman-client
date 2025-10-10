@@ -3,6 +3,25 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "promoter",
+        "type": "address"
+      }
+    ],
+    "name": "getAmountEarnedByPromoter",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountEarned",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "creator",
         "type": "address"
       }
@@ -34,21 +53,6 @@
             "internalType": "uint256",
             "name": "id",
             "type": "uint256"
-          },
-          {
-            "internalType": "string",
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "description",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "project_url",
-            "type": "string"
           },
           {
             "internalType": "string",
@@ -97,18 +101,108 @@
           },
           {
             "internalType": "bool",
-            "name": "refund_requested",
+            "name": "is_open_promotion",
             "type": "bool"
           },
           {
+            "internalType": "string",
+            "name": "neynar_score",
+            "type": "string"
+          },
+          {
             "internalType": "bool",
-            "name": "is_open_promotion",
+            "name": "pro_user",
             "type": "bool"
           }
         ],
         "internalType": "struct LibHypeman.Promotion[]",
         "name": "promotions",
         "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "promotionId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "intentHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getIntentByHash",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "intentHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "promotion_id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "wallet",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fid",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiry",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nonce",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IPromotionIntents.Intent",
+        "name": "intent",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "promotionId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "intentHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getIsIntentProcessed",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -194,21 +288,6 @@
           },
           {
             "internalType": "string",
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "description",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "project_url",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
             "name": "cast_url",
             "type": "string"
           },
@@ -254,12 +333,17 @@
           },
           {
             "internalType": "bool",
-            "name": "refund_requested",
+            "name": "is_open_promotion",
             "type": "bool"
           },
           {
+            "internalType": "string",
+            "name": "neynar_score",
+            "type": "string"
+          },
+          {
             "internalType": "bool",
-            "name": "is_open_promotion",
+            "name": "pro_user",
             "type": "bool"
           }
         ],
@@ -396,21 +480,6 @@
           },
           {
             "internalType": "string",
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "description",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "project_url",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
             "name": "cast_url",
             "type": "string"
           },
@@ -456,12 +525,17 @@
           },
           {
             "internalType": "bool",
-            "name": "refund_requested",
+            "name": "is_open_promotion",
             "type": "bool"
           },
           {
+            "internalType": "string",
+            "name": "neynar_score",
+            "type": "string"
+          },
+          {
             "internalType": "bool",
-            "name": "is_open_promotion",
+            "name": "pro_user",
             "type": "bool"
           }
         ],
@@ -516,21 +590,6 @@
           },
           {
             "internalType": "string",
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "description",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "project_url",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
             "name": "cast_url",
             "type": "string"
           },
@@ -576,12 +635,17 @@
           },
           {
             "internalType": "bool",
-            "name": "refund_requested",
+            "name": "is_open_promotion",
             "type": "bool"
           },
           {
+            "internalType": "string",
+            "name": "neynar_score",
+            "type": "string"
+          },
+          {
             "internalType": "bool",
-            "name": "is_open_promotion",
+            "name": "pro_user",
             "type": "bool"
           }
         ],
@@ -665,6 +729,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "getPromotionIntentBatchSize",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "batch_size",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -675,9 +752,9 @@
     "name": "getPromotionMentions",
     "outputs": [
       {
-        "internalType": "string[]",
+        "internalType": "uint256[]",
         "name": "mentions",
-        "type": "string[]"
+        "type": "uint256[]"
       }
     ],
     "stateMutability": "view",

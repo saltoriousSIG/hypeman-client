@@ -82,12 +82,6 @@
       },
       {
         "indexed": false,
-        "internalType": "string",
-        "name": "name",
-        "type": "string"
-      },
-      {
-        "indexed": false,
         "internalType": "uint256",
         "name": "totalBudget",
         "type": "uint256"
@@ -120,28 +114,13 @@
         "components": [
           {
             "internalType": "string",
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "description",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "project_url",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
             "name": "cast_url",
             "type": "string"
           },
           {
-            "internalType": "string[]",
+            "internalType": "uint256[]",
             "name": "profile_mentions",
-            "type": "string[]"
+            "type": "uint256[]"
           },
           {
             "components": [
@@ -209,6 +188,16 @@
             "internalType": "bool",
             "name": "is_open_promotion",
             "type": "bool"
+          },
+          {
+            "internalType": "string",
+            "name": "neynar_score",
+            "type": "string"
+          },
+          {
+            "internalType": "bool",
+            "name": "pro_user",
+            "type": "bool"
           }
         ],
         "internalType": "struct IPromotionCreate.CreatePromotionArgs",
@@ -237,21 +226,6 @@
             "internalType": "uint256",
             "name": "id",
             "type": "uint256"
-          },
-          {
-            "internalType": "string",
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "description",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "project_url",
-            "type": "string"
           },
           {
             "internalType": "string",
@@ -300,12 +274,17 @@
           },
           {
             "internalType": "bool",
-            "name": "refund_requested",
+            "name": "is_open_promotion",
             "type": "bool"
           },
           {
+            "internalType": "string",
+            "name": "neynar_score",
+            "type": "string"
+          },
+          {
             "internalType": "bool",
-            "name": "is_open_promotion",
+            "name": "pro_user",
             "type": "bool"
           }
         ],
@@ -328,9 +307,9 @@
     "name": "getPromotionMentions",
     "outputs": [
       {
-        "internalType": "string[]",
+        "internalType": "uint256[]",
         "name": "",
-        "type": "string[]"
+        "type": "uint256[]"
       }
     ],
     "stateMutability": "view",

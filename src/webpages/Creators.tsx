@@ -145,8 +145,6 @@ export default function BuyersPage() {
 
     const userCasts = connectedUserData?.casts || [];
 
-    console.log(userCasts);
-
     return (
         <div className="min-h-screen bg-black text-white relative overflow-hidden">
             {/* Floating decorative elements */}

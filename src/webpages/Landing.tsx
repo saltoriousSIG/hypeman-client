@@ -61,26 +61,6 @@ export default function HomePage() {
         },
     ]
 
-    useEffect(() => {
-        if (!fUser) return;
-        const load = async () => {
-            try {
-                const { data } = await axios.post(`/api/get_signer`, {
-                    u_fid: fUser.fid
-                });
-                if (data.status !== "approved") {
-                    setIsAuthenticated(false);
-                } else {
-                    setIsAuthenticated(true);
-                }
-                setSignerApprovalUrl(data.signer_approval_url);
-            } catch (e: any) {
-                throw new Error(e.message);
-            }
-
-        }
-        load();
-    }, [fUser]);
 
     return (
         <div className="min-h-screen bg-black text-white pb-20 relative overflow-hidden">

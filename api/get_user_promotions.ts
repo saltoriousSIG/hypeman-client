@@ -18,23 +18,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         `user_cast:${fid}:${promotion.id}`
       );
       if (!user_cast_data) {
-        const initialCast = await hypeman_ai.generateInitialCast(
-          fid,
-          username,
-          promotion.name,
-          promotion.description,
-          promotion.project_url,
-          promotion.cast_url
-        );
-        const cast_obj = {
-          id: promotion.id,
-          cast_text: initialCast.text,
-        };
-        await redisClient.set(
-          `user_cast:${fid}:${promotion.id}`,
-          JSON.stringify(cast_obj)
-        );
-        user_casts.push(cast_obj);
+        // const initialCast = await hypeman_ai.generateInitialCast(
+        //   fid,
+        //   username,
+        //   promotion.name,
+        //   promotion.description,
+        //   promotion.project_url,
+        //   promotion.cast_url
+        // );
+        // const cast_obj = {
+        //   id: promotion.id,
+        //   cast_text: initialCast.text,
+        // };
+        // await redisClient.set(
+        //   `user_cast:${fid}:${promotion.id}`,
+        //   JSON.stringify(cast_obj)
+        // );
+        // user_casts.push(cast_obj);
       } else {
         const data =
           typeof user_cast_data === "string"
