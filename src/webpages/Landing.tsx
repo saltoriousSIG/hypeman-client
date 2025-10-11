@@ -8,11 +8,12 @@ import LoginModal from "@/components/LoginModal/LoginModal";
 import Footer from "@/components/Footer/Footer";
 import useGetPostPricing from "@/hooks/useGetPostPricing";
 import { useData } from "@/providers/DataProvider";
+import { Button } from "@/components/ui/button";
 
 
 
 export default function HomePage() {
-    const { fUser } = useFrameContext();
+    const { fUser, handleSignin } = useFrameContext();
 
     const [activeTab, setActiveTab] = useState<"active" | "completed">("active")
     const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -107,6 +108,7 @@ export default function HomePage() {
                         <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-500/20 to-green-400/20 text-green-400 px-6 py-2 rounded-full text-sm font-semibold border border-green-400/20">
                             ${1000} earned
                         </div>
+                        <Button onClick={handleSignin}>signin</Button>
                     </div>
                 )}
 

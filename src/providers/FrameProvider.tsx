@@ -1,7 +1,7 @@
 import { createContext, useEffect, useState, useContext, useCallback } from "react";
 import sdk from "@farcaster/frame-sdk";
 import { MiniAppSDK } from "@farcaster/miniapp-sdk/dist/types";
-import { useAccount, useConnect } from "wagmi";
+import { useAccount, useCall, useConnect } from "wagmi";
 import { Cast } from "@neynar/nodejs-sdk/build/api";
 import { getUserStats } from "@/lib/getUserStats";
 import axios from "axios";
@@ -27,6 +27,7 @@ interface FrameContextValue {
     isConnected: boolean | undefined;
     handleAddFrame: () => Promise<void>;
     handleSetIsFrameAdding: (state: boolean) => void;
+    handleSignin: () => Promise<void>;
     isFrameAdded: boolean;
     isFrameAdding: boolean;
     connect: Function;
@@ -80,6 +81,7 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
         });
     }, [])
 
+
     // Load context
     useEffect(() => {
         const load = async () => {
@@ -129,6 +131,14 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
         load();
     }, [fUser]);
 
+    const handleSignin = useCallback(async () => {
+        const response = await sdk.actions.signIn({
+            nonce: `${Math.floor(Date.now() / 1000) + 3600}`, // 1 hour from now
+        });
+        console.log("Signed in:", response);
+
+    }, []);
+
     return (
         <FrameSDKContext.Provider value={{
             errors,
@@ -138,6 +148,7 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
             address,
             handleAddFrame,
             handleSetIsFrameAdding,
+            handleSignin,
             isFrameAdded,
             isFrameAdding,
             isConnected,
