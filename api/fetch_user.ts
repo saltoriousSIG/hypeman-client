@@ -22,4 +22,4 @@ async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default withHost(handler);
+export default handler;

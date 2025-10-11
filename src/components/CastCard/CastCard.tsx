@@ -1,23 +1,34 @@
-"use client"
-
 import type React from "react"
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2, X } from "lucide-react"
+import { useFrameContext } from "@/providers/FrameProvider"
 import axios from "axios";
+import Skeleton from "react-loading-skeleton";
+import 'react-loading-skeleton/dist/skeleton.css'
+import useContract, { ExecutionType } from "@/hooks/useContract"
+import { Button } from "../ui/button"
+import { extractUrls } from "@/lib/utils"
+import sdk from "@farcaster/frame-sdk"
 
 interface CastCardProps {
     promotion: any
     cast_text: string
     pricing: number
+    promotionContent: string
+    promotionAuthor: string
+    promotionEmmbedContext?: any[]
+
 }
 
 const CastCard: React.FC<CastCardProps> = ({
     promotion,
     cast_text,
+    promotionContent,
+    promotionAuthor,
+    promotionEmmbedContext,
     pricing,
 }) => {
-    console.log(promotion)
     const [sliderOffset, setSliderOffset] = useState(0)
     const [isDragging, setIsDragging] = useState(false)
     const [isCompleting, setIsCompleting] = useState(false)
@@ -25,9 +36,19 @@ const CastCard: React.FC<CastCardProps> = ({
     const sliderRef = useRef<HTMLDivElement>(null)
     const startXRef = useRef(0)
 
+    const [isLoading, setIsLoading] = useState(false)
+    const [rerolledCast, setRerolledCast] = useState<string | null>(null)
     const [rerollNotes, setRerollNotes] = useState("")
     const [showRerollInput, setShowRerollInput] = useState(false)
-    const [isLoadingText, setIsLoadingText] = useState(false)
+    const [intent, setIntent] = useState<any | null>(null)
+    const [submittedIntents, setSubmittedIntents] = useState<any[]>([])
+    const [isLoadingIntent, setIsLoadingIntent] = useState(false)
+
+    const { fUser, address } = useFrameContext();
+
+    const intentPromiseRef = useRef<Promise<any> | null>(null)
+
+    const submit_intent = useContract(ExecutionType.WRITABLE, "Intents", "submitIntent");
 
     const handleTap = () => {
         if (!showRerollInput && !isPosting) {
@@ -35,9 +56,27 @@ const CastCard: React.FC<CastCardProps> = ({
         }
     }
 
-    const handleReroll = () => {
-        console.log(`[v0] Rerolling promotion ${promotion.id} with notes: ${rerollNotes}`)
-        setIsLoadingText(true)
+    const handleReroll = async () => {
+        if (!fUser) return;
+        try {
+            setIsLoading(true)
+            const { data } = await axios.post("/api/reroll_promotion_cast", {
+                fid: fUser.fid,
+                username: fUser.username,
+                promotionId: promotion.id,
+                previousCast: cast_text,
+                promotionContent: promotionContent,
+                promotionAuthor: promotionAuthor,
+                embedContext: promotionEmmbedContext,
+                userFeedback: rerollNotes,
+            });
+            setRerolledCast(data.cast.generated_cast);
+            setShowRerollInput(false)
+        } catch (e: any) {
+            throw new Error(e.message);
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     const handleCancelReroll = () => {
@@ -46,8 +85,32 @@ const CastCard: React.FC<CastCardProps> = ({
     }
 
     const handleDragStart = (clientX: number) => {
+        if (!fUser) return;
         setIsDragging(true)
         startXRef.current = clientX
+
+        if (!intent && !intentPromiseRef.current && address) {
+            setIsLoadingIntent(true)
+
+            // Store the promise so we can await it later
+            intentPromiseRef.current = axios.post("/api/generate_intent_signature", {
+                promotion_id: promotion.id,
+                fid: fUser?.fid,
+                wallet: address
+            })
+                .then((res) => {
+                    setIntent(res.data)
+                    setIsLoadingIntent(false)
+                    return res.data
+                })
+                .catch((err) => {
+                    console.error("Error fetching intent signature:", err)
+                    setIsLoadingIntent(false)
+                    intentPromiseRef.current = null
+                    throw err
+                })
+        }
+
     }
 
     const handleDragMove = (clientX: number) => {
@@ -80,16 +143,51 @@ const CastCard: React.FC<CastCardProps> = ({
         setIsDragging(false)
     }
 
-    const handlePost = async () => {
-        setIsPosting(true)
-        console.log(`[v0] Posting promotion ${promotion.id}`)
-        // Transaction logic will be added here
-        setTimeout(() => {
-            setIsPosting(false)
-            setIsCompleting(false)
+    const handlePostCast = useCallback(
+        async (e?: React.MouseEvent) => {
+            console.log(rerolledCast, cast_text, promotion.cast_url);
+            if (!rerolledCast && !cast_text) return;
+            e?.stopPropagation();
+            // Post cast logic here
+            console.log(rerolledCast || cast_text);
+            const { text, urls } = extractUrls(rerolledCast || cast_text);
+            const embeds: any = [...urls, promotion.cast_url]
+            const response = await sdk.actions.composeCast({
+                text,
+                embeds,
+            });
+            console.log(response);
+        }, [rerolledCast, cast_text, promotion.cast_url]
+    )
+
+    const handlePost = useCallback(async () => {
+        try {
+            setIsPosting(true)
+
+            // If intent is already loaded, use it
+            if (intent) {
+                await submit_intent([intent.intent, intent.signature]);
+                return
+            }
+
+            // Otherwise, wait for the promise to resolve
+            if (intentPromiseRef.current) {
+                const intentData = await intentPromiseRef.current
+                console.log(intentData);
+                // await submit_intent([intentData.intent, intentData.signature]);
+            } else {
+                throw new Error("No intent available")
+            }
+            await handlePostCast()
+        } catch (error) {
+            console.error("Error posting:", error)
+            // Reset state on error
             setSliderOffset(0)
-        }, 3000)
-    }
+            setIsCompleting(false)
+        } finally {
+            setIsPosting(false)
+        }
+    }, [intent, submit_intent, handlePostCast, cast_text, rerolledCast])
 
     const handleMouseDown = (e: React.MouseEvent) => {
         e.preventDefault()
@@ -132,6 +230,24 @@ const CastCard: React.FC<CastCardProps> = ({
         }
     }, [isDragging])
 
+    useEffect(() => {
+        if (!fUser) return;
+        const load = async () => {
+            try {
+                const { data } = await axios.post("/api/fetch_intents", { promotion_id: promotion.id, fid: fUser?.fid });
+                console.log("Fetched existing intents:", data.intents);
+                setSubmittedIntents(data.intents || [])
+            } catch (e: any) {
+                throw new Error(e.message);
+            }
+        }
+        load();
+
+
+    }, [fUser, promotion.id]);
+
+
+
     return (
         <div className="space-y-3 mb-5">
             <Card
@@ -161,8 +277,14 @@ const CastCard: React.FC<CastCardProps> = ({
                     </div>
 
                     {showRerollInput ? (
-                        <div className="space-y-4">
-                            <p className="text-sm leading-relaxed text-white/80 mb-3">{cast_text}</p>
+                        <div className="space-y-4 h-full">
+                            {(!cast_text || isLoading) ? (
+                                <div className="space-y-2 h-full">
+                                    <Skeleton count={3} className="!bg-white/10" />
+                                </div>
+                            ) : (
+                                <p className="text-sm leading-relaxed text-white/80 mb-3">{rerolledCast || cast_text}</p>
+                            )}
                             <div className="bg-black/20 rounded-2xl p-4 border border-white/10">
                                 <label className="block text-sm font-medium text-white/80 mb-2">Reroll Notes (optional)</label>
                                 <textarea
@@ -190,16 +312,12 @@ const CastCard: React.FC<CastCardProps> = ({
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {isLoadingText ? (
-                                <div className="space-y-2 animate-pulse">
-                                    <div className="h-4 bg-white/20 rounded-lg w-full"></div>
-                                    <div className="h-4 bg-white/20 rounded-lg w-5/6"></div>
-                                    <div className="h-4 bg-white/20 rounded-lg w-4/5"></div>
-                                    <div className="h-4 bg-white/20 rounded-lg w-3/4"></div>
-                                    <div className="h-4 bg-white/20 rounded-lg w-2/3"></div>
+                            {(!cast_text || isLoading) ? (
+                                <div className="space-y-2 h-full">
+                                    <Skeleton count={3} className="!bg-white/10" />
                                 </div>
                             ) : (
-                                <p className="text-sm leading-relaxed text-white/80">{cast_text}</p>
+                                <p className="text-sm leading-relaxed text-white/80 mb-3">{rerolledCast || cast_text}</p>
                             )}
 
                             {isPosting ? (
@@ -208,49 +326,63 @@ const CastCard: React.FC<CastCardProps> = ({
                                     <span className="text-white/80 font-medium">Posting...</span>
                                 </div>
                             ) : (
-                                <div
-                                    ref={sliderRef}
-                                    className="relative h-14 bg-white/5 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    <div
-                                        className={`absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 z-10 ${isCompleting ? "transition-all duration-300 ease-out" : ""
-                                            }`}
-                                        style={{
-                                            width: sliderOffset
-                                                ? `${((sliderOffset + 48) / (sliderRef.current?.getBoundingClientRect().width || 1)) * 100}%`
-                                                : "0%",
-                                            maskImage: "linear-gradient(to right, black 85%, transparent 100%)",
-                                            WebkitMaskImage: "linear-gradient(to right, black 85%, transparent 100%)",
-                                        }}
-                                    />
+                                <>
+                                    {submittedIntents.length > 0 ? (
+                                        <div className="space-y-2">
+                                            <div className="w-full">
+                                                <Button
+                                                    onClick={handlePostCast}
+                                                    className="w-full relative  bg-purple-600 rounded-xl shadow-lg flex items-center justify-center cursor-pointer z-40 hover:bg-purple-500 hover:text-white transition-all duration-300">
+                                                    Post Cast
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div
+                                            ref={sliderRef}
+                                            className="relative h-14 bg-white/5 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <div
+                                                className={`absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 z-10 ${isCompleting ? "transition-all duration-300 ease-out" : ""
+                                                    }`}
+                                                style={{
+                                                    width: sliderOffset
+                                                        ? `${((sliderOffset + 48) / (sliderRef.current?.getBoundingClientRect().width || 1)) * 100}%`
+                                                        : "0%",
+                                                    maskImage: "linear-gradient(to right, black 85%, transparent 100%)",
+                                                    WebkitMaskImage: "linear-gradient(to right, black 85%, transparent 100%)",
+                                                }}
+                                            />
 
-                                    {isCompleting && (
-                                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/50 via-pink-500/50 to-purple-600/50 animate-pulse z-20" />
+                                            {isCompleting && (
+                                                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/50 via-pink-500/50 to-purple-600/50 animate-pulse z-20" />
+                                            )}
+
+                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+                                                <span className="text-sm font-medium text-white/60">
+                                                    {isCompleting ? "Posting..." : "Slide to Post & Earn"}
+                                                </span>
+                                            </div>
+
+                                            <button
+                                                onMouseDown={handleMouseDown}
+                                                onTouchStart={handleTouchStart}
+                                                onTouchMove={handleTouchMove}
+                                                onTouchEnd={handleDragEnd}
+                                                onTouchCancel={handleDragEnd}
+                                                className={`absolute top-1 left-1 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center cursor-grab active:cursor-grabbing z-40 ${isCompleting ? "transition-all duration-300 ease-out" : ""
+                                                    }`}
+                                                style={{
+                                                    transform: `translateX(${sliderOffset}px)`,
+                                                    touchAction: "none",
+                                                }}
+                                            >
+                                                <div className="text-xl">💸</div>
+                                            </button>
+                                        </div>
                                     )}
-
-                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                                        <span className="text-sm font-medium text-white/60">
-                                            {isCompleting ? "Posting..." : "Slide to Post & Earn"}
-                                        </span>
-                                    </div>
-
-                                    <button
-                                        onMouseDown={handleMouseDown}
-                                        onTouchStart={handleTouchStart}
-                                        onTouchMove={handleTouchMove}
-                                        onTouchEnd={handleDragEnd}
-                                        onTouchCancel={handleDragEnd}
-                                        className={`absolute top-1 left-1 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center cursor-grab active:cursor-grabbing z-40 ${isCompleting ? "transition-all duration-300 ease-out" : ""
-                                            }`}
-                                        style={{
-                                            transform: `translateX(${sliderOffset}px)`,
-                                            touchAction: "none",
-                                        }}
-                                    >
-                                        <div className="text-xl">💸</div>
-                                    </button>
-                                </div>
+                                </>
                             )}
                         </div>
                     )}

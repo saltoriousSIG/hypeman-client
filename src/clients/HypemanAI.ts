@@ -120,6 +120,7 @@ don't sanitize or clean up their voice.
 IMPORTANT: Use their authentic vocabulary from the examples above, even if it's casual, edgy, or unconventional. Don't tone down their voice
 IMPORTANT: Avoid inherently cheezy promotional language, identify the nuances to their writing style and emulate it accurately
 IMPORTANT: Avoid using language that is directly in the promotional cast. be creative and use your own words while still matching their style and energy
+IMPORTANT: only use URLs if they are provided in the context, or the origiginal promotion content. do not make up URLs or include any URLs that are not provided  
 
        `,
       },
@@ -149,6 +150,8 @@ IMPORTANT! only output the cast and nothing else, do not include any of your thi
 IMPORTANT, use correct spelling and grammer, even if you don't in your example casts
 
 IMPORTANT: Avoid using language that is directly in the promotional cast. be creative and use your own words while still matching their style and energy
+
+IMPORTANT: only use URLs if they are provided in the context, or the origiginal promotion content. do not make up URLs or include any URLs that are not provided  
 `,
       },
     ];
@@ -242,12 +245,19 @@ IMPORTANT: Avoid using language that is directly in the promotional cast. be cre
         {
           role: "user" as const,
           content: `Please revise this cast based on my feedback: "${userFeedback}"
-          Make it sound more authentic to my voice while addressing the feedback. Keep under 280 characters and maintain the promotional intent.`,
+          
+          Make it sound more authentic to my voice while addressing the feedback. Keep under 280 characters and maintain the promotional intent.
+
+          IMPORTANT: This isnt an addition to the previous cast, this is a replacement of it. Do not include any part of the previous cast unless it fits naturally with my feedback 
+
+          IMPORTANT: only use URLs if they are provided in the context, or the origiginal promotion content. do not make up URLs or include any URLs that are not provided
+          
+          `,
         },
       ];
 
       const result = await generateText({
-        model: this.qualityModel,
+        model: this.fastModel,
         messages,
         temperature: options?.temperature || 0.7,
         maxRetries: 2,

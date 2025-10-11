@@ -30,7 +30,10 @@ async function handler(req: VercelRequest, res: VercelResponse) {
 
     const cast_obj = {
       id: promotionId,
-      cast_text: cast.text,
+      generated_cast: cast.text,
+      cast_author: promotionAuthor,
+      cast_text: promotionContent,
+      cast_embed_context: embedContext,
     };
 
     await redisClient.set(
@@ -40,7 +43,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log("REROLLED CAST", { cast });
 
-    res.status(200).json({ cast: cast.text });
+    res.status(200).json({ cast: cast_obj });
   } catch (e: any) {
     res.status(500).json({ error: "Error processing reroll" });
   }

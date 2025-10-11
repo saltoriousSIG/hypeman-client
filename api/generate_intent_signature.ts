@@ -1,7 +1,9 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
 import {
   encodeAbiParameters,
+  hexToBytes,
   keccak256,
+  stringToBytes,
   toHex,
   type Address,
   type Hex,
@@ -12,11 +14,14 @@ import { calculateUserScore } from "../src/lib/calculateUserScore.js";
 import { parseUnits } from "viem";
 import { RedisClient } from "../src/clients/RedisClient.js";
 import { withHost } from "../middleware/withHost.js";
+import { v4 as uuidv4 } from "uuid";
+import { randomBytes } from "crypto";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
 // Types matching your Solidity struct
 interface Intent {
+  intentHash: Hex;
   promotion_id: bigint;
   wallet: Address;
   fid: bigint;
@@ -45,6 +50,7 @@ interface SignIntentResponse {
     nonce: string;
   };
   signature: Hex;
+  messageHash: Hex;
   intent_hash: Hex;
 }
 
@@ -98,8 +104,12 @@ async function handler(req: VercelRequest, res: VercelResponse) {
       await redis.set(`signature_nonce`, parseInt(signature_nonce) + 1);
     }
 
+    const hash = toHex(randomBytes(32));
+    console.log(hash);
+
     // Construct the intent object matching Solidity struct
     const intent: Intent = {
+      intentHash: hash,
       promotion_id: BigInt(body.promotion_id),
       wallet: body.wallet as Address,
       fid: BigInt(body.fid),
@@ -112,6 +122,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
     // Must match the order and types in your Solidity struct
     const encodedIntent = encodeAbiParameters(
       [
+        { type: "bytes32", name: "intentHash" },
         { type: "uint256", name: "promotion_id" },
         { type: "address", name: "wallet" },
         { type: "uint256", name: "fid" },
@@ -120,6 +131,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
         { type: "uint256", name: "nonce" },
       ],
       [
+        intent.intentHash,
         intent.promotion_id,
         intent.wallet,
         intent.fid,
@@ -140,16 +152,17 @@ async function handler(req: VercelRequest, res: VercelResponse) {
 
     const response: SignIntentResponse = {
       intent: {
+        intentHash: hash,
         promotion_id: intent.promotion_id.toString(),
         wallet: intent.wallet,
-        intentHash: messageHash,
         fid: intent.fid.toString(),
         fee: intent.fee.toString(),
         expiry: intent.expiry.toString(),
         nonce: intent.nonce.toString(),
       },
       signature,
-      intent_hash: messageHash,
+      messageHash,
+      intent_hash: hash,
     };
 
     return res.status(200).json(response);

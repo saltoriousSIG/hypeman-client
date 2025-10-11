@@ -139,6 +139,9 @@ export default function HomePage() {
                                 promotion={cast}
                                 cast_text={promotion_casts[cast.id]?.generated_cast}
                                 pricing={pricing}
+                                promotionContent={promotion_casts[cast.id]?.cast_text}
+                                promotionAuthor={promotion_casts[cast.id]?.author}
+                                promotionEmmbedContext={promotion_casts[cast.id]?.cast_embed_context}
                             />
                         )
                     })

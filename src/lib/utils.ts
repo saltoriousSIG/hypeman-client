@@ -18,3 +18,22 @@ export const sleep = (timeout: number) => {
     }, timeout);
   });
 };
+
+export const extractUrls = (text: string): { text: string; urls: string[] } => {
+  // Regex to match URLs (http/https)
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+  // Extract all URLs
+  const urls = text.match(urlRegex) || [];
+
+  // Remove URLs from text and clean up extra whitespace
+  const cleanText = text.replace(urlRegex, "").replace(/\s+/g, " ").trim();
+
+  return { text: cleanText, urls };
+};
+
+export const extractHashFromFCUrl = (uri: string) => {
+  const urlObj = new URL(uri);
+  const hash = urlObj.pathname.split("/").pop();
+  return hash;
+};
