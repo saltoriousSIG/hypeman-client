@@ -2,7 +2,7 @@ import { VercelRequest, VercelResponse } from "@vercel/node";
 
 const allowedHosts = [
   "https://supervictorious-laurel-idyllically.ngrok-free.dev",
-  "https://hypeman-client.vercel.app/",
+  "https://hypeman-client.vercel.app",
 ];
 
 export function withHost(handler: any) {
