@@ -135,8 +135,8 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
         const response = await sdk.actions.signIn({
             nonce: `${Math.floor(Date.now() / 1000) + 3600}`, // 1 hour from now
         });
+        localStorage.setItem("auth_signature", response.signature);
         console.log("Signed in:", response);
-
     }, []);
 
     return (

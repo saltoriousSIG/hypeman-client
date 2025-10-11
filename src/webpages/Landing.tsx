@@ -19,6 +19,7 @@ export default function HomePage() {
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const [showLoginModal, setShowLoginModal] = useState(false)
     const [signerApprovalUrl, setSignerApprovalUrl] = useState<string>();
+    const [signature, setSignature] = useState<string | null>(null);
 
     const { promotions, promotion_casts } = useData();
 
@@ -108,7 +109,13 @@ export default function HomePage() {
                         <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-500/20 to-green-400/20 text-green-400 px-6 py-2 rounded-full text-sm font-semibold border border-green-400/20">
                             ${1000} earned
                         </div>
-                        <Button onClick={handleSignin}>signin</Button>
+                        <Button onClick={async () => {
+                            await handleSignin();
+                            const signature = localStorage.getItem("auth_signature");
+                            setSignature(signature);
+                        }}>signin</Button>
+
+                        <span>{signature}</span>
                     </div>
                 )}
 
