@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Settings, BarChart3 } from "lucide-react"
 import { NavLink } from "react-router-dom";
 import { useFrameContext } from "@/providers/FrameProvider";
 import CastCard from "@/components/CastCard/CastCard";
-import axios from "axios";
 import CompletedCard from "@/components/CompletedCard/CompletedCard";
 import LoginModal from "@/components/LoginModal/LoginModal";
 import Footer from "@/components/Footer/Footer";
@@ -135,7 +134,12 @@ export default function HomePage() {
                 {activeTab === "active" ? (
                     promotions.map((cast) => {
                         return (
-                            <CastCard key={cast.id} promotion={cast} cast_text={promotion_casts[cast.id]?.cast_text} handleShowLoginModal={handleShowLoginModal} isAuthenticated={isAuthenticated} pricing={pricing} />
+                            <CastCard
+                                key={cast.id}
+                                promotion={cast}
+                                cast_text={promotion_casts[cast.id]?.generated_cast}
+                                pricing={pricing}
+                            />
                         )
                     })
                 ) : (

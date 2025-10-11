@@ -1,14 +1,15 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
 import axios from "axios";
+import { withHost } from "../middleware/withHost.js";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
-  
+
   try {
     const { castHash } = req.body;
-    
+
     if (!castHash) {
       return res.status(400).json({ error: "Cast hash is required" });
     }
@@ -19,8 +20,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Fetch all quotes with pagination
     while (hasMore) {
-      const url = `https://api.neynar.com/v2/farcaster/cast/quotes/?identifier=${castHash}&type=hash&limit=100${cursor ? `&cursor=${cursor}` : ''}`;
-      
+      const url = `https://api.neynar.com/v2/farcaster/cast/quotes/?identifier=${castHash}&type=hash&limit=100${cursor ? `&cursor=${cursor}` : ""}`;
+
       const { data } = await axios.get(url, {
         headers: {
           "x-api-key": process.env.NEYNAR_API_KEY as string,
@@ -44,3 +45,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
+export default withHost(handler);

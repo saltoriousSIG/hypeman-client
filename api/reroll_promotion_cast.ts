@@ -1,33 +1,31 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
 import { HypemanAI } from "../src/clients/HypemanAI.js";
 import { RedisClient } from "../src/clients/RedisClient.js";
+import { withHost } from "../middleware/withHost.js";
 
 const redisClient = new RedisClient(process.env.REDIS_URL as string);
-const hypeman_ai = new HypemanAI();
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const {
       fid,
       username,
       promotionId,
       previousCast,
+      promotionContent,
+      promotionAuthor,
+      embedContext,
       userFeedback,
-      promotionName,
-      promotionDescription,
-      promotionUrl,
-      promotionCast,
     } = req.body;
 
+    const hypeman_ai = await HypemanAI.getInstance(fid, username);
+
     const cast = await hypeman_ai.refineCast(
-      fid,
-      username,
-      promotionName,
-      promotionDescription,
-      promotionUrl,
-      previousCast,
+      promotionContent,
+      promotionAuthor,
+      embedContext,
       userFeedback,
-      promotionCast
+      previousCast
     );
 
     const cast_obj = {
@@ -47,3 +45,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(500).json({ error: "Error processing reroll" });
   }
 }
+
+export default withHost(handler);

@@ -29,7 +29,10 @@ type Promotion = {
 
 type PromotionCasts = {
     id: string,
+    generated_cast: string;
+    author: string;
     cast_text: string;
+    cast_embed_context: Array<{ type: string; value: string }>;
 }
 
 interface DataContextValue {
@@ -55,6 +58,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const [promotions, setPromotions] = useState<Array<Promotion>>([]);
     const [promotionCasts, setPromotionCasts] = useState<Record<string, PromotionCasts>>({});
 
+    console.log(promotionCasts);
+
     const get_next_promotion_id = useContract(ExecutionType.READABLE, "Data", "getNextPromotionId");
     const get_promotion = useContract(ExecutionType.READABLE, "Data", "getPromotion");
 
@@ -64,7 +69,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             const promotions: Array<Promotion> = [];
             try {
                 const next_promotion_id = await get_next_promotion_id([]);
-                console.log(next_promotion_id);
                 for (let i = 0; i < next_promotion_id; i++) {
                     const promotion = await get_promotion([i]);
                     promotions.push({

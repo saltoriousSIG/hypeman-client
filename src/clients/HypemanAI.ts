@@ -25,15 +25,39 @@ interface ValidationResult {
 }
 
 export class HypemanAI {
+  private static instance: HypemanAI;
+  private initPromise: Promise<void> | null = null;
   private fastModel;
   private qualityModel;
   private user_casts: Cast[];
+  private username: string;
 
-  constructor() {
+  constructor(fid: number, username: string) {
     // Initialize models for two-tier system
     this.fastModel = anthropic("claude-3-5-haiku-latest");
     this.qualityModel = openai("gpt-5");
     this.user_casts = [];
+    this.username = username;
+    this.initPromise = this.init(fid);
+  }
+
+  public static async getInstance(
+    fid: number,
+    username: string
+  ): Promise<HypemanAI> {
+    if (!HypemanAI.instance) {
+      HypemanAI.instance = new HypemanAI(fid, username);
+    }
+    await HypemanAI.instance.initPromise;
+    return HypemanAI.instance;
+  }
+
+  private async init(fid: number): Promise<void> {
+    try {
+      await this.fetchUserCasts(fid);
+    } catch (e: any) {
+      throw new Error("Failed to initialize HypemanAI: " + e.message);
+    }
   }
 
   /**
@@ -79,40 +103,52 @@ export class HypemanAI {
    * Build voice learning prompt from user's cast history
    */
   buildVoiceLearningPrompt(
-    casts: Cast[],
-    fcUsername: string,
-    promotionName: string,
-    promotionDescription: string,
-    promotionUrl: string
+    promotionContent: string,
+    promotionAuthor: string,
+    embedContext: { type: string; value: string }[]
   ) {
     return [
       {
         role: "system" as const,
         content: `
-You are ${fcUsername} on farcaster. Study how you actually write from these examples Write EXACTLY like these examples, including any slang, casual language, or edgy expressions:
+You are ${this.username} on farcaster. Study how you actually write from these examples Write EXACTLY like these examples, including any slang, casual language, or edgy expressions:
 
-${casts.map((cast, i) => `${i + 1}. ${cast.text}`).join("\n\n")}
+${this.user_casts.map((cast, i) => `${i + 1}. ${cast.text}`).join("\n\n")}
 
 You're NOT promoting anything. You're just casually mentioning something you tried.
 don't sanitize or clean up their voice.
-Important: Use their authentic vocabulary from the examples above, even if it's casual, edgy, or unconventional. Don't tone down their voice
+IMPORTANT: Use their authentic vocabulary from the examples above, even if it's casual, edgy, or unconventional. Don't tone down their voice
+IMPORTANT: Avoid inherently cheezy promotional language, identify the nuances to their writing style and emulate it accurately
+IMPORTANT: Avoid using language that is directly in the promotional cast. be creative and use your own words while still matching their style and energy
+
        `,
       },
       {
         role: "user" as const,
         content: `
-You tried this app: ${promotionName}
-Description: ${promotionDescription}
-${promotionUrl}
+You're casually mentioning something you tried. Don't promote or sell - just mention it naturally.
 
-Just mention it casually. Don't try to get them to do anything. Under 280 chars
-If the url is provide it, be sure to naturally include it in the cast.
+CONTEXT:
+Cast Content: ${promotionContent}
+Cast Author: ${promotionAuthor}
+${embedContext && embedContext.length > 0 ? `Additional Context:\n${embedContext.map((e) => `- ${e.type}: ${e.value}`).join("\n")}` : ""}
+
+${embedContext.some((x) => x.type === "url") ? `URL: ${embedContext.find((x) => x.type === "url")?.value}` : ""}
+
+RULES:
+- Under 280 characters
+- Match their exact language style and energy from the examples
+- Naturally include the URL if provided
+- Use correct spelling and grammar (even if examples don't)
+- Stay focused on the topic while using their authentic voice
 
 IMPORTANT Write about the app/promotion while matching their exact language style and vocabulary from the examples. Stay focused on the topic but use their authentic voice. use curse words if I use them alot in my other posts
 
 IMPORTANT! only output the cast and nothing else, do not include any of your thinking or reasoning
 
 IMPORTANT, use correct spelling and grammer, even if you don't in your example casts
+
+IMPORTANT: Avoid using language that is directly in the promotional cast. be creative and use your own words while still matching their style and energy
 `,
       },
     ];
@@ -123,18 +159,12 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
    * Fetches user casts and generates content quickly
    */
   async generateInitialCast(
-    fid: number,
-    username: string,
-    promotionName: string,
-    promotionDescription: string,
-    promotionUrl: string,
-    _promotionCast?: string,
+    promotionContent: string,
+    promotionAuthor: string,
+    embedContext: { type: string; value: string }[],
     options?: GenerationOptions
   ): Promise<GenerationResult> {
     try {
-      // Fetch and prepare user's cast history
-      await this.fetchUserCasts(fid);
-
       if (this.user_casts.length === 0) {
         return {
           success: false,
@@ -144,11 +174,9 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
       }
 
       const messages = this.buildVoiceLearningPrompt(
-        this.user_casts,
-        username,
-        promotionName,
-        promotionDescription,
-        promotionUrl
+        promotionContent,
+        promotionAuthor,
+        embedContext
       );
 
       const result = await generateText({
@@ -180,17 +208,14 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
    * Uses cached cast data and Claude for better voice mimicry
    */
   async refineCast(
-    username: string,
-    promotionName: string,
-    promotionDescription: string,
-    promotionUrl: string,
-    previousCast: string,
+    promotionContent: string,
+    promotionAuthor: string,
+    embedContext: { type: string; value: string }[],
     userFeedback: string,
-    _promotionCast?: string,
+    previousCast: string,
     options?: GenerationOptions
   ): Promise<GenerationResult> {
     try {
-      // Use cached cast data for refinement
       if (this.user_casts.length === 0) {
         return {
           success: false,
@@ -200,24 +225,24 @@ IMPORTANT, use correct spelling and grammer, even if you don't in your example c
       }
 
       const baseMessages = this.buildVoiceLearningPrompt(
-        this.user_casts,
-        username,
-        promotionName,
-        promotionDescription,
-        promotionUrl
+        promotionContent,
+        promotionAuthor,
+        embedContext
       );
 
       const messages = [
         ...baseMessages,
         {
           role: "assistant" as const,
-          content: previousCast,
+          content: `
+          This is the previous cast your generated: ${previousCast}
+          I will provide you feed back and I want you to revise the cast to better match my voice and address the feedback.
+          `,
         },
         {
           role: "user" as const,
           content: `Please revise this cast based on my feedback: "${userFeedback}"
-
-Make it sound more authentic to my voice while addressing the feedback. Keep under 280 characters and maintain the promotional intent.`,
+          Make it sound more authentic to my voice while addressing the feedback. Keep under 280 characters and maintain the promotional intent.`,
         },
       ];
 
@@ -250,12 +275,10 @@ Make it sound more authentic to my voice while addressing the feedback. Keep und
    * Generate multiple variations for A/B testing
    */
   async generateVariations(
-    username: string,
     count: number = 3,
-    promotionName: string,
-    promotionDescription: string,
-    promotionUrl: string,
-    _promotionCast?: string
+    promotionContent: string,
+    promotionAuthor: string,
+    embedContext: { type: string; value: string }[]
   ): Promise<GenerationResult[]> {
     const variations: GenerationResult[] = [];
 
@@ -274,11 +297,9 @@ Make it sound more authentic to my voice while addressing the feedback. Keep und
     for (let i = 0; i < count; i++) {
       try {
         const messages = this.buildVoiceLearningPrompt(
-          this.user_casts,
-          username,
-          promotionName,
-          promotionDescription,
-          promotionUrl
+          promotionContent,
+          promotionAuthor,
+          embedContext
         );
 
         const result = await generateText({

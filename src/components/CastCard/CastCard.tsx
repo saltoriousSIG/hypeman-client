@@ -4,20 +4,17 @@ import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2, X } from "lucide-react"
+import axios from "axios";
 
 interface CastCardProps {
     promotion: any
     cast_text: string
-    isAuthenticated: boolean
-    handleShowLoginModal: (state: boolean) => void
     pricing: number
 }
 
 const CastCard: React.FC<CastCardProps> = ({
     promotion,
     cast_text,
-    isAuthenticated,
-    handleShowLoginModal,
     pricing,
 }) => {
     console.log(promotion)
@@ -41,12 +38,6 @@ const CastCard: React.FC<CastCardProps> = ({
     const handleReroll = () => {
         console.log(`[v0] Rerolling promotion ${promotion.id} with notes: ${rerollNotes}`)
         setIsLoadingText(true)
-        // Simulate AI generation
-        setTimeout(() => {
-            setIsLoadingText(false)
-            setShowRerollInput(false)
-            setRerollNotes("")
-        }, 2000)
     }
 
     const handleCancelReroll = () => {

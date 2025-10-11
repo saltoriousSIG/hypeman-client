@@ -78,6 +78,13 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
         connect({
             connector: connectors[0]
         });
+        const load = async () => {
+            const result = await sdk.actions.signIn({
+                nonce: Math.random().toString(36).substring(2, 15)
+            });
+            console.log("Signed in with Farcaster!", { result });
+        }
+        load();
     }, [])
 
 

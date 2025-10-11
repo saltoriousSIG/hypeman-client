@@ -11,6 +11,7 @@ import { getUserStats } from "../src/lib/getUserStats.js";
 import { calculateUserScore } from "../src/lib/calculateUserScore.js";
 import { parseUnits } from "viem";
 import { RedisClient } from "../src/clients/RedisClient.js";
+import { withHost } from "../middleware/withHost.js";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
@@ -49,7 +50,7 @@ interface SignIntentResponse {
 
 //TODO:
 // Vercel API Route Handler
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow POST requests
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -160,3 +161,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 }
+
+export default withHost(handler);

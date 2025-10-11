@@ -1,7 +1,8 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
 import axios from "axios";
+import { withHost } from "../middleware/withHost.js";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -16,16 +17,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     );
     return res.status(200).json({
-      users: data.users.map((u: { user: { fid: number; display_name: string; username: string; pfp_url: string; follower_count: number } }) => ({
-        id: u.user.fid,
-        name: u.user.display_name,
-        handle: u.user.username,
-        avatar: u.user.pfp_url,
-        followers: u.user.follower_count,
-      })),
+      users: data.users.map(
+        (u: {
+          user: {
+            fid: number;
+            display_name: string;
+            username: string;
+            pfp_url: string;
+            follower_count: number;
+          };
+        }) => ({
+          id: u.user.fid,
+          name: u.user.display_name,
+          handle: u.user.username,
+          avatar: u.user.pfp_url,
+          followers: u.user.follower_count,
+        })
+      ),
       cursor: data.next.cursor,
     });
   } catch (e: any) {
     res.status(500).json({ error: "Error processing cast" });
   }
 }
+
+export default withHost(handler);
