@@ -4,8 +4,8 @@ import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Share, Bell, Check } from "lucide-react";
 import { Badge } from "../ui/badge";
-import axios from "axios";
 import { useFrameContext } from "@/providers/FrameProvider";
+import useAxios from "@/hooks/useAxios";
 
 interface ShareModalProps {
     showShareModal: boolean;
@@ -30,8 +30,8 @@ const ShareModal: React.FC<ShareModalProps> = ({ showShareModal, handleShowShare
         username: `@${string}`
     }>>([]);
     const [cursor, setCursor] = useState<string>();
-
     const { fUser } = useFrameContext();
+    const axios = useAxios();
     useEffect(() => {
         return () => {
             setSelectedFollowers([])
@@ -44,7 +44,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ showShareModal, handleShowShare
         const load = async () => {
             try {
                 const { data } = await axios.post(`/api/fetch_user_followers`, {
-                    fid: fUser.fid
+                    cursor: null
                 });
                 setUserFollowers(data.users);
                 setCursor(data.cursor);

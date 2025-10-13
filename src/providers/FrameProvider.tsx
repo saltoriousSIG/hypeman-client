@@ -1,10 +1,9 @@
 import { createContext, useEffect, useState, useContext, useCallback } from "react";
 import sdk from "@farcaster/frame-sdk";
 import { MiniAppSDK } from "@farcaster/miniapp-sdk/dist/types";
-import { useAccount, useCall, useConnect } from "wagmi";
+import { useAccount, useConnect } from "wagmi";
 import { Cast } from "@neynar/nodejs-sdk/build/api";
-import { getUserStats } from "@/lib/getUserStats";
-import axios from "axios";
+
 
 
 type ConnectedUserData = {
@@ -22,14 +21,14 @@ interface FrameContextValue {
     errors: Record<string, Error> | null;
     context: Awaited<MiniAppSDK['context']> | null;
     fUser: Awaited<MiniAppSDK['context']>['user'] | null;
-    connectedUserData: ConnectedUserData | null;
     address: string | undefined;
     isConnected: boolean | undefined;
     handleAddFrame: () => Promise<void>;
     handleSetIsFrameAdding: (state: boolean) => void;
-    handleSignin: () => Promise<void>;
+    handleSignin: () => Promise<any>;
     isFrameAdded: boolean;
     isFrameAdding: boolean;
+    isAuthenticated: boolean;
     connect: Function;
 }
 
@@ -47,10 +46,9 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
     const [errors, setErrors] = useState<Record<string, Error> | null>(null);
     const [context, setContext] = useState<Awaited<MiniAppSDK['context']> | null>(null);
     const [fUser, setFUser] = useState<Awaited<MiniAppSDK['context']>['user'] | null>(null);
-    const [connectedUserData, setConnectedUserData] = useState<ConnectedUserData | null>(null);
-
     const [isFrameAdded, setIsframeAdded] = useState<boolean>(false);
     const [isFrameAdding, setIsFrameAdding] = useState<boolean>(false)
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
     const { isConnected, address } = useAccount();
     const { connect, connectors } = useConnect();
@@ -102,48 +100,40 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
         load()
     }, []);
 
-    useEffect(() => {
-        if (!fUser) return;
-        const load = async () => {
-            try {
-                const { score, follower_count, avgLikes, avgRecasts, avgReplies, casts } = await getUserStats(fUser.fid);
-                const { data: castsData } = await axios.post("/api/fetch_user_casts", {
-                    fid: fUser.fid
-                });
-                const nextCursor = castsData.next?.cursor || null;
-
-                setConnectedUserData({
-                    score,
-                    follower_count,
-                    avgLikes,
-                    avgRecasts,
-                    avgReplies,
-                    casts,
-                    nextCursor
-                });
-            } catch (e: any) {
-                setErrors({
-                    ...errors,
-                    load: new Error("Could not load user data")
-                });
-            }
-        }
-        load();
-    }, [fUser]);
-
     const handleSignin = useCallback(async () => {
-        const response = await sdk.actions.signIn({
-            nonce: `${Math.floor(Date.now() / 1000) + 3600}`, // 1 hour from now
-        });
-        localStorage.setItem("auth_signature", response.signature);
-        console.log("Signed in:", response);
-    }, []);
+        try {
+            // probably check if the signature is still valid here
+            const response = await sdk.actions.signIn({
+                nonce: `${address}`, // 1 hour from now
+            });
+            localStorage.setItem("signature", response.signature);
+            localStorage.setItem("message", response.message);
+            setIsAuthenticated(true);
+            return response.signature;
+        } catch (e: any) {
+            return null
+        }
+    }, [address, fUser]);
+
+    useEffect(() => {
+        if (!address || !fUser) return;
+        const storage_signature = localStorage.getItem("signature");
+        const storage_message = localStorage.getItem("message");
+        // should check if this is still valid;
+        if (!storage_signature || !storage_message) {
+            const result = handleSignin();
+            if (!result) {
+                setIsAuthenticated(false);
+            }
+        } else {
+            setIsAuthenticated(true);
+        }
+    }, [handleSignin, address, fUser])
 
     return (
         <FrameSDKContext.Provider value={{
             errors,
             fUser,
-            connectedUserData,
             context,
             address,
             handleAddFrame,
@@ -152,6 +142,7 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
             isFrameAdded,
             isFrameAdding,
             isConnected,
+            isAuthenticated,
             connect
         }}>
             {children}

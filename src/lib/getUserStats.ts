@@ -1,42 +1,47 @@
 import axios from "axios";
 
-export const getUserStats = async (fid: number, host?: string) => {
+export const getUserStats = async (fid: number) => {
   try {
-    const { data } = await axios.post(
-      host ? `${host}/api/fetch_user` : "/api/fetch_user",
+    const { data } = await axios.get(
+      `https://api.neynar.com/v2/farcaster/user/bulk?fids=${fid}`,
       {
-        fid,
+        headers: {
+          "x-api-key": process.env.NEYNAR_API_KEY as string,
+        },
       }
     );
-    const { data: casts } = await axios.post(
-      host ? `${host}/api/fetch_user_casts` : "/api/fetch_user_casts",
-      {
-        fid,
-      }
-    );
-    const castsLength = casts.casts.length || 1;
+    let url = `https://api.neynar.com/v2/farcaster/feed/user/casts/?limit=25&include_replies=false&fid=${fid}`;
+    const {
+      data: { casts },
+    } = await axios.get(url, {
+      headers: {
+        "x-api-key": process.env.NEYNAR_API_KEY as string,
+      },
+    });
+    const castsLength = casts.length || 1;
     const avgLikes =
-      casts.casts.reduce((acc: any, curr: any) => {
+      casts.reduce((acc: any, curr: any) => {
         return acc + (curr.reactions?.likes_count ?? 0);
       }, 0) / castsLength;
     const avgRecasts =
-      casts.casts.reduce((acc: any, curr: any) => {
+      casts.reduce((acc: any, curr: any) => {
         return acc + (curr.reactions?.recasts_count ?? 0);
       }, 0) / castsLength;
     const avgReplies =
-      casts.casts.reduce((acc: any, curr: any) => {
+      casts.reduce((acc: any, curr: any) => {
         return acc + (curr.replies?.count ?? 0);
       }, 0) / castsLength;
 
     return {
-      score: data.user.score,
-      follower_count: data.user.follower_count,
+      score: data.users[0].score,
+      follower_count: data.users[0].follower_count,
       avgLikes,
       avgRecasts,
       avgReplies,
       casts: casts.casts,
     };
   } catch (e: any) {
+    console.log(e);
     throw new Error(e.message);
   }
 };

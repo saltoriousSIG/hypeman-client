@@ -1,23 +1,25 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
+import { ExtendedVercelRequest } from "../src/types/request.type.js";
 import { HypemanAI } from "../src/clients/HypemanAI.js";
 import { RedisClient } from "../src/clients/RedisClient.js";
 import axios from "axios";
 import { withHost } from "../middleware/withHost.js";
+import { validateSignature } from "../middleware/validateSignature.js";
 
 const redisClient = new RedisClient(process.env.REDIS_URL as string);
 
-async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
   try {
-    const { fid, username, promotions } = req.body;
-    const hypeman_ai = await HypemanAI.getInstance(fid, username);
+    const { username, promotions } = req.body;
+    const hypeman_ai = await HypemanAI.getInstance(req.fid as number, username);
     const user_casts: any = [];
 
     for (const promotion of promotions) {
       const user_cast_data = await redisClient.get(
-        `user_cast:${fid}:${promotion.id}`
+        `user_cast:${req.fid}:${promotion.id}`
       );
       if (!user_cast_data) {
         const { data } = await axios.get(
@@ -58,7 +60,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
           cast_embed_context: embed_context,
         };
         await redisClient.set(
-          `user_cast:${fid}:${promotion.id}`,
+          `user_cast:${req.fid}:${promotion.id}`,
           JSON.stringify(cast_obj)
         );
         user_casts.push(cast_obj);
@@ -78,4 +80,4 @@ async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default withHost(handler);
+export default withHost(validateSignature(handler));

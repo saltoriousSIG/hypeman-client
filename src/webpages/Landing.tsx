@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Settings, BarChart3 } from "lucide-react"
 import { NavLink } from "react-router-dom";
 import { useFrameContext } from "@/providers/FrameProvider";
@@ -9,17 +9,13 @@ import Footer from "@/components/Footer/Footer";
 import useGetPostPricing from "@/hooks/useGetPostPricing";
 import { useData } from "@/providers/DataProvider";
 import { Button } from "@/components/ui/button";
-
-
+import axios from 'axios';
 
 export default function HomePage() {
-    const { fUser, handleSignin } = useFrameContext();
+    const { fUser, isAuthenticated, address } = useFrameContext();
 
     const [activeTab, setActiveTab] = useState<"active" | "completed">("active")
-    const [isAuthenticated, setIsAuthenticated] = useState(false)
     const [showLoginModal, setShowLoginModal] = useState(false)
-    const [signerApprovalUrl, setSignerApprovalUrl] = useState<string>();
-    const [signature, setSignature] = useState<string | null>(null);
 
     const { promotions, promotion_casts } = useData();
 
@@ -28,6 +24,7 @@ export default function HomePage() {
     const handleShowLoginModal = (state: boolean) => {
         setShowLoginModal(state);
     }
+
 
     const completedPromotions = [
         {
@@ -62,6 +59,32 @@ export default function HomePage() {
         },
     ]
 
+    useEffect(() => {
+        if (!isAuthenticated) {
+            setShowLoginModal(true);
+        } else {
+            setShowLoginModal(false);
+        }
+    }, [isAuthenticated]);
+
+    const testSignature = async () => {
+        console.log("Testing signature...");
+        console.log(localStorage.getItem("signature"), "signature in local storage");
+        console.log(localStorage.getItem("message"), "message in local storage");
+        try {
+            await axios.get(`/api/is_valid_signature`, {
+                headers: {
+                    "x-fc-message": btoa(localStorage.getItem("message") as string) || "",
+                    "x-fc-signature": localStorage.getItem("signature") || "",
+                    "x-fc-nonce": address || ""
+                }
+            })
+
+        } catch (e: any) {
+            throw new Error("Error testing signature: " + e.message)
+        }
+    }
+
 
     return (
         <div className="min-h-screen bg-black text-white pb-20 relative overflow-hidden">
@@ -89,6 +112,8 @@ export default function HomePage() {
                         <Settings className="w-4 h-4 text-white/60" />
                     </button>
                 </NavLink>
+
+                <Button onClick={testSignature}>Test</Button>
             </header>
 
             <div className="px-4 space-y-4 relative z-10">
@@ -109,13 +134,6 @@ export default function HomePage() {
                         <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-500/20 to-green-400/20 text-green-400 px-6 py-2 rounded-full text-sm font-semibold border border-green-400/20">
                             ${1000} earned
                         </div>
-                        <Button onClick={async () => {
-                            await handleSignin();
-                            const signature = localStorage.getItem("auth_signature");
-                            setSignature(signature);
-                        }}>signin</Button>
-
-                        <span>{signature}</span>
                     </div>
                 )}
 
@@ -175,7 +193,7 @@ export default function HomePage() {
                 )}
             </div>
 
-            <LoginModal signerApprovalUrl={signerApprovalUrl} showLoginModal={showLoginModal} handleShowLoginModal={handleShowLoginModal} />
+            <LoginModal showLoginModal={showLoginModal} handleShowLoginModal={handleShowLoginModal} />
 
             <Footer />
         </div>

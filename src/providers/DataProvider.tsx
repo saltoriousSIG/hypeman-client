@@ -2,7 +2,7 @@ import { useContext, createContext, useEffect, useState, useCallback } from "rea
 import useContract, { ExecutionType } from "@/hooks/useContract";
 import { DIAMOND_ADDRESS } from "@/lib/utils";
 import { useFrameContext } from "./FrameProvider";
-import axios from "axios";
+import useAxios from "@/hooks/useAxios";
 
 export enum PromotionState {
     ACTIVE,     // Promotion is live and can receive posts
@@ -54,6 +54,7 @@ export function useData() {
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
     const { fUser } = useFrameContext();
+    const axios = useAxios();
 
     const [promotions, setPromotions] = useState<Array<Promotion>>([]);
     const [promotionCasts, setPromotionCasts] = useState<Record<string, PromotionCasts>>({});
@@ -98,7 +99,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             try {
                 const casts_obj: any = {}
                 const { data: { user_casts } } = await axios.post('/api/get_user_promotions', {
-                    fid: fUser.fid,
                     username: fUser.username,
                     promotions
                 });

@@ -3,13 +3,13 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2, X } from "lucide-react"
 import { useFrameContext } from "@/providers/FrameProvider"
-import axios from "axios";
 import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css'
 import useContract, { ExecutionType } from "@/hooks/useContract"
 import { Button } from "../ui/button"
 import { extractUrls } from "@/lib/utils"
 import sdk from "@farcaster/frame-sdk"
+import useAxios from "@/hooks/useAxios"
 
 interface CastCardProps {
     promotion: any
@@ -35,7 +35,6 @@ const CastCard: React.FC<CastCardProps> = ({
     const [isPosting, setIsPosting] = useState(false)
     const sliderRef = useRef<HTMLDivElement>(null)
     const startXRef = useRef(0)
-
     const [isLoading, setIsLoading] = useState(false)
     const [rerolledCast, setRerolledCast] = useState<string | null>(null)
     const [rerollNotes, setRerollNotes] = useState("")
@@ -43,6 +42,8 @@ const CastCard: React.FC<CastCardProps> = ({
     const [intent, setIntent] = useState<any | null>(null)
     const [submittedIntents, setSubmittedIntents] = useState<any[]>([])
     const [isLoadingIntent, setIsLoadingIntent] = useState(false)
+
+    const axios = useAxios();
 
     const { fUser, address } = useFrameContext();
 
@@ -61,7 +62,6 @@ const CastCard: React.FC<CastCardProps> = ({
         try {
             setIsLoading(true)
             const { data } = await axios.post("/api/reroll_promotion_cast", {
-                fid: fUser.fid,
                 username: fUser.username,
                 promotionId: promotion.id,
                 previousCast: cast_text,
@@ -95,7 +95,6 @@ const CastCard: React.FC<CastCardProps> = ({
             // Store the promise so we can await it later
             intentPromiseRef.current = axios.post("/api/generate_intent_signature", {
                 promotion_id: promotion.id,
-                fid: fUser?.fid,
                 wallet: address
             })
                 .then((res) => {
@@ -157,6 +156,12 @@ const CastCard: React.FC<CastCardProps> = ({
                 embeds,
             });
             console.log(response);
+            if (response.cast === null) {
+                // decide what to do here, do i add bytes string now or let the intent timeout
+            } else {
+                console.log(response.cast);
+                // Add to submitted intents 
+            }
         }, [rerolledCast, cast_text, promotion.cast_url]
     )
 
@@ -173,8 +178,7 @@ const CastCard: React.FC<CastCardProps> = ({
             // Otherwise, wait for the promise to resolve
             if (intentPromiseRef.current) {
                 const intentData = await intentPromiseRef.current
-                console.log(intentData);
-                // await submit_intent([intentData.intent, intentData.signature]);
+                await submit_intent([intentData.intent, intentData.signature]);
             } else {
                 throw new Error("No intent available")
             }
@@ -234,7 +238,7 @@ const CastCard: React.FC<CastCardProps> = ({
         if (!fUser) return;
         const load = async () => {
             try {
-                const { data } = await axios.post("/api/fetch_intents", { promotion_id: promotion.id, fid: fUser?.fid });
+                const { data } = await axios.post("/api/fetch_intents", { promotion_id: promotion.id });
                 console.log("Fetched existing intents:", data.intents);
                 setSubmittedIntents(data.intents || [])
             } catch (e: any) {
@@ -242,8 +246,6 @@ const CastCard: React.FC<CastCardProps> = ({
             }
         }
         load();
-
-
     }, [fUser, promotion.id]);
 
 

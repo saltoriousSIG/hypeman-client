@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import axios from "axios";
 import { Cast } from "@neynar/nodejs-sdk/build/api";
+import useAxios from "./useAxios";
 
 interface FetchUserCastsResponse {
   casts: Cast[];
@@ -20,6 +20,7 @@ interface UseUserCastsParams {
  * @param enabled - Whether the query should be enabled (default: true)
  */
 export function useUserCasts({ fid, enabled = true }: UseUserCastsParams) {
+  const axios = useAxios();
   return useInfiniteQuery<
     FetchUserCastsResponse,
     Error,
@@ -32,7 +33,6 @@ export function useUserCasts({ fid, enabled = true }: UseUserCastsParams) {
       const { data } = await axios.post<FetchUserCastsResponse>(
         "/api/fetch_user_casts",
         {
-          fid,
           cursor: pageParam,
         }
       );
@@ -45,4 +45,3 @@ export function useUserCasts({ fid, enabled = true }: UseUserCastsParams) {
     gcTime: 1000 * 60 * 30, // Keep unused data in cache for 30 minutes
   });
 }
-

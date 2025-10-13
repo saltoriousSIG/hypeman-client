@@ -1,9 +1,9 @@
-import { useFrameContext } from "@/providers/FrameProvider";
 import { useMemo } from "react";
 import { calculateUserScore } from "@/lib/calculateUserScore";
+import { useUserStats } from "@/providers/UserStatsProvider";
 
 const useGetPostPricing = () => {
-  const { connectedUserData } = useFrameContext();
+  const { connectedUserData } = useUserStats();
 
   const pricePerPost = useMemo(() => {
     if (!connectedUserData) return 0;

@@ -1,15 +1,17 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
+import { VercelResponse } from "@vercel/node";
+import { ExtendedVercelRequest } from "../src/types/request.type.js";
 import axios from "axios";
 import { withHost } from "../middleware/withHost.js";
+import { validateSignature } from "../middleware/validateSignature.js";
 
-async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
   try {
-    const { fid, cursor } = req.body;
+    const { cursor } = req.body;
     const { data } = await axios.get(
-      `https://api.neynar.com/v2/farcaster/followers/?limit=20&fid=${fid}${cursor ? `&cursor=${cursor}` : ``}`,
+      `https://api.neynar.com/v2/farcaster/followers/?limit=20&fid=${req.fid}${cursor ? `&cursor=${cursor}` : ``}`,
       {
         headers: {
           "x-api-key": process.env.NEYNAR_API_KEY as string,
@@ -41,4 +43,4 @@ async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default withHost(handler);
+export default withHost(validateSignature(handler));

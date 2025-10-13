@@ -31,7 +31,7 @@ import { useCastQuoteCount } from "@/hooks/useCastQuoteCount"
 import { useUserCasts } from "@/hooks/useUserCasts"
 
 export default function BuyersPage() {
-    const { address, fUser, connectedUserData } = useFrameContext();
+    const { address, fUser } = useFrameContext();
 
     const [selectedCast, setSelectedCast] = useState<Cast | null>(null);
     const [budget, setBudget] = useState<number>(10);

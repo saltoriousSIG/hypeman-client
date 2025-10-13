@@ -2,13 +2,14 @@ import { VercelRequest, VercelResponse } from "@vercel/node";
 import { HypemanAI } from "../src/clients/HypemanAI.js";
 import { RedisClient } from "../src/clients/RedisClient.js";
 import { withHost } from "../middleware/withHost.js";
+import { ExtendedVercelRequest } from "../src/types/request.type.js";
+import { validateSignature } from "../middleware/validateSignature.js";
 
 const redisClient = new RedisClient(process.env.REDIS_URL as string);
 
-async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
   try {
     const {
-      fid,
       username,
       promotionId,
       previousCast,
@@ -18,7 +19,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
       userFeedback,
     } = req.body;
 
-    const hypeman_ai = await HypemanAI.getInstance(fid, username);
+    const hypeman_ai = await HypemanAI.getInstance(req.fid as number, username);
 
     const cast = await hypeman_ai.refineCast(
       promotionContent,
@@ -37,7 +38,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     await redisClient.set(
-      `user_cast:${fid}:${promotionId}`,
+      `user_cast:${req.fid}:${promotionId}`,
       JSON.stringify(cast_obj)
     );
 
@@ -49,4 +50,4 @@ async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default withHost(handler);
+export default withHost(validateSignature(handler));

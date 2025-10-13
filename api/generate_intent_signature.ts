@@ -1,4 +1,5 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
+import { VercelResponse } from "@vercel/node";
+import { ExtendedVercelRequest } from "../src/types/request.type.js";
 import {
   encodeAbiParameters,
   hexToBytes,
@@ -16,6 +17,7 @@ import { RedisClient } from "../src/clients/RedisClient.js";
 import { withHost } from "../middleware/withHost.js";
 import { v4 as uuidv4 } from "uuid";
 import { randomBytes } from "crypto";
+import { validateSignature } from "../middleware/validateSignature.js";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
@@ -33,8 +35,6 @@ interface Intent {
 interface SignIntentRequest {
   promotion_id: string;
   wallet: string;
-  fid: string;
-  fee: string;
   expiry?: number; // Optional, can be auto-generated
   nonce?: string; // Optional, can be auto-generated
 }
@@ -56,7 +56,7 @@ interface SignIntentResponse {
 
 //TODO:
 // Vercel API Route Handler
-async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
   // Only allow POST requests
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -64,16 +64,15 @@ async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const body: SignIntentRequest = req.body;
-
     // Validate required fields
-    if (!body.promotion_id || !body.wallet || !body.fid) {
+    if (!body.promotion_id || !body.wallet) {
       return res.status(400).json({
-        error: "Missing required fields: promotion_id, wallet, fid, fee",
+        error: "Missing required fields: promotion_id, wallet",
       });
     }
 
     const { score, follower_count, avgLikes, avgRecasts, avgReplies } =
-      await getUserStats(parseInt(body.fid), process.env.SITE_HOST);
+      await getUserStats(req.fid as number);
     const fee = calculateUserScore(
       score,
       follower_count,
@@ -112,7 +111,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
       intentHash: hash,
       promotion_id: BigInt(body.promotion_id),
       wallet: body.wallet as Address,
-      fid: BigInt(body.fid),
+      fid: BigInt(req.fid as number),
       fee: parseUnits(`${fee}`, 6),
       expiry: expiry,
       nonce: BigInt(signature_nonce ? parseInt(signature_nonce) : 0),
@@ -175,4 +174,4 @@ async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default withHost(handler);
+export default withHost(validateSignature(handler));

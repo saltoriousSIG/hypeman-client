@@ -81,6 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             expiry: decoded.args.expiry.toString(),
             nonce: decoded.args.nonce.toString(),
             timestamp: decoded.args.timestamp.toString(),
+            intentHash: decoded.args.intentHash,
           })
         );
       }
