@@ -2,9 +2,7 @@ import { VercelResponse } from "@vercel/node";
 import { ExtendedVercelRequest } from "../src/types/request.type.js";
 import {
   encodeAbiParameters,
-  hexToBytes,
   keccak256,
-  stringToBytes,
   toHex,
   type Address,
   type Hex,
@@ -18,19 +16,11 @@ import { withHost } from "../middleware/withHost.js";
 import { v4 as uuidv4 } from "uuid";
 import { randomBytes } from "crypto";
 import { validateSignature } from "../middleware/validateSignature.js";
+import { Intent } from "../src/types/intents.type.js";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
 // Types matching your Solidity struct
-interface Intent {
-  intentHash: Hex;
-  promotion_id: bigint;
-  wallet: Address;
-  fid: bigint;
-  fee: bigint;
-  expiry: bigint;
-  nonce: bigint;
-}
 
 interface SignIntentRequest {
   promotion_id: string;
@@ -40,15 +30,7 @@ interface SignIntentRequest {
 }
 
 interface SignIntentResponse {
-  intent: {
-    promotion_id: string;
-    wallet: string;
-    intentHash: string;
-    fid: string;
-    fee: string;
-    expiry: string;
-    nonce: string;
-  };
+  intent: Intent;
   signature: Hex;
   messageHash: Hex;
   intent_hash: Hex;
@@ -95,6 +77,8 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       ? BigInt(body.expiry)
       : BigInt(Math.floor(Date.now() / 1000 + 3600));
 
+    console.log(expiry, "expiry");
+
     const signature_nonce = await redis.get(`signature_nonce`);
 
     if (!signature_nonce) {
@@ -131,12 +115,12 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       ],
       [
         intent.intentHash,
-        intent.promotion_id,
+        intent.promotion_id as bigint,
         intent.wallet,
-        intent.fid,
-        intent.fee,
-        intent.expiry,
-        intent.nonce,
+        intent.fid as bigint,
+        intent.fee as bigint,
+        intent.expiry as bigint,
+        intent.nonce as bigint,
       ]
     );
 

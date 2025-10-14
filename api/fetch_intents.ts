@@ -21,7 +21,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
     const { promotion_id } = req.body;
     const list = await redis.lrange(`intent:${promotion_id}`, 0, -1);
     res.status(200).json({
-      intents: list.filter((i: any) => parseInt(i.fid) === req.fid || !req.fid),
+      intents: list.find((i: any) => parseInt(i.fid) === req.fid || !req.fid),
     });
   } catch (e: any) {
     console.log("Error fetching intents:", e);

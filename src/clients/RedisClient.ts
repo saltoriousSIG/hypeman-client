@@ -99,6 +99,10 @@ export class RedisClient {
     return await this.redis.lpush(key, ...encrypted);
   }
 
+  async lset(key: string, index: number, value: any): Promise<"OK"> {
+    return await this.redis.lset(key, index, this.encrypt(value));
+  }
+
   async rpush(key: string, ...values: any[]): Promise<number> {
     const encrypted = values.map((v) => this.encrypt(v));
     return await this.redis.rpush(key, ...encrypted);
@@ -112,6 +116,10 @@ export class RedisClient {
   async lpop(key: string): Promise<any> {
     const result = await this.redis.lpop(key);
     return this.decrypt(result);
+  }
+
+  async lrem(key: string, count: number, value: any): Promise<number> {
+    return await this.redis.lrem(key, count, this.encrypt(value));
   }
 
   async rpop(key: string): Promise<any> {

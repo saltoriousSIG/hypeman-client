@@ -39,9 +39,10 @@ const CastCard: React.FC<CastCardProps> = ({
     const [rerolledCast, setRerolledCast] = useState<string | null>(null)
     const [rerollNotes, setRerollNotes] = useState("")
     const [showRerollInput, setShowRerollInput] = useState(false)
-    const [intent, setIntent] = useState<any | null>(null)
-    const [submittedIntents, setSubmittedIntents] = useState<any[]>([])
-    const [isLoadingIntent, setIsLoadingIntent] = useState(false)
+    const [intent, setIntent] = useState<any | null>();
+    const [isLoadingIntent, setIsLoadingIntent] = useState(false);
+    const [postSubmitted, setPostSubmitted] = useState(false);
+    const [promoterDetails, setPromoterDetails] = useState<any | null>(null);
 
     const axios = useAxios();
 
@@ -50,8 +51,11 @@ const CastCard: React.FC<CastCardProps> = ({
     const intentPromiseRef = useRef<Promise<any> | null>(null)
 
     const submit_intent = useContract(ExecutionType.WRITABLE, "Intents", "submitIntent");
+    const get_promoter_details = useContract(ExecutionType.READABLE, "Data", "getPromoterDetails");
+    const claim = useContract(ExecutionType.WRITABLE, "Claim", "claim");
 
     const handleTap = () => {
+        if (promotion.intent?.castHash) return;
         if (!showRerollInput && !isPosting) {
             setShowRerollInput(true)
         }
@@ -59,6 +63,7 @@ const CastCard: React.FC<CastCardProps> = ({
 
     const handleReroll = async () => {
         if (!fUser) return;
+        if (promotion.intent.castHash) return;
         try {
             setIsLoading(true)
             const { data } = await axios.post("/api/reroll_promotion_cast", {
@@ -144,25 +149,27 @@ const CastCard: React.FC<CastCardProps> = ({
 
     const handlePostCast = useCallback(
         async (e?: React.MouseEvent) => {
-            console.log(rerolledCast, cast_text, promotion.cast_url);
             if (!rerolledCast && !cast_text) return;
             e?.stopPropagation();
             // Post cast logic here
-            console.log(rerolledCast || cast_text);
             const { text, urls } = extractUrls(rerolledCast || cast_text);
             const embeds: any = [...urls, promotion.cast_url]
             const response = await sdk.actions.composeCast({
                 text,
                 embeds,
             });
-            console.log(response);
             if (response.cast === null) {
                 // decide what to do here, do i add bytes string now or let the intent timeout
             } else {
-                console.log(response.cast);
+                setPostSubmitted(true);
+                await axios.post("/api/submit_cast_hash_to_intent", {
+                    cast_hash: response.cast.hash,
+                    intent_hash: intent?.intentHash || promotion.intent?.intentHash,
+                    promotion_id: promotion.id,
+                });
                 // Add to submitted intents 
             }
-        }, [rerolledCast, cast_text, promotion.cast_url]
+        }, [rerolledCast, cast_text, promotion.cast_url, intent]
     )
 
     const handlePost = useCallback(async () => {
@@ -182,6 +189,7 @@ const CastCard: React.FC<CastCardProps> = ({
             } else {
                 throw new Error("No intent available")
             }
+
             await handlePostCast()
         } catch (error) {
             console.error("Error posting:", error)
@@ -232,23 +240,17 @@ const CastCard: React.FC<CastCardProps> = ({
             document.removeEventListener("mousemove", handleGlobalMouseMove)
             document.removeEventListener("mouseup", handleGlobalMouseUp)
         }
-    }, [isDragging])
+    }, [isDragging]);
 
     useEffect(() => {
-        if (!fUser) return;
         const load = async () => {
-            try {
-                const { data } = await axios.post("/api/fetch_intents", { promotion_id: promotion.id });
-                console.log("Fetched existing intents:", data.intents);
-                setSubmittedIntents(data.intents || [])
-            } catch (e: any) {
-                throw new Error(e.message);
-            }
+            const details = await get_promoter_details([promotion.id, address]);
+            console.log(details);
+            setPromoterDetails(details);
         }
         load();
-    }, [fUser, promotion.id]);
-
-
+    }, [promotion.id, address]);
+    console.log(promotion.intent)
 
     return (
         <div className="space-y-3 mb-5">
@@ -258,7 +260,7 @@ const CastCard: React.FC<CastCardProps> = ({
                 style={{ borderRadius: "24px" }}
                 onClick={() => !showRerollInput && !isPosting && handleTap()}
             >
-                {!showRerollInput && !isPosting && (
+                {!showRerollInput && !isPosting && !promotion.intent?.castHash && (
                     <div className="absolute top-4 left-4 bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-white/60 border border-white/10">
                         💡 Tap card to reroll content
                     </div>
@@ -272,7 +274,7 @@ const CastCard: React.FC<CastCardProps> = ({
                             </div>
                             <div>
                                 <div className="font-semibold text-white">{promotion.name} Campaign</div>
-                                <div className="text-sm text-white/40">{showRerollInput ? "Customize your post" : "Tap to reroll"}</div>
+                                {!promotion.intent?.castHash && <div className="text-sm text-white/40">{showRerollInput ? "Customize your post" : "Tap to reroll"}</div>}
                             </div>
                         </div>
                         <div className="text-right text-purple-400 font-bold text-lg">${pricing}</div>
@@ -328,62 +330,101 @@ const CastCard: React.FC<CastCardProps> = ({
                                     <span className="text-white/80 font-medium">Posting...</span>
                                 </div>
                             ) : (
+
                                 <>
-                                    {submittedIntents.length > 0 ? (
-                                        <div className="space-y-2">
-                                            <div className="w-full">
-                                                <Button
-                                                    onClick={handlePostCast}
-                                                    className="w-full relative  bg-purple-600 rounded-xl shadow-lg flex items-center justify-center cursor-pointer z-40 hover:bg-purple-500 hover:text-white transition-all duration-300">
-                                                    Post Cast
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div
-                                            ref={sliderRef}
-                                            className="relative h-14 bg-white/5 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <div
-                                                className={`absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 z-10 ${isCompleting ? "transition-all duration-300 ease-out" : ""
-                                                    }`}
-                                                style={{
-                                                    width: sliderOffset
-                                                        ? `${((sliderOffset + 48) / (sliderRef.current?.getBoundingClientRect().width || 1)) * 100}%`
-                                                        : "0%",
-                                                    maskImage: "linear-gradient(to right, black 85%, transparent 100%)",
-                                                    WebkitMaskImage: "linear-gradient(to right, black 85%, transparent 100%)",
-                                                }}
-                                            />
+                                    {
+                                        intent?.castHash || promotion.intent?.castHash ?
+                                            (
+                                                <div className="text-center py-4 px-3 bg-white/10 rounded-xl border border-white/10">
+                                                    <div className="text-sm text-white/80 mb-2">✅ Posted Successfully!</div>
+                                                    <a
+                                                        href={`https://warpcast.com/${promotionAuthor}/casts/${intent?.castHash}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-purple-400 font-semibold hover:underline break-all"
+                                                    >
+                                                        View Cast
+                                                    </a>
+                                                    <div className="w-full mt-2">
+                                                        <Button
+                                                            disabled={promoterDetails?.state === 2}
+                                                            onClick={async () => {
+                                                                await claim([promotion.id])
+                                                            }}
+                                                            className="w-full relative  bg-green-600 rounded-xl shadow-lg flex items-center justify-center cursor-pointer z-40 hover:bg-green-500 hover:text-white transition-all duration-300">
+                                                            Claim
+                                                        </Button>
+                                                    </div>
+                                                </div>
 
-                                            {isCompleting && (
-                                                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/50 via-pink-500/50 to-purple-600/50 animate-pulse z-20" />
+                                            ) :
+
+                                            (
+                                                <>
+                                                    {intent || promotion.intent ? (
+
+                                                        <div className="space-y-2">
+                                                            <div className="w-full">
+                                                                <Button
+                                                                    onClick={handlePostCast}
+                                                                    className="w-full relative  bg-purple-600 rounded-xl shadow-lg flex items-center justify-center cursor-pointer z-40 hover:bg-purple-500 hover:text-white transition-all duration-300">
+                                                                    Post Cast
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            {!postSubmitted && (
+                                                                <div
+                                                                    ref={sliderRef}
+                                                                    className="relative h-14 bg-white/5 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                >
+                                                                    <div
+                                                                        className={`absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 z-10 ${isCompleting ? "transition-all duration-300 ease-out" : ""
+                                                                            }`}
+                                                                        style={{
+                                                                            width: sliderOffset
+                                                                                ? `${((sliderOffset + 48) / (sliderRef.current?.getBoundingClientRect().width || 1)) * 100}%`
+                                                                                : "0%",
+                                                                            maskImage: "linear-gradient(to right, black 85%, transparent 100%)",
+                                                                            WebkitMaskImage: "linear-gradient(to right, black 85%, transparent 100%)",
+                                                                        }}
+                                                                    />
+
+                                                                    {isCompleting && (
+                                                                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/50 via-pink-500/50 to-purple-600/50 animate-pulse z-20" />
+                                                                    )}
+
+                                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+                                                                        <span className="text-sm font-medium text-white/60">
+                                                                            {isCompleting ? "Posting..." : "Slide to Post & Earn"}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    <button
+                                                                        onMouseDown={handleMouseDown}
+                                                                        onTouchStart={handleTouchStart}
+                                                                        onTouchMove={handleTouchMove}
+                                                                        onTouchEnd={handleDragEnd}
+                                                                        onTouchCancel={handleDragEnd}
+                                                                        className={`absolute top-1 left-1 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center cursor-grab active:cursor-grabbing z-40 ${isCompleting ? "transition-all duration-300 ease-out" : ""
+                                                                            }`}
+                                                                        style={{
+                                                                            transform: `translateX(${sliderOffset}px)`,
+                                                                            touchAction: "none",
+                                                                        }}
+                                                                    >
+                                                                        <div className="text-xl">💸</div>
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    )}
+
+                                                </>
+
                                             )}
-
-                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                                                <span className="text-sm font-medium text-white/60">
-                                                    {isCompleting ? "Posting..." : "Slide to Post & Earn"}
-                                                </span>
-                                            </div>
-
-                                            <button
-                                                onMouseDown={handleMouseDown}
-                                                onTouchStart={handleTouchStart}
-                                                onTouchMove={handleTouchMove}
-                                                onTouchEnd={handleDragEnd}
-                                                onTouchCancel={handleDragEnd}
-                                                className={`absolute top-1 left-1 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center cursor-grab active:cursor-grabbing z-40 ${isCompleting ? "transition-all duration-300 ease-out" : ""
-                                                    }`}
-                                                style={{
-                                                    transform: `translateX(${sliderOffset}px)`,
-                                                    touchAction: "none",
-                                                }}
-                                            >
-                                                <div className="text-xl">💸</div>
-                                            </button>
-                                        </div>
-                                    )}
                                 </>
                             )}
                         </div>

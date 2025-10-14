@@ -88,6 +88,37 @@
       {
         "indexed": false,
         "internalType": "uint256",
+        "name": "unclaimedAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "PromotionCleanedUp",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "promotionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
         "name": "refundAmount",
         "type": "uint256"
       },
@@ -121,6 +152,19 @@
       }
     ],
     "name": "addPromotionBudget",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "promotion_id",
+        "type": "uint256"
+      }
+    ],
+    "name": "cleanupPromotion",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

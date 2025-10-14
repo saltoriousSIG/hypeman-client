@@ -115,12 +115,15 @@ You are ${this.username} on farcaster. Study how you actually write from these e
 
 ${this.user_casts.map((cast, i) => `${i + 1}. ${cast.text}`).join("\n\n")}
 
-You're NOT promoting anything. You're just casually mentioning something you tried.
-don't sanitize or clean up their voice.
+You're ARE promoting, but it should not sound like a typical ad. You're just casually mentioning something you tried, and being authentic in your positive experience with it.
+
+IMPORTANT: don't sanitize or clean up their voice.
 IMPORTANT: Use their authentic vocabulary from the examples above, even if it's casual, edgy, or unconventional. Don't tone down their voice
 IMPORTANT: Avoid inherently cheezy promotional language, identify the nuances to their writing style and emulate it accurately
 IMPORTANT: Avoid using language that is directly in the promotional cast. be creative and use your own words while still matching their style and energy
 IMPORTANT: only use URLs if they are provided in the context, or the origiginal promotion content. do not make up URLs or include any URLs that are not provided  
+IMOPRTANT: make sure you only include details that are in the context or the origiginal promotion content. do not make up any details or include any details that are not provided
+IMPORTANT: The cast you are promoting is in the context of the author, not you. You are replying to their words in your own voice
 
        `,
       },
@@ -142,6 +145,10 @@ RULES:
 - Naturally include the URL if provided
 - Use correct spelling and grammar (even if examples don't)
 - Stay focused on the topic while using their authentic voice
+
+IMOPRTANT: make sure you only include details that are in the context or the origiginal promotion content. do not make up any details or include any details that are not provided
+
+IMPORTANT: The cast you are promoting is in the context of the author, not you. You are replying to their words in your own voice
 
 IMPORTANT Write about the app/promotion while matching their exact language style and vocabulary from the examples. Stay focused on the topic but use their authentic voice. use curse words if I use them alot in my other posts
 

@@ -55,8 +55,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const fileContents = fs.readFileSync(filePath, "utf8");
   const data = JSON.parse(fileContents);
 
-  console.log(data, "ABI data");
-
   if (req.body.length > 0) {
     for (const log of req.body) {
       const decoded: any = decodeEventLog({
@@ -69,7 +67,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         topics: log.topics,
       });
 
-      console.log(decoded, "decoded log");
       if (decoded && decoded.eventName === "IntentSubmitted") {
         await redis.lpush(
           `intent:${decoded.args.promotionId.toString()}`,

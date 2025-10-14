@@ -264,7 +264,17 @@
           },
           {
             "internalType": "uint256",
+            "name": "remaining_budget",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
             "name": "created_time",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "unprocessed_intents",
             "type": "uint256"
           },
           {

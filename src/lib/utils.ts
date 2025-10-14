@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const DIAMOND_ADDRESS: `0x${string}` =
-  "0xad0ce96ce7F9B1447Ee3f116d7cbfd076AE8c865";
+  "0xc170f23ca2d2eAE331aF084401dcd985f73384A9";
 
 export const USDC_ADDRESS: `0x${string}` =
   "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";

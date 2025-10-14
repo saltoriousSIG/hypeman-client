@@ -1,63 +1,26 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Settings, BarChart3 } from "lucide-react"
 import { NavLink } from "react-router-dom";
 import { useFrameContext } from "@/providers/FrameProvider";
 import CastCard from "@/components/CastCard/CastCard";
-import CompletedCard from "@/components/CompletedCard/CompletedCard";
 import LoginModal from "@/components/LoginModal/LoginModal";
 import Footer from "@/components/Footer/Footer";
 import useGetPostPricing from "@/hooks/useGetPostPricing";
 import { useData } from "@/providers/DataProvider";
-import { Button } from "@/components/ui/button";
-import axios from 'axios';
 
 export default function HomePage() {
-    const { fUser, isAuthenticated, address } = useFrameContext();
+    const { fUser, isAuthenticated } = useFrameContext();
 
     const [activeTab, setActiveTab] = useState<"active" | "completed">("active")
     const [showLoginModal, setShowLoginModal] = useState(false)
 
-    const { promotions, promotion_casts } = useData();
+    const { promotions, promotion_casts, promotion_intents } = useData();
 
     const pricing = useGetPostPricing();
 
     const handleShowLoginModal = (state: boolean) => {
         setShowLoginModal(state);
     }
-
-
-    const completedPromotions = [
-        {
-            id: 101,
-            text: "This new AI trading bot is absolutely crushing it! 🤖 Made 15% gains in just 2 days. The algorithm is next level and the team behind it has serious credentials. Early access ends soon! #AI #Trading #Crypto",
-            category: "Crypto",
-            earned: 180,
-            postedAt: "2 days ago",
-            status: "claimable", // claimable, claimed, pending
-            engagement: "2.1K likes, 340 recasts",
-            minTimeRemaining: null,
-        },
-        {
-            id: 102,
-            text: "Just minted from this incredible NFT collection and WOW! 🎨 The artwork is stunning and the utility roadmap is insane. Floor price already pumping. This is going to be huge! #NFT #Art #Web3",
-            category: "NFT",
-            earned: 120,
-            postedAt: "5 days ago",
-            status: "claimed",
-            engagement: "1.8K likes, 290 recasts",
-            minTimeRemaining: null,
-        },
-        {
-            id: 103,
-            text: "This gaming platform is revolutionizing how we play! 🎮 Earn real rewards while gaming, incredible graphics, and the community is amazing. Beta access is live now! #Gaming #P2E #Web3",
-            category: "Gaming",
-            earned: 95,
-            postedAt: "1 week ago",
-            status: "pending",
-            engagement: "1.2K likes, 180 recasts",
-            minTimeRemaining: "6h remaining",
-        },
-    ]
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -67,23 +30,31 @@ export default function HomePage() {
         }
     }, [isAuthenticated]);
 
-    const testSignature = async () => {
-        console.log("Testing signature...");
-        console.log(localStorage.getItem("signature"), "signature in local storage");
-        console.log(localStorage.getItem("message"), "message in local storage");
-        try {
-            await axios.get(`/api/is_valid_signature`, {
-                headers: {
-                    "x-fc-message": btoa(localStorage.getItem("message") as string) || "",
-                    "x-fc-signature": localStorage.getItem("signature") || "",
-                    "x-fc-nonce": address || ""
-                }
-            })
+    const availablePromotions = useMemo(() => {
+        return promotions.map((p) => {
+            const intent = promotion_intents[p.id];
+            return {
+                ...p,
+                intent
+            }
+        }).filter((p) => {
+            return !p.intent?.castHash
+        });
+    }, [promotions, promotion_intents]);
 
-        } catch (e: any) {
-            throw new Error("Error testing signature: " + e.message)
-        }
-    }
+    const completedPromotions = useMemo(() => {
+        console.log(promotions);
+        return promotions.map((p) => {
+
+            const intent = promotion_intents[p.id];
+            return {
+                ...p,
+                intent
+            }
+        }).filter((p) => {
+            return p.intent?.castHash
+        });
+    }, [promotions, promotion_intents]);
 
 
     return (
@@ -112,8 +83,6 @@ export default function HomePage() {
                         <Settings className="w-4 h-4 text-white/60" />
                     </button>
                 </NavLink>
-
-                <Button onClick={testSignature}>Test</Button>
             </header>
 
             <div className="px-4 space-y-4 relative z-10">
@@ -154,12 +123,12 @@ export default function HomePage() {
                             : "text-white/60 hover:text-white/80 hover:bg-white/5"
                             }`}
                     >
-                        History
+                        Claims
                     </button>
                 </div>
 
                 {activeTab === "active" ? (
-                    promotions.map((cast) => {
+                    availablePromotions.map((cast) => {
                         return (
                             <CastCard
                                 key={cast.id}
@@ -174,8 +143,16 @@ export default function HomePage() {
                     })
                 ) : (
                     <div className="space-y-4">
-                        {completedPromotions.map((promotion) => (
-                            <CompletedCard promotion={promotion} />
+                        {completedPromotions.map((cast) => (
+                            <CastCard
+                                key={cast.id}
+                                promotion={cast}
+                                cast_text={promotion_casts[cast.id]?.generated_cast}
+                                pricing={pricing}
+                                promotionContent={promotion_casts[cast.id]?.cast_text}
+                                promotionAuthor={promotion_casts[cast.id]?.author}
+                                promotionEmmbedContext={promotion_casts[cast.id]?.cast_embed_context}
+                            />
                         ))}
 
                         {completedPromotions.length === 0 && (

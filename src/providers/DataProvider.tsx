@@ -1,8 +1,9 @@
-import { useContext, createContext, useEffect, useState, useCallback } from "react";
+import { useContext, createContext, useEffect, useState } from "react";
 import useContract, { ExecutionType } from "@/hooks/useContract";
-import { DIAMOND_ADDRESS } from "@/lib/utils";
 import { useFrameContext } from "./FrameProvider";
 import useAxios from "@/hooks/useAxios";
+import { Intent } from "@/types/intents.type";
+
 
 export enum PromotionState {
     ACTIVE,     // Promotion is live and can receive posts
@@ -38,9 +39,8 @@ type PromotionCasts = {
 interface DataContextValue {
     promotions: Array<Promotion>;
     promotion_casts: Record<string, PromotionCasts>;
+    promotion_intents: Record<string, Intent>
 }
-
-
 
 const DataContext = createContext<DataContextValue | undefined>(undefined);
 
@@ -58,8 +58,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const [promotions, setPromotions] = useState<Array<Promotion>>([]);
     const [promotionCasts, setPromotionCasts] = useState<Record<string, PromotionCasts>>({});
-
-    console.log(promotionCasts);
+    const [promotionIntents, setPromotionIntents] = useState<Record<string, Intent>>({});
 
     const get_next_promotion_id = useContract(ExecutionType.READABLE, "Data", "getNextPromotionId");
     const get_promotion = useContract(ExecutionType.READABLE, "Data", "getPromotion");
@@ -78,8 +77,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                         created_time: new Date(parseInt(promotion.created_time.toString())),
                         creator_fid: parseInt(promotion.creator_fid.toString()),
                         committed_budget: parseInt(promotion.committed_budget.toString()),
+                        remaining_budget: parseInt(promotion.remaining_budget.toString()),
                         total_budget: parseInt(promotion.total_budget.toString()),
-                        amount_paid_out: parseInt(promotion.amount_paid_out.toString())
+                        amount_paid_out: parseInt(promotion.amount_paid_out.toString()),
+                        unprocessed_intents: parseInt(promotion.unprocessed_intents.toString())
                     })
                 }
                 setPromotions(promotions);
@@ -90,7 +91,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         load();
     }, [get_promotion, get_next_promotion_id]);
 
-    console.log(promotions)
 
     useEffect(() => {
         if (!fUser) return;
@@ -113,10 +113,31 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         load();
     }, [fUser, promotions]);
 
+    useEffect(() => {
+        if (!fUser) return;
+        const load = async () => {
+            const intents: Record<string, Intent> = {};
+            await Promise.all(
+                promotions.map(async (promotion) => {
+                    try {
+                        const { data } = await axios.post("/api/fetch_intents", { promotion_id: promotion.id });
+                        intents[promotion.id] = data.intents;
+                    } catch (e: any) {
+                        throw new Error(e.message);
+                    }
+                })
+            )
+            setPromotionIntents(intents);
+        }
+        load();
+    }, [fUser, promotions]);
+
+
     return (
         <DataContext.Provider value={{
             promotions,
-            promotion_casts: promotionCasts
+            promotion_casts: promotionCasts,
+            promotion_intents: promotionIntents
         }}>
             {children}
         </DataContext.Provider>
