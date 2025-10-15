@@ -6,23 +6,11 @@ import LoginModal from "@/components/LoginModal/LoginModal";
 import MainLayout from "@/components/Layout/MainLayout";
 import useGetPostPricing from "@/hooks/useGetPostPricing";
 import { useData } from "@/providers/DataProvider";
-import {
-    Drawer,
-    DrawerClose,
-    DrawerContent,
-    DrawerDescription,
-    DrawerFooter,
-    DrawerHeader,
-    DrawerTitle,
-    DrawerTrigger,
-} from "@/components/ui/drawer";
-import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
     const { isAuthenticated } = useFrameContext();
 
     const [showLoginModal, setShowLoginModal] = useState(false)
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
     const { promoterPromotions, loading, promoterPromotionsLoading } = useData();
 
