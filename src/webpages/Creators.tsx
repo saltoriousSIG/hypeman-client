@@ -22,8 +22,7 @@ import { useFrameContext } from "@/providers/FrameProvider"
 import { parseUnits } from "viem"
 import { pricing_tiers } from "@/lib/calculateUserScore";
 import ShareModal from "@/components/ShareModal/ShareModal"
-import Footer from "@/components/Footer/Footer"
-import Header from "@/components/Header/Header"
+import MainLayout from "@/components/Layout/MainLayout"
 import { Cast } from "@neynar/nodejs-sdk/build/api"
 import sdk from "@farcaster/frame-sdk"
 import CastListItem from "@/components/CastListItem/CastListItem"
@@ -196,21 +195,7 @@ export default function BuyersPage() {
     );
 
     return (
-        <div className="min-h-screen bg-black text-white relative overflow-hidden">
-            {/* Floating decorative elements */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl"></div>
-                <div className="absolute top-40 right-20 w-24 h-24 bg-pink-500/20 rounded-full blur-2xl"></div>
-                <div className="absolute bottom-40 left-1/4 w-20 h-20 bg-purple-400/30 rounded-full blur-xl"></div>
-                <div className="absolute top-60 left-1/2 w-16 h-16 bg-pink-400/20 rounded-full blur-lg"></div>
-                <div className="absolute bottom-20 right-10 w-28 h-28 bg-purple-600/20 rounded-full blur-2xl"></div>
-                <div className="absolute top-80 right-20 w-10 h-10 bg-cyan-400/30 rounded-full blur-lg"></div>
-            </div>
-
-            {/* Header */}
-            <Header />
-
-            <div className="relative z-10 pt-20 px-4 pb-20 space-y-4">
+        <MainLayout className="pb-20 space-y-4">
                 {isLoading ? (
                     <Card className="bg-white/10 backdrop-blur-sm border-white/20">
                         <CardContent className="p-8 text-center">
@@ -264,7 +249,6 @@ export default function BuyersPage() {
                         )}
                     </>
                 )}
-            </div>
 
             {/* Promotion Drawer */}
             <Drawer open={isDrawerOpen} onOpenChange={handleDrawerClose}>
@@ -467,7 +451,6 @@ export default function BuyersPage() {
                 showShareModal={showShareModal}
                 handleShowShareModal={handleShowShareModal}
             />
-            <Footer />
-        </div>
+        </MainLayout>
     );
 }
