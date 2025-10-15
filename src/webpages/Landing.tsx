@@ -1,19 +1,28 @@
 import { useState, useEffect, useMemo } from "react"
-import { Settings, BarChart3 } from "lucide-react"
-import { NavLink } from "react-router-dom";
+import { BarChart3 } from "lucide-react"
 import { useFrameContext } from "@/providers/FrameProvider";
 import CastCard from "@/components/CastCard/CastCard";
 import LoginModal from "@/components/LoginModal/LoginModal";
 import Footer from "@/components/Footer/Footer";
 import useGetPostPricing from "@/hooks/useGetPostPricing";
 import { useData } from "@/providers/DataProvider";
-import { Loader2 } from "lucide-react";
+import {
+    Drawer,
+    DrawerClose,
+    DrawerContent,
+    DrawerDescription,
+    DrawerFooter,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerTrigger,
+} from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
     const { fUser, isAuthenticated } = useFrameContext();
 
-    const [activeTab, setActiveTab] = useState<"active" | "completed">("active")
     const [showLoginModal, setShowLoginModal] = useState(false)
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
     const { promoterPromotions, loading, promoterPromotionsLoading } = useData();
 
@@ -62,109 +71,83 @@ export default function HomePage() {
                         HYPEMAN
                     </h1>
                 </div>
-                <NavLink to="/creators/settings">
-                    <button className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-300">
-                        <Settings className="w-4 h-4 text-white/60" />
-                    </button>
-                </NavLink>
+                <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+                    <DrawerTrigger asChild>
+                        <button className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-purple-600 p-0.5 hover:scale-105 transition-transform duration-300 cursor-pointer">
+                            <img
+                                src={fUser?.pfpUrl || "/placeholder.svg"}
+                                alt={fUser?.username}
+                                className="w-full h-full rounded-full object-cover"
+                            />
+                        </button>
+                    </DrawerTrigger>
+                    <DrawerContent className="bg-black border-white/10">
+                        <DrawerHeader>
+                            <DrawerTitle className="text-center text-white">Your Claims</DrawerTitle>
+                            <DrawerDescription className="text-center text-white/60">
+                                View your completed promotions and earnings
+                            </DrawerDescription>
+                        </DrawerHeader>
+                        <div className="px-4 pb-4 max-h-[60vh] overflow-y-auto space-y-4">
+                            {completedPromotions.length > 0 ? (
+                                completedPromotions.map((cast) => (
+                                    <CastCard
+                                        key={cast.id}
+                                        promotion={cast}
+                                        cast_text={promotion_casts[cast.id]?.generated_cast}
+                                        pricing={pricing}
+                                        promotionContent={promotion_casts[cast.id]?.cast_text}
+                                        promotionAuthor={promotion_casts[cast.id]?.author}
+                                        promotionEmmbedContext={promotion_casts[cast.id]?.cast_embed_context}
+                                    />
+                                ))
+                            ) : (
+                                <div className="text-center py-12">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <BarChart3 className="w-8 h-8 text-white" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white mb-2">No Claims Yet</h3>
+                                    <p className="text-white/60 max-w-sm mx-auto leading-relaxed">
+                                        Your completed promotions and earnings will appear here.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                        <DrawerFooter className="border-t border-white/10">
+                            <DrawerClose asChild>
+                                <Button variant="outline" className="bg-white/5 border-white/10 text-white hover:bg-white/10">Close</Button>
+                            </DrawerClose>
+                        </DrawerFooter>
+                    </DrawerContent>
+                </Drawer>
             </header>
 
             <div className="px-4 space-y-4 relative z-10">
-                {activeTab === "active" && (
-                    <div className="text-center mb-8">
-                        <div className="relative inline-block mb-4">
-                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-purple-600 p-1 mx-auto">
-                                <img
-                                    src={fUser?.pfpUrl || "/placeholder.svg"}
-                                    alt={fUser?.username}
-                                    width={88}
-                                    height={88}
-                                    className="w-full h-full rounded-full object-cover"
-                                />
-                            </div>
+                {availablePromotions.map((cast) => {
+                    return (
+                        <CastCard
+                            key={cast.id}
+                            promotion={cast}
+                            cast_text={promotion_casts[cast.id]?.generated_cast}
+                            pricing={pricing}
+                            promotionContent={promotion_casts[cast.id]?.cast_text}
+                            promotionAuthor={promotion_casts[cast.id]?.author}
+                            promotionEmmbedContext={promotion_casts[cast.id]?.cast_embed_context}
+                        />
+                    )
+                })}
+
+                {availablePromotions.length === 0 && (
+                    <div className="text-center py-12">
+                        <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <BarChart3 className="w-8 h-8 text-white" />
                         </div>
-                        <h2 className="text-2xl font-bold text-white mb-2">@{fUser?.username}</h2>
-                        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-500/20 to-green-400/20 text-green-400 px-6 py-2 rounded-full text-sm font-semibold border border-green-400/20">
-                            ${1000} earned
-                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">No Available Promotions</h3>
+                        <p className="text-white/60 max-w-sm mx-auto leading-relaxed">
+                            Check back soon for new promotion opportunities.
+                        </p>
                     </div>
                 )}
-
-                <div className="flex items-center gap-2 mb-6 bg-white/5 rounded-2xl p-1 backdrop-blur-sm border border-white/10">
-                    <button
-                        onClick={() => setActiveTab("active")}
-                        className={`flex-1 py-4 px-6 rounded-xl text-sm font-semibold transition-all duration-300 ${activeTab === "active"
-                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25"
-                            : "text-white/60 hover:text-white/80 hover:bg-white/5"
-                            }`}
-                    >
-                        Available
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("completed")}
-                        className={`flex-1 py-4 px-6 rounded-xl text-sm font-semibold transition-all duration-300 ${activeTab === "completed"
-                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25"
-                            : "text-white/60 hover:text-white/80 hover:bg-white/5"
-                            }`}
-                    >
-                        Claims
-                    </button>
-                </div>
-                <>
-                    {loading || promoterPromotionsLoading ? (
-                        <div className="flex items-center justify-center py-20">
-                            <Loader2 className="w-8 h-8 text-white/60 animate-spin" />
-                        </div>
-                    ) : (
-                        <>
-                            {activeTab === "active" ? (
-                                availablePromotions.map((promotion: any) => {
-                                    return (
-                                        <CastCard
-                                            key={promotion.id}
-                                            promotion={promotion}
-                                            cast_text={"HURLS, REPLACE ME PLZ :)"}
-                                            pricing={pricing}
-                                            promotionContent={promotion.cast_data.text}
-                                            promotionAuthor={promotion.cast_data.author.username}
-                                            promotionEmmbedContext={promotion.cast_data.embeds}
-                                        />
-                                    )
-                                })
-                            ) : (
-                                <div className="space-y-4">
-                                    {completedPromotions.map((promotion: any) => (
-                                        <CastCard
-                                            key={promotion.id}
-                                            promotion={promotion}
-                                            cast_text={promotion.cast_data.text}
-                                            pricing={pricing}
-                                            promotionContent={promotion.cast_data.text}
-                                            promotionAuthor={promotion.cast_data.author.username}
-                                            promotionEmmbedContext={promotion.cast_data.embeds}
-                                        />
-                                    ))}
-
-                                    {completedPromotions.length === 0 && (
-                                        <div className="text-center py-12">
-                                            <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                <BarChart3 className="w-8 h-8 text-white" />
-                                            </div>
-                                            <h3 className="text-xl font-bold text-white mb-2">No History Yet</h3>
-                                            <p className="text-white/60 max-w-sm mx-auto leading-relaxed">
-                                                Your completed promotions and earnings will appear here.
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </>
-
-                    )
-                    }
-
-                </>
-
             </div>
 
             <LoginModal showLoginModal={showLoginModal} handleShowLoginModal={handleShowLoginModal} />
