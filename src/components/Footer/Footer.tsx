@@ -10,8 +10,8 @@ const Footer: React.FC = () => {
                     {({ isActive }) => (
                         <button
                             className={`w-full flex items-center justify-center gap-2 px-6 py-6 text-white text-base font-semibold transition-all duration-300 border-r cursor-pointer ${isActive
-                                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25 border-white/10 font-bold'
-                                    : 'bg-white/10 hover:bg-white/20 border-white/10'
+                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25 border-white/10 font-bold'
+                                : 'bg-white/10 hover:bg-white/20 border-white/10'
                                 }`}
                         >
                             <DollarSign className="w-5 h-5" />
@@ -23,8 +23,8 @@ const Footer: React.FC = () => {
                     {({ isActive }) => (
                         <button
                             className={`w-full flex items-center justify-center gap-2 px-6 py-6 text-white text-base font-semibold transition-all duration-300 border-r cursor-pointer ${isActive
-                                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25 border-white/10 font-bold'
-                                    : 'bg-white/10 hover:bg-white/20 border-white/10'
+                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25 border-white/10 font-bold'
+                                : 'bg-white/10 hover:bg-white/20 border-white/10'
                                 }`}
                         >
                             <Plus className="w-5 h-5" />
@@ -36,8 +36,8 @@ const Footer: React.FC = () => {
                     {({ isActive }) => (
                         <button
                             className={`w-full flex items-center justify-center gap-2 px-6 py-6 text-white text-base font-semibold transition-all duration-300 cursor-pointer ${isActive
-                                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25 font-bold'
-                                    : 'bg-white/10 hover:bg-white/20'
+                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25 font-bold'
+                                : 'bg-white/10 hover:bg-white/20'
                                 }`}
                         >
                             <Settings className="w-5 h-5" />
