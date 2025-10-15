@@ -43,7 +43,6 @@ export default function HomePage() {
     }, [promotions, promotion_intents]);
 
     const completedPromotions = useMemo(() => {
-        console.log(promotions);
         return promotions.map((p) => {
 
             const intent = promotion_intents[p.id];
@@ -55,7 +54,6 @@ export default function HomePage() {
             return p.intent?.castHash
         });
     }, [promotions, promotion_intents]);
-
 
     return (
         <div className="min-h-screen bg-black text-white pb-20 relative overflow-hidden">

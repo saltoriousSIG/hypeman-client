@@ -45,6 +45,7 @@ const CastCard: React.FC<CastCardProps> = ({
     const [promoterDetails, setPromoterDetails] = useState<any | null>(null);
 
     const axios = useAxios();
+    console.log(intent, promotion.id, "intent state in card");
 
     const { fUser, address } = useFrameContext();
 
@@ -54,8 +55,16 @@ const CastCard: React.FC<CastCardProps> = ({
     const get_promoter_details = useContract(ExecutionType.READABLE, "Data", "getPromoterDetails");
     const claim = useContract(ExecutionType.WRITABLE, "Claim", "claim");
 
+    useEffect(() => {
+        console.log(promotion.intent, "promotion intent in effect");
+        if (promotion.intent) {
+            setIntent(promotion.intent);
+        }
+    }, [promotion.intent]);
+
+
     const handleTap = () => {
-        if (promotion.intent?.castHash) return;
+        if (intent?.castHash) return;
         if (!showRerollInput && !isPosting) {
             setShowRerollInput(true)
         }
@@ -63,7 +72,7 @@ const CastCard: React.FC<CastCardProps> = ({
 
     const handleReroll = async () => {
         if (!fUser) return;
-        if (promotion.intent.castHash) return;
+        if (intent?.castHash) return;
         try {
             setIsLoading(true)
             const { data } = await axios.post("/api/reroll_promotion_cast", {
@@ -148,7 +157,7 @@ const CastCard: React.FC<CastCardProps> = ({
     }
 
     const handlePostCast = useCallback(
-        async (e?: React.MouseEvent) => {
+        async (e?: React.MouseEvent, intent_passed?: any) => {
             if (!rerolledCast && !cast_text) return;
             e?.stopPropagation();
             // Post cast logic here
@@ -158,16 +167,14 @@ const CastCard: React.FC<CastCardProps> = ({
                 text,
                 embeds,
             });
-            if (response.cast === null) {
-                // decide what to do here, do i add bytes string now or let the intent timeout
-            } else {
+            if (response.cast) {
+                //decide what to do here, do i add bytes string now or let the intent timeout
                 setPostSubmitted(true);
                 await axios.post("/api/submit_cast_hash_to_intent", {
                     cast_hash: response.cast.hash,
-                    intent_hash: intent?.intentHash || promotion.intent?.intentHash,
+                    intent_hash: intent_passed?.intentHash || intent?.intentHash,
                     promotion_id: promotion.id,
                 });
-                // Add to submitted intents 
             }
         }, [rerolledCast, cast_text, promotion.cast_url, intent]
     )
@@ -175,27 +182,39 @@ const CastCard: React.FC<CastCardProps> = ({
     const handlePost = useCallback(async () => {
         try {
             setIsPosting(true)
+            let intent_to_pass;
 
             // If intent is already loaded, use it
             if (intent) {
                 await submit_intent([intent.intent, intent.signature]);
+                await axios.post("/api/add_intent", {
+                    promotion_id: promotion.id,
+                    intent
+                })
                 return
             }
 
             // Otherwise, wait for the promise to resolve
             if (intentPromiseRef.current) {
                 const intentData = await intentPromiseRef.current
+                intent_to_pass = intentData.intent;
+                setIntent(intentData.intent);
                 await submit_intent([intentData.intent, intentData.signature]);
+                await axios.post("/api/add_intent", {
+                    promotion_id: promotion.id,
+                    intent: intentData.intent
+                });
             } else {
                 throw new Error("No intent available")
             }
 
-            await handlePostCast()
+            await handlePostCast(undefined, intent_to_pass);
         } catch (error) {
             console.error("Error posting:", error)
             // Reset state on error
             setSliderOffset(0)
             setIsCompleting(false)
+            setIntent(null);
         } finally {
             setIsPosting(false)
         }
@@ -245,12 +264,12 @@ const CastCard: React.FC<CastCardProps> = ({
     useEffect(() => {
         const load = async () => {
             const details = await get_promoter_details([promotion.id, address]);
-            console.log(details);
+            console.log(details, "details");
             setPromoterDetails(details);
         }
         load();
     }, [promotion.id, address]);
-    console.log(promotion.intent)
+
 
     return (
         <div className="space-y-3 mb-5">
@@ -260,7 +279,7 @@ const CastCard: React.FC<CastCardProps> = ({
                 style={{ borderRadius: "24px" }}
                 onClick={() => !showRerollInput && !isPosting && handleTap()}
             >
-                {!showRerollInput && !isPosting && !promotion.intent?.castHash && (
+                {!showRerollInput && !isPosting && !intent?.castHash && (
                     <div className="absolute top-4 left-4 bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-white/60 border border-white/10">
                         💡 Tap card to reroll content
                     </div>
@@ -274,7 +293,7 @@ const CastCard: React.FC<CastCardProps> = ({
                             </div>
                             <div>
                                 <div className="font-semibold text-white">{promotion.name} Campaign</div>
-                                {!promotion.intent?.castHash && <div className="text-sm text-white/40">{showRerollInput ? "Customize your post" : "Tap to reroll"}</div>}
+                                {!intent?.castHash && <div className="text-sm text-white/40">{showRerollInput ? "Customize your post" : "Tap to reroll"}</div>}
                             </div>
                         </div>
                         <div className="text-right text-purple-400 font-bold text-lg">${pricing}</div>
@@ -333,7 +352,7 @@ const CastCard: React.FC<CastCardProps> = ({
 
                                 <>
                                     {
-                                        intent?.castHash || promotion.intent?.castHash ?
+                                        intent?.castHash ?
                                             (
                                                 <div className="text-center py-4 px-3 bg-white/10 rounded-xl border border-white/10">
                                                     <div className="text-sm text-white/80 mb-2">✅ Posted Successfully!</div>
@@ -347,7 +366,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                                     </a>
                                                     <div className="w-full mt-2">
                                                         <Button
-                                                            disabled={promoterDetails?.state === 2}
+                                                            disabled={promoterDetails?.state === 2 || !intent?.processed}
                                                             onClick={async () => {
                                                                 await claim([promotion.id])
                                                             }}
@@ -361,7 +380,7 @@ const CastCard: React.FC<CastCardProps> = ({
 
                                             (
                                                 <>
-                                                    {intent || promotion.intent ? (
+                                                    {intent ? (
 
                                                         <div className="space-y-2">
                                                             <div className="w-full">
