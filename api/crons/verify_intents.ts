@@ -77,7 +77,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let intents_to_process = [];
 
     for (let i = 0; i < Number(next_promotion_id); i++) {
-      const list = await redis.lrange(`intent:${i}`, 0, -1);
+      const list = (await redis.lrange(`intent:${i}`, 0, -1)).filter(
+        (item) => !item.processed
+      );
       if (list.length > 0) {
         for (const [index, item] of list.entries()) {
           if (item.castHash) {
