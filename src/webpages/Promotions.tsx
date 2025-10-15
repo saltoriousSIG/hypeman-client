@@ -1,6 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card"
 import {
-    ArrowLeft,
     Edit3,
     Trash2,
     Eye,
@@ -9,16 +8,14 @@ import {
     TrendingUp,
     Pause,
     Play,
-    Settings,
     AlertTriangle,
     CheckCircle,
 } from "lucide-react"
 import { useState } from "react"
-import { NavLink } from "react-router-dom"
-import { useFrameContext } from "@/providers/FrameProvider"
+import Footer from "@/components/Footer/Footer"
+import Header from "@/components/Header/Header"
 
 export default function CreatorManagePage() {
-    const { fUser } = useFrameContext();
     const [activeTab, setActiveTab] = useState<"active" | "paused" | "completed">("active")
     const [promotions, setPromotions] = useState({
         active: [
@@ -242,40 +239,10 @@ export default function CreatorManagePage() {
                 <div className="absolute top-80 right-20 w-14 h-14 bg-cyan-400/35 rounded-full blur-lg animate-pulse"></div>
             </div>
 
-            <header className="relative z-10 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <NavLink to="/">
-                        <button className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-300">
-                            <ArrowLeft className="w-5 h-5 text-white/80" />
-                        </button>
-                    </NavLink>
-                    <div>
-                        <h1 className="text-xl font-bold text-white">My Promotions</h1>
-                        <p className="text-sm text-white/60">Manage your campaigns</p>
-                    </div>
-                </div>
-                <NavLink to="/creators/settings">
-                    <button className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-300">
-                        <Settings className="w-4 h-4 text-white/60" />
-                    </button>
-                </NavLink>
-            </header>
+            <Header />
 
-            <div className="px-4 space-y-6 relative z-10">
+            <div className="pt-20 px-4 space-y-6 relative z-10">
                 <div className="text-center mb-8">
-                    <div className="relative inline-block mb-4">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-purple-600 p-1 mx-auto">
-                            <img
-                                src={fUser?.pfpUrl || "/placeholder.svg"}
-                                alt={fUser?.username}
-                                width={72}
-                                height={72}
-                                className="w-full h-full rounded-full object-cover"
-                            />
-                        </div>
-                    </div>
-                    <h2 className="text-xl font-bold text-white mb-4">@{fUser?.username}</h2>
-
                     <div className="grid grid-cols-3 gap-4 mb-6">
                         <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
                             <div className="text-2xl font-bold text-green-400">${currentUser.totalEarned}</div>
@@ -463,6 +430,7 @@ export default function CreatorManagePage() {
                     </div>
                 )}
             </div>
+            <Footer />
         </div>
     )
 }

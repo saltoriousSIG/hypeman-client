@@ -4,25 +4,14 @@ import { useFrameContext } from "@/providers/FrameProvider";
 import CastCard from "@/components/CastCard/CastCard";
 import LoginModal from "@/components/LoginModal/LoginModal";
 import Footer from "@/components/Footer/Footer";
+import Header from "@/components/Header/Header";
 import useGetPostPricing from "@/hooks/useGetPostPricing";
 import { useData } from "@/providers/DataProvider";
-import {
-    Drawer,
-    DrawerClose,
-    DrawerContent,
-    DrawerDescription,
-    DrawerFooter,
-    DrawerHeader,
-    DrawerTitle,
-    DrawerTrigger,
-} from "@/components/ui/drawer";
-import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
-    const { fUser, isAuthenticated } = useFrameContext();
+    const { isAuthenticated } = useFrameContext();
 
     const [showLoginModal, setShowLoginModal] = useState(false)
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
     const { promoterPromotions, loading, promoterPromotionsLoading } = useData();
 
@@ -44,11 +33,6 @@ export default function HomePage() {
         return promoterPromotions?.filter(p => p.display_to_promoters && !p.claimable) || [];
     }, [promoterPromotions]);
 
-    const completedPromotions = useMemo(() => {
-        return promoterPromotions?.filter(p => p.claimable) || [];
-    }, [promoterPromotions]);
-
-    console.log(promoterPromotions);
 
     return (
         <div className="min-h-screen bg-black text-white pb-20 relative overflow-hidden">
@@ -64,65 +48,9 @@ export default function HomePage() {
                 <div className="absolute top-96 left-6 w-4 h-4 bg-green-300/50 rounded-full blur-sm"></div>
             </div>
 
-            <header className="relative z-10 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <img src="/hypeman-logo.png" alt="Hypeman Logo" width={32} height={32} className="rounded-lg" />
-                    <h1 className="text-lg font-semibold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent title">
-                        HYPEMAN
-                    </h1>
-                </div>
-                <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-                    <DrawerTrigger asChild>
-                        <button className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-purple-600 p-0.5 hover:scale-105 transition-transform duration-300 cursor-pointer">
-                            <img
-                                src={fUser?.pfpUrl || "/placeholder.svg"}
-                                alt={fUser?.username}
-                                className="w-full h-full rounded-full object-cover"
-                            />
-                        </button>
-                    </DrawerTrigger>
-                    <DrawerContent className="bg-black border-white/10">
-                        <DrawerHeader>
-                            <DrawerTitle className="text-center text-white">Your Claims</DrawerTitle>
-                            <DrawerDescription className="text-center text-white/60">
-                                View your completed promotions and earnings
-                            </DrawerDescription>
-                        </DrawerHeader>
-                        <div className="px-4 pb-4 max-h-[60vh] overflow-y-auto space-y-4">
-                            {completedPromotions.length > 0 ? (
-                                completedPromotions.map((cast) => (
-                                    <CastCard
-                                        key={cast.id}
-                                        promotion={cast}
-                                        cast_text={promotion_casts[cast.id]?.generated_cast}
-                                        pricing={pricing}
-                                        promotionContent={promotion_casts[cast.id]?.cast_text}
-                                        promotionAuthor={promotion_casts[cast.id]?.author}
-                                        promotionEmmbedContext={promotion_casts[cast.id]?.cast_embed_context}
-                                    />
-                                ))
-                            ) : (
-                                <div className="text-center py-12">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <BarChart3 className="w-8 h-8 text-white" />
-                                    </div>
-                                    <h3 className="text-xl font-bold text-white mb-2">No Claims Yet</h3>
-                                    <p className="text-white/60 max-w-sm mx-auto leading-relaxed">
-                                        Your completed promotions and earnings will appear here.
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                        <DrawerFooter className="border-t border-white/10">
-                            <DrawerClose asChild>
-                                <Button variant="outline" className="bg-white/5 border-white/10 text-white hover:bg-white/10">Close</Button>
-                            </DrawerClose>
-                        </DrawerFooter>
-                    </DrawerContent>
-                </Drawer>
-            </header>
+            <Header />
 
-            <div className="px-4 space-y-4 relative z-10">
+            <div className="pt-20 px-4 space-y-4 relative z-10">
                 {availablePromotions.map((cast) => {
                     return (
                         <CastCard
