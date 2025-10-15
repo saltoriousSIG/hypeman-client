@@ -1,16 +1,16 @@
 import { useState } from "react"
+import { NavLink } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { ArrowLeft, Save, DollarSign, CheckCircle } from "lucide-react"
-import { NavLink } from "react-router-dom"
+import { Save, DollarSign, CheckCircle, ArrowLeft } from "lucide-react"
 import { useFrameContext } from "@/providers/FrameProvider"
 
 export default function CreatorSettingsPage() {
     const { fUser } = useFrameContext();
-    const [isVerifiedPromoter, setIsVerifiedPromoter] = useState(false)
+    const [isVerifiedPromoter] = useState(false)
 
     const [settings, setSettings] = useState({
         pricePerPost: 299,
@@ -39,31 +39,29 @@ export default function CreatorSettingsPage() {
                 <div className="absolute top-80 right-20 w-10 h-10 bg-cyan-400/30 rounded-full blur-lg"></div>
             </div>
 
-            <header className="relative z-10 px-6 py-4 flex items-center justify-between">
+            {/* Custom Header with Back Button */}
+            <header className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md border-b border-white/10 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <NavLink to="/">
+                    <NavLink to="/creators">
                         <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
                             <ArrowLeft className="w-4 h-4 text-white/60" />
                         </div>
                     </NavLink>
-                    <div className="flex items-center gap-2">
-                        <img src="/hypeman-logo.png" alt="Hypeman Logo" width={32} height={32} className="rounded-lg" />
+                    <div>
                         <h1 className="text-lg font-semibold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent title">
-                            Settings
+                            Creator Settings
                         </h1>
                     </div>
                 </div>
-                <Button
+                <div
                     onClick={handleSave}
-                    size="sm"
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-xs px-4 border-0"
+                    className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer"
                 >
-                    <Save className="w-3 h-3 mr-1" />
-                    Save
-                </Button>
+                    <Save className="w-4 h-4 text-white/60" />
+                </div>
             </header>
 
-            <div className="px-4 space-y-4 relative z-10 mb-5">
+            <div className="pt-20 px-4 space-y-4 relative z-10 mb-5">
                 {isVerifiedPromoter ? (
                     /* Profile Section - Only for verified promoters */
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/10">
