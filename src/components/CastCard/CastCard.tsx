@@ -45,7 +45,6 @@ const CastCard: React.FC<CastCardProps> = ({
     const [promoterDetails, setPromoterDetails] = useState<any | null>(null);
 
     const axios = useAxios();
-    console.log(intent, promotion.id, "intent state in card");
 
     const { fUser, address } = useFrameContext();
 
@@ -56,7 +55,6 @@ const CastCard: React.FC<CastCardProps> = ({
     const claim = useContract(ExecutionType.WRITABLE, "Claim", "claim");
 
     useEffect(() => {
-        console.log(promotion.intent, "promotion intent in effect");
         if (promotion.intent) {
             setIntent(promotion.intent);
         }
@@ -264,7 +262,6 @@ const CastCard: React.FC<CastCardProps> = ({
     useEffect(() => {
         const load = async () => {
             const details = await get_promoter_details([promotion.id, address]);
-            console.log(details, "details");
             setPromoterDetails(details);
         }
         load();

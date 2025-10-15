@@ -1,5 +1,4 @@
 import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import axios from "axios";
 import { Cast } from "@neynar/nodejs-sdk/build/api";
@@ -24,18 +23,27 @@ interface ValidationResult {
   issues: string[];
 }
 
+interface VoiceProfile {
+  avgLength: number;
+  usesEmoji: boolean;
+  usesProfanity: boolean;
+  energyLevel: "high" | "medium" | "low";
+  commonPhrases: string[];
+  punctuationStyle: string;
+}
+
 export class HypemanAI {
   private static instance: HypemanAI;
   private initPromise: Promise<void> | null = null;
   private fastModel;
-  private qualityModel;
   private user_casts: Cast[];
   private username: string;
+  private voiceProfile: VoiceProfile | null = null;
+  private topExamples: Cast[] = [];
 
   constructor(fid: number, username: string) {
-    // Initialize models for two-tier system
-    this.fastModel = anthropic("claude-3-5-haiku-latest");
-    this.qualityModel = openai("gpt-5");
+    // Haiku-optimized model
+    this.fastModel = anthropic("claude-3-5-haiku-20241022");
     this.user_casts = [];
     this.username = username;
     this.initPromise = this.init(fid);
@@ -55,15 +63,12 @@ export class HypemanAI {
   private async init(fid: number): Promise<void> {
     try {
       await this.fetchUserCasts(fid);
+      this.voiceProfile = this.analyzeVoice(this.user_casts);
+      this.topExamples = this.selectBestExamples(this.user_casts);
     } catch (e: any) {
       throw new Error("Failed to initialize HypemanAI: " + e.message);
     }
   }
-
-  /**
-   * Fetch user's recent casts from Neynar API
-   * You'll implement the actual Neynar API call here
-   */
 
   async fetchUserCasts(fid: number): Promise<void> {
     try {
@@ -75,24 +80,18 @@ export class HypemanAI {
           },
         }
       );
-      this.user_casts = data.casts;
+      this.user_casts = this.sanitizeCasts(data.casts);
     } catch (e: any) {
       console.log(e, e.message);
-      throw new Error(
-        "fetchUserCasts not implemented - add your Neynar API integration here"
-      );
+      throw new Error("Failed to fetch user casts");
     }
   }
 
-  /**
-   * Basic post sanitization
-   * Remove empty posts, clean up formatting
-   */
   sanitizeCasts(casts: Cast[]): Cast[] {
     return casts
-      .filter((cast) => cast.text && cast.text.trim().length > 10) // Remove empty/too short
-      .filter((cast) => !cast.text.startsWith("@")) // Remove pure mentions/replies
-      .slice(0, 500) // Limit to most recent 500 casts
+      .filter((cast) => cast.text && cast.text.trim().length > 15)
+      .filter((cast) => !cast.text.startsWith("@"))
+      .slice(0, 100)
       .map((cast) => ({
         ...cast,
         text: cast.text.trim(),
@@ -100,73 +99,261 @@ export class HypemanAI {
   }
 
   /**
-   * Build voice learning prompt from user's cast history
+   * Fast voice analysis - extract key patterns only
+   */
+  private analyzeVoice(casts: Cast[]): VoiceProfile {
+    const texts = casts.map((c) => c.text);
+    const allText = texts.join(" ");
+
+    const avgLength =
+      texts.reduce((sum, t) => sum + t.length, 0) / texts.length;
+    const usesEmoji = /[\p{Emoji}]/gu.test(allText);
+    const profanityWords = ["fuck", "shit", "damn", "hell"];
+    const usesProfanity = profanityWords.some((word) =>
+      allText.toLowerCase().includes(word)
+    );
+
+    // Energy level based on punctuation
+    const exclamations = (allText.match(/!/g) || []).length;
+    const energyRatio = exclamations / texts.length;
+    const energyLevel =
+      energyRatio > 0.5 ? "high" : energyRatio < 0.2 ? "low" : "medium";
+
+    // Extract 2-3 word phrases that appear 3+ times
+    const phraseCounts: { [key: string]: number } = {};
+    texts.forEach((text) => {
+      const words = text.toLowerCase().split(/\s+/);
+      for (let i = 0; i < words.length - 1; i++) {
+        const phrase = words.slice(i, i + 2).join(" ");
+        if (phrase.length > 5) {
+          phraseCounts[phrase] = (phraseCounts[phrase] || 0) + 1;
+        }
+      }
+    });
+    const commonPhrases = Object.entries(phraseCounts)
+      .filter(([_, count]) => count >= 3)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([phrase]) => phrase);
+
+    // Punctuation style
+    const hasEllipsis = allText.includes("...");
+    const hasDashes = allText.includes("—") || allText.includes(" - ");
+    const punctuationStyle = hasEllipsis
+      ? "uses ellipses"
+      : hasDashes
+        ? "uses dashes"
+        : "standard";
+
+    return {
+      avgLength,
+      usesEmoji,
+      usesProfanity,
+      energyLevel,
+      commonPhrases,
+      punctuationStyle,
+    };
+  }
+
+  /**
+   * Select 8-10 best examples for few-shot prompting
+   * Research shows Haiku performs best with 8-10 examples
+   */
+  private selectBestExamples(casts: Cast[]): Cast[] {
+    if (casts.length <= 10) return casts;
+
+    // Diversity sampling: different lengths and styles
+    const sorted = [...casts].sort((a, b) => {
+      // Prefer medium-to-long casts (more informative)
+      const scoreA = a.text.length > 30 ? a.text.length : 0;
+      const scoreB = b.text.length > 30 ? b.text.length : 0;
+      return scoreB - scoreA;
+    });
+
+    const selected: Cast[] = [];
+    const used = new Set<number>();
+
+    // Pick diverse lengths
+    for (let i = 0; i < sorted.length && selected.length < 10; i++) {
+      if (used.has(i)) continue;
+
+      const cast = sorted[i];
+      const lengthBucket = Math.floor(cast.text.length / 50);
+
+      // Check if we already have similar length
+      const hasSimilar = selected.some((s) => {
+        const sBucket = Math.floor(s.text.length / 50);
+        return Math.abs(sBucket - lengthBucket) < 1;
+      });
+
+      if (!hasSimilar || selected.length < 6) {
+        selected.push(cast);
+        used.add(i);
+      }
+    }
+
+    return selected.slice(0, 10);
+  }
+
+  /**
+   * Generate concise style hints (3-5 bullets max)
+   */
+  private generateStyleHints(): string {
+    if (!this.voiceProfile) return "";
+
+    const hints: string[] = [];
+    const vp = this.voiceProfile;
+
+    // Energy
+    if (vp.energyLevel === "high") {
+      hints.push("High energy - use !, emojis, caps");
+    } else if (vp.energyLevel === "low") {
+      hints.push("Low-key, understated - minimal !, emojis");
+    }
+
+    // Length
+    if (vp.avgLength < 60) {
+      hints.push("Keep it SHORT and punchy");
+    } else if (vp.avgLength > 120) {
+      hints.push("Longer, detailed responses");
+    }
+
+    // Profanity
+    if (vp.usesProfanity) {
+      hints.push("Use profanity naturally");
+    }
+
+    // Punctuation
+    if (vp.punctuationStyle !== "standard") {
+      hints.push(`Style: ${vp.punctuationStyle}`);
+    }
+
+    // Common phrases
+    if (vp.commonPhrases.length > 0) {
+      hints.push(`Sometimes use: "${vp.commonPhrases[0]}"`);
+    }
+
+    return hints.slice(0, 5).join("\n");
+  }
+
+  /**
+   * HAIKU-OPTIMIZED PROMPT
+   * - XML tags for structure
+   * - 8-10 clear examples
+   * - Concise instructions
+   * - Prefilling support
    */
   buildVoiceLearningPrompt(
     promotionContent: string,
     promotionAuthor: string,
     embedContext: { type: string; value: string }[]
   ) {
+    const contextUrl = embedContext.find((x) => x.type === "url")?.value;
+    const additionalContext =
+      embedContext.length > 0
+        ? embedContext.map((e) => `${e.type}: ${e.value}`).join("\n")
+        : "";
+
+    const styleHints = this.generateStyleHints();
+
     return [
       {
         role: "system" as const,
-        content: `
-You are ${this.username} on farcaster. Study how you actually write from these examples Write EXACTLY like these examples, including any slang, casual language, or edgy expressions:
+        content: `You are ${this.username}. Write EXACTLY like these examples:
 
-${this.user_casts.map((cast, i) => `${i + 1}. ${cast.text}`).join("\n\n")}
+<examples>
+${this.topExamples.map((cast, i) => `<example${i + 1}>${cast.text}</example${i + 1}>`).join("\n")}
+</examples>
 
-You're ARE promoting, but it should not sound like a typical ad. You're just casually mentioning something you tried, and being authentic in your positive experience with it.
+<voice_rules>
+${styleHints}
+</voice_rules>
 
-IMPORTANT: don't sanitize or clean up their voice.
-IMPORTANT: Use their authentic vocabulary from the examples above, even if it's casual, edgy, or unconventional. Don't tone down their voice
-IMPORTANT: Avoid inherently cheezy promotional language, identify the nuances to their writing style and emulate it accurately
-IMPORTANT: Avoid using language that is directly in the promotional cast. be creative and use your own words while still matching their style and energy
-IMPORTANT: only use URLs if they are provided in the context, or the origiginal promotion content. do not make up URLs or include any URLs that are not provided  
-IMOPRTANT: make sure you only include details that are in the context or the origiginal promotion content. do not make up any details or include any details that are not provided
-IMPORTANT: The cast you are promoting is in the context of the author, not you. You are replying to their words in your own voice
-
-       `,
+<restrictions>
+- You're replying to ${promotionAuthor}'s post (not writing as them)
+- Only use facts from provided content
+- Never invent URLs
+- Under 280 characters
+- Match examples' tone exactly
+</restrictions>`,
       },
       {
         role: "user" as const,
-        content: `
-You're casually mentioning something you tried. Don't promote or sell - just mention it naturally.
+        content: `<task>Write a natural reply (not an ad)</task>
 
-CONTEXT:
-Cast Content: ${promotionContent}
-Cast Author: ${promotionAuthor}
-${embedContext && embedContext.length > 0 ? `Additional Context:\n${embedContext.map((e) => `- ${e.type}: ${e.value}`).join("\n")}` : ""}
+<content>
+${promotionContent}
+</content>
 
-${embedContext.some((x) => x.type === "url") ? `URL: ${embedContext.find((x) => x.type === "url")?.value}` : ""}
+${additionalContext ? `<context>\n${additionalContext}\n</context>` : ""}
 
-RULES:
-- Under 280 characters
-- Match their exact language style and energy from the examples
-- Naturally include the URL if provided
-- Use correct spelling and grammar (even if examples don't)
-- Stay focused on the topic while using their authentic voice
+${contextUrl ? `<url>${contextUrl}</url>` : ""}
 
-IMOPRTANT: make sure you only include details that are in the context or the origiginal promotion content. do not make up any details or include any details that are not provided
-
-IMPORTANT: The cast you are promoting is in the context of the author, not you. You are replying to their words in your own voice
-
-IMPORTANT Write about the app/promotion while matching their exact language style and vocabulary from the examples. Stay focused on the topic but use their authentic voice. use curse words if I use them alot in my other posts
-
-IMPORTANT! only output the cast and nothing else, do not include any of your thinking or reasoning
-
-IMPORTANT, use correct spelling and grammer, even if you don't in your example casts
-
-IMPORTANT: Avoid using language that is directly in the promotional cast. be creative and use your own words while still matching their style and energy
-
-IMPORTANT: only use URLs if they are provided in the context, or the origiginal promotion content. do not make up URLs or include any URLs that are not provided  
-`,
+<output>Only the cast text</output>`,
       },
     ];
   }
 
   /**
-   * Fast initial generation for landing page
-   * Fetches user casts and generates content quickly
+   * Clean extraction - handle any wrapper text
+   */
+  private extractCastFromResponse(fullResponse: string): string {
+    return (
+      fullResponse
+        .replace(/^(Here's|Here is|Cast:|Output:)/i, "")
+        .replace(/<\/?[^>]+(>|$)/g, "") // Remove any XML tags in output
+        .trim()
+        .split("\n")
+        .filter((line) => line.trim().length > 0)
+        .pop()
+        ?.trim() || fullResponse.trim()
+    );
+  }
+
+  /**
+   * Fast warmup - single example style priming
+   */
+  private async performVoiceWarmup(): Promise<void> {
+    if (this.topExamples.length === 0) return;
+
+    try {
+      await generateText({
+        model: this.fastModel,
+        messages: [
+          {
+            role: "user",
+            content: `Copy this style: "${this.topExamples[0].text}"\n\nWrite 1 sentence about tech in that style.`,
+          },
+        ],
+        temperature: 1.0,
+      });
+    } catch {
+      // Silent fail - warmup is optional
+    }
+  }
+
+  /**
+   * Post-process - ensure quality
+   */
+  private postProcessCast(castText: string): string {
+    let processed = castText.trim();
+
+    // Remove common artifacts
+    processed = processed.replace(/^(Here's|Here is|Cast:)/i, "").trim();
+
+    // Ensure character limit
+    if (processed.length > 280) {
+      processed = processed.substring(0, 277) + "...";
+    }
+
+    return processed;
+  }
+
+  /**
+   * HAIKU-OPTIMIZED: Fast initial generation
+   * - Voice warmup
+   * - Optimal temperature (0.9-0.95 for creativity)
+   * - Minimal retries for speed
    */
   async generateInitialCast(
     promotionContent: string,
@@ -175,13 +362,16 @@ IMPORTANT: only use URLs if they are provided in the context, or the origiginal 
     options?: GenerationOptions
   ): Promise<GenerationResult> {
     try {
-      if (this.user_casts.length === 0) {
+      if (this.topExamples.length === 0) {
         return {
           success: false,
           error: "No suitable casts found for voice training",
-          model: "claude-3.5-sonnet",
+          model: "claude-3-5-haiku-20241022",
         };
       }
+
+      // Quick warmup
+      await this.performVoiceWarmup();
 
       const messages = this.buildVoiceLearningPrompt(
         promotionContent,
@@ -192,30 +382,34 @@ IMPORTANT: only use URLs if they are provided in the context, or the origiginal 
       const result = await generateText({
         model: this.fastModel,
         messages,
-        temperature: options?.temperature || 0.9,
-        topP: 0.9,
-        maxRetries: 1, // Fail fast for speed
-        abortSignal: AbortSignal.timeout(30000), // 15s timeout
+        temperature: options?.temperature || 0.92, // Sweet spot for Haiku creativity
+        topP: 0.95,
+        frequencyPenalty: 0.3,
+        presencePenalty: 0.3,
+        maxRetries: 1, // Fast fail for speed
+        abortSignal: AbortSignal.timeout(15000), // 15s timeout
       });
+
+      let castText = this.extractCastFromResponse(result.text);
+      castText = this.postProcessCast(castText);
 
       return {
         success: true,
-        text: result.text,
-        model: "fast model",
+        text: castText,
+        model: "claude-3-5-haiku-20241022",
         generationType: "initial",
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
-        model: "fast model",
+        model: "claude-3-5-haiku-20241022",
       };
     }
   }
 
   /**
-   * Quality refinement for iterative improvements
-   * Uses cached cast data and Claude for better voice mimicry
+   * HAIKU-OPTIMIZED: Refinement with feedback
    */
   async refineCast(
     promotionContent: string,
@@ -226,11 +420,11 @@ IMPORTANT: only use URLs if they are provided in the context, or the origiginal 
     options?: GenerationOptions
   ): Promise<GenerationResult> {
     try {
-      if (this.user_casts.length === 0) {
+      if (this.topExamples.length === 0) {
         return {
           success: false,
           error: "No suitable casts found for voice training",
-          model: "claude-3.5-sonnet",
+          model: "claude-3-5-haiku-20241022",
         };
       }
 
@@ -240,41 +434,46 @@ IMPORTANT: only use URLs if they are provided in the context, or the origiginal 
         embedContext
       );
 
+      const styleHints = this.generateStyleHints();
+
       const messages = [
         ...baseMessages,
         {
           role: "assistant" as const,
-          content: `
-          This is the previous cast your generated: ${previousCast}
-          I will provide you feed back and I want you to revise the cast to better match my voice and address the feedback.
-          `,
+          content: previousCast,
         },
         {
           role: "user" as const,
-          content: `Please revise this cast based on my feedback: "${userFeedback}"
-          
-          Make it sound more authentic to my voice while addressing the feedback. Keep under 280 characters and maintain the promotional intent.
+          content: `<feedback>${userFeedback}</feedback>
 
-          IMPORTANT: This isnt an addition to the previous cast, this is a replacement of it. Do not include any part of the previous cast unless it fits naturally with my feedback 
+<voice_reminder>
+${styleHints}
+</voice_reminder>
 
-          IMPORTANT: only use URLs if they are provided in the context, or the origiginal promotion content. do not make up URLs or include any URLs that are not provided
-          
-          `,
+<task>Rewrite completely (under 280 chars). Match voice. Address feedback.</task>
+
+<output>Only the revised cast</output>`,
         },
       ];
 
       const result = await generateText({
         model: this.fastModel,
         messages,
-        temperature: options?.temperature || 0.7,
+        temperature: options?.temperature || 0.92,
+        topP: 0.95,
+        frequencyPenalty: 0.3,
+        presencePenalty: 0.3,
         maxRetries: 2,
-        abortSignal: AbortSignal.timeout(30000), // 30s timeout for quality
+        abortSignal: AbortSignal.timeout(20000),
       });
+
+      let castText = this.extractCastFromResponse(result.text);
+      castText = this.postProcessCast(castText);
 
       return {
         success: true,
-        text: result.text,
-        model: "claude-3.5-sonnet",
+        text: castText,
+        model: "claude-3-5-haiku-20241022",
         generationType: "refinement",
         originalCast: previousCast,
         feedback: userFeedback,
@@ -283,13 +482,15 @@ IMPORTANT: only use URLs if they are provided in the context, or the origiginal 
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
-        model: "claude-3.5-sonnet",
+        model: "claude-3-5-haiku-20241022",
       };
     }
   }
 
   /**
-   * Generate multiple variations for A/B testing
+   * HAIKU-OPTIMIZED: Generate variations
+   * - Temperature variation for diversity
+   * - Shared warmup
    */
   async generateVariations(
     count: number = 3,
@@ -299,17 +500,18 @@ IMPORTANT: only use URLs if they are provided in the context, or the origiginal 
   ): Promise<GenerationResult[]> {
     const variations: GenerationResult[] = [];
 
-    // Fetch casts once for all variations
-
-    if (this.user_casts.length === 0) {
+    if (this.topExamples.length === 0) {
       return [
         {
           success: false,
           error: "No suitable casts found for voice training",
-          model: "gpt-4o-mini",
+          model: "claude-3-5-haiku-20241022",
         },
       ];
     }
+
+    // Single warmup for all variations
+    await this.performVoiceWarmup();
 
     for (let i = 0; i < count; i++) {
       try {
@@ -319,18 +521,27 @@ IMPORTANT: only use URLs if they are provided in the context, or the origiginal 
           embedContext
         );
 
+        // Vary temperature: 0.88, 0.92, 0.96
+        const temperature = 0.88 + i * 0.04;
+
         const result = await generateText({
           model: this.fastModel,
           messages,
-          temperature: 0.7 + i * 0.1, // Vary temperature for diversity
+          temperature,
+          topP: 0.95,
+          frequencyPenalty: 0.3 + i * 0.05,
+          presencePenalty: 0.3 + i * 0.05,
           maxRetries: 1,
           abortSignal: AbortSignal.timeout(15000),
         });
 
+        let castText = this.extractCastFromResponse(result.text);
+        castText = this.postProcessCast(castText);
+
         variations.push({
           success: true,
-          text: result.text,
-          model: "gpt-4o-mini",
+          text: castText,
+          model: "claude-3-5-haiku-20241022",
           generationType: "variation",
           variationIndex: i,
         });
@@ -338,7 +549,7 @@ IMPORTANT: only use URLs if they are provided in the context, or the origiginal 
         variations.push({
           success: false,
           error: error instanceof Error ? error.message : "Unknown error",
-          model: "gpt-4o-mini",
+          model: "claude-3-5-haiku-20241022",
           variationIndex: i,
         });
       }
@@ -348,7 +559,7 @@ IMPORTANT: only use URLs if they are provided in the context, or the origiginal 
   }
 
   /**
-   * Validate cast meets requirements
+   * Enhanced validation with voice matching
    */
   validateCast(castText: string): ValidationResult {
     const issues: string[] = [];
@@ -365,14 +576,39 @@ IMPORTANT: only use URLs if they are provided in the context, or the origiginal 
       issues.push("Cast too short, minimum 10 characters");
     }
 
-    // Check for obvious AI markers
+    // AI markers
     const aiMarkers = ["as an ai", "i am an ai", "i cannot", "i apologize"];
-    const hasAiMarkers = aiMarkers.some((marker) =>
-      castText.toLowerCase().includes(marker)
-    );
+    if (aiMarkers.some((m) => castText.toLowerCase().includes(m))) {
+      issues.push("Contains AI markers");
+    }
 
-    if (hasAiMarkers) {
-      issues.push("Cast contains AI-generated markers");
+    // Generic promotional language
+    const genericMarkers = [
+      "excited to share",
+      "won't want to miss",
+      "game-changer",
+    ];
+    if (genericMarkers.some((m) => castText.toLowerCase().includes(m))) {
+      issues.push("Too promotional/generic");
+    }
+
+    // Voice mismatch checks
+    if (this.voiceProfile) {
+      const vp = this.voiceProfile;
+
+      // Energy mismatch
+      const exclamations = (castText.match(/!/g) || []).length;
+      if (vp.energyLevel === "low" && exclamations > 1) {
+        issues.push("Energy too high for this user's style");
+      }
+
+      // Profanity mismatch
+      const hasProfanity = ["fuck", "shit", "damn"].some((w) =>
+        castText.toLowerCase().includes(w)
+      );
+      if (hasProfanity && !vp.usesProfanity) {
+        issues.push("Contains profanity (user doesn't use it)");
+      }
     }
 
     return {
@@ -381,25 +617,3 @@ IMPORTANT: only use URLs if they are provided in the context, or the origiginal 
     };
   }
 }
-
-// Usage example:
-// const hypemanAI = new HypemanAI()
-//
-// const initialCast = await hypemanAI.generateInitialCast(
-//   12345, // user's FID
-//   "Check out this new token $HYPE - it's revolutionizing social promotion!"
-// )
-//
-// if (initialCast.success) {
-//   console.log('Generated cast:', initialCast.text)
-//
-//   // User wants to refine it
-//   const refined = await hypemanAI.refineCast(
-//     12345,
-//     "Check out this new token $HYPE - it's revolutionizing social promotion!",
-//     initialCast.text,
-//     "make it more excited and add an emoji"
-//   )
-//
-//   console.log('Refined cast:', refined.text)
-// }
