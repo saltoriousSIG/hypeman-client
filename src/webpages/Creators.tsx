@@ -196,59 +196,59 @@ export default function BuyersPage() {
 
     return (
         <MainLayout className="pb-20 space-y-4">
-                {isLoading ? (
-                    <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-                        <CardContent className="p-8 text-center">
-                            <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin text-purple-400" />
-                            <p className="text-white/60">Loading your casts...</p>
-                        </CardContent>
-                    </Card>
-                ) : isError ? (
-                    <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-                        <CardContent className="p-8 text-center">
-                            <p className="text-red-400">Failed to load casts. Please try again.</p>
-                        </CardContent>
-                    </Card>
-                ) : userCasts.length === 0 ? (
-                    <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-                        <CardContent className="p-8 text-center">
-                            <p className="text-white/60">No casts found. Create some casts first!</p>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <>
-                        <div className="space-y-2">
-                            {userCasts.map((cast: Cast) => (
-                                <CastListItem
-                                    key={cast.hash}
-                                    cast={cast}
-                                    onPromote={handleSelectCast}
-                                    onView={handleViewCast}
-                                />
-                            ))}
+            {isLoading ? (
+                <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+                    <CardContent className="p-8 text-center">
+                        <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin text-purple-400" />
+                        <p className="text-white/60">Loading your casts...</p>
+                    </CardContent>
+                </Card>
+            ) : isError ? (
+                <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+                    <CardContent className="p-8 text-center">
+                        <p className="text-red-400">Failed to load casts. Please try again.</p>
+                    </CardContent>
+                </Card>
+            ) : userCasts.length === 0 ? (
+                <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+                    <CardContent className="p-8 text-center">
+                        <p className="text-white/60">No casts found. Create some casts first!</p>
+                    </CardContent>
+                </Card>
+            ) : (
+                <>
+                    <div className="space-y-2">
+                        {userCasts.map((cast: Cast) => (
+                            <CastListItem
+                                key={cast.hash}
+                                cast={cast}
+                                onPromote={handleSelectCast}
+                                onView={handleViewCast}
+                            />
+                        ))}
+                    </div>
+                    {/* Load More Button */}
+                    {hasNextPage && (
+                        <div className="flex justify-center pt-2">
+                            <Button
+                                onClick={handleLoadMore}
+                                disabled={isFetchingNextPage}
+                                variant="outline"
+                                className="bg-white/5 border-white/20 text-white hover:bg-white/10 hover:text-white transition-all min-w-[140px]"
+                            >
+                                {isFetchingNextPage ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Loading...
+                                    </>
+                                ) : (
+                                    "Load More"
+                                )}
+                            </Button>
                         </div>
-                        {/* Load More Button */}
-                        {hasNextPage && (
-                            <div className="flex justify-center pt-2">
-                                <Button
-                                    onClick={handleLoadMore}
-                                    disabled={isFetchingNextPage}
-                                    variant="outline"
-                                    className="bg-white/5 border-white/20 text-white hover:bg-white/10 hover:text-white transition-all min-w-[140px]"
-                                >
-                                    {isFetchingNextPage ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Loading...
-                                        </>
-                                    ) : (
-                                        "Load More"
-                                    )}
-                                </Button>
-                            </div>
-                        )}
-                    </>
-                )}
+                    )}
+                </>
+            )}
 
             {/* Promotion Drawer */}
             <Drawer open={isDrawerOpen} onOpenChange={handleDrawerClose}>

@@ -357,8 +357,8 @@ export default function CreatorManagePage() {
                         </p>
                     </div>
                 )}
-            </MainLayout>
-        </PromotionManageProvider>
+            </MainLayout >
+        </PromotionManageProvider >
 
     )
 }
