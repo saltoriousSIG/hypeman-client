@@ -68,19 +68,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
 
       if (decoded && decoded.eventName === "IntentSubmitted") {
-        await redis.lpush(
+        const list = await redis.lrange(
           `intent:${decoded.args.promotionId.toString()}`,
-          JSON.stringify({
-            promotionId: decoded.args.promotionId.toString(),
-            wallet: decoded.args.wallet,
-            fid: decoded.args.fid.toString(),
-            fee: decoded.args.fee.toString(),
-            expiry: decoded.args.expiry.toString(),
-            nonce: decoded.args.nonce.toString(),
-            timestamp: decoded.args.timestamp.toString(),
-            intentHash: decoded.args.intentHash,
-          })
+          0,
+          -1
         );
+
+        const index = list.findIndex(
+          (i: any) =>
+            i.intentHash === decoded.args.intentHash &&
+            decoded.args.promotionId.toString() == i.promotionId &&
+            i.fid == decoded.args.fid.toString()
+        );
+
+        if (index === -1) {
+          await redis.lpush(
+            `intent:${decoded.args.promotionId.toString()}`,
+            JSON.stringify({
+              promotionId: decoded.args.promotionId.toString(),
+              wallet: decoded.args.wallet,
+              fid: decoded.args.fid.toString(),
+              fee: decoded.args.fee.toString(),
+              expiry: decoded.args.expiry.toString(),
+              nonce: decoded.args.nonce.toString(),
+              timestamp: decoded.args.timestamp.toString(),
+              intentHash: decoded.args.intentHash,
+            })
+          );
+        }
       }
     }
   }

@@ -41,7 +41,6 @@ export default function HomePage() {
         });
     }, [promotions, promotion_intents]);
 
-
     return (
         <div className="min-h-screen bg-black text-white pb-20 relative overflow-hidden">
             <div className="absolute inset-0 pointer-events-none">
