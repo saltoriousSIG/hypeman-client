@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { Zap, Plus } from "lucide-react";
+import { DollarSign, Plus } from "lucide-react";
 
 const Footer: React.FC = () => {
     return (
@@ -16,7 +16,7 @@ const Footer: React.FC = () => {
                                         : 'bg-white/10 hover:bg-white/20 border-white/10'
                                 }`}
                             >
-                                <Zap className="w-4 h-4" />
+                                <DollarSign className="w-4 h-4" />
                                 Earn
                             </button>
                         )}
