@@ -17,6 +17,7 @@ import { v4 as uuidv4 } from "uuid";
 import { randomBytes } from "crypto";
 import { validateSignature } from "../middleware/validateSignature.js";
 import { Intent } from "../src/types/intents.type.js";
+import setupAdminWallet from "../src/lib/setupAdminWallet.js";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
@@ -63,14 +64,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       avgReplies
     );
 
-    // Get the owner's private key from environment variables
-    const ownerPrivateKey = process.env.OWNER_PRIVATE_KEY as Hex;
-    if (!ownerPrivateKey) {
-      throw new Error("OWNER_PRIVATE_KEY not configured");
-    }
-
-    // Create account from private key
-    const account = privateKeyToAccount(ownerPrivateKey);
+    const { account } = setupAdminWallet();
 
     // Generate expiry (default: 1 hour from now) if not provided
     const expiry = body.expiry

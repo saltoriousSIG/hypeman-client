@@ -1,45 +1,20 @@
-import { useContext, createContext, useEffect, useState } from "react";
-import useContract, { ExecutionType } from "@/hooks/useContract";
-import { useFrameContext } from "./FrameProvider";
+import { useContext, createContext, useState, useEffect } from "react";
 import useAxios from "@/hooks/useAxios";
-import { Intent } from "@/types/intents.type";
-
-
-export enum PromotionState {
-    ACTIVE,     // Promotion is live and can receive posts
-    COMPLETED,  // Budget exhausted or manually completed
-    EJECTED
-}
-
-type Promotion = {
-    cast_text?: string;
-    created_time: bigint;
-    creator: string;
-    creator_fid: bigint;
-    description: string;
-    id: string;
-    is_open_promotion: boolean;
-    name: string;
-    project_url: string;
-    refund_requested: boolean;
-    remaining_budget: bigint;
-    state: number;
-    token: string;
-    total_budget: bigint;
-}
-
-type PromotionCasts = {
-    id: string,
-    generated_cast: string;
-    author: string;
-    cast_text: string;
-    cast_embed_context: Array<{ type: string; value: string }>;
-}
-
+import { useQuery } from "@tanstack/react-query";
+import { Promotion } from "@/types/promotion.type";
+import { useUserStats } from "./UserStatsProvider";
 interface DataContextValue {
-    promotions: Array<Promotion>;
-    promotion_casts: Record<string, PromotionCasts>;
-    promotion_intents: Record<string, Intent>
+    promotions?: Array<Promotion & {
+        claimable: boolean;
+        display_to_promoters: boolean
+    }>;
+    promoterPromotions?: Array<Promotion & {
+        claimable: boolean;
+        display_to_promoters: boolean
+    }>;
+    promoterPromotionsLoading?: boolean;
+    loading?: boolean;
+    error: any;
 }
 
 const DataContext = createContext<DataContextValue | undefined>(undefined);
@@ -53,91 +28,60 @@ export function useData() {
 }
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
-    const { fUser } = useFrameContext();
     const axios = useAxios();
+    const { connectedUserData } = useUserStats();
 
-    const [promotions, setPromotions] = useState<Array<Promotion>>([]);
-    const [promotionCasts, setPromotionCasts] = useState<Record<string, PromotionCasts>>({});
-    const [promotionIntents, setPromotionIntents] = useState<Record<string, Intent>>({});
+    const { data: promotions, isLoading, error } = useQuery({
+        queryKey: ["promotions"],
+        queryFn: async () => {
+            const { data: { promotions } } = await axios.get<{
+                promotions: Array<Promotion & {
+                    claimable: boolean;
+                    display_to_promoters: boolean
+                }>
+            }>('/api/fetch_promotions');
+            return promotions;
+        },
+        enabled: true,
+        staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+        gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+        retry: 2, // Retry failed requests twice
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    });
 
-    const get_next_promotion_id = useContract(ExecutionType.READABLE, "Data", "getNextPromotionId");
-    const get_promotion = useContract(ExecutionType.READABLE, "Data", "getPromotion");
-
-    useEffect(() => {
-        if (!get_promotion) return;
-        const load = async () => {
-            const promotions: Array<Promotion> = [];
-            try {
-                const next_promotion_id = await get_next_promotion_id([]);
-                for (let i = 0; i < next_promotion_id; i++) {
-                    const promotion = await get_promotion([i]);
-                    promotions.push({
-                        ...promotion,
-                        id: promotion.id.toString(),
-                        created_time: new Date(parseInt(promotion.created_time.toString())),
-                        creator_fid: parseInt(promotion.creator_fid.toString()),
-                        committed_budget: parseInt(promotion.committed_budget.toString()),
-                        remaining_budget: parseInt(promotion.remaining_budget.toString()),
-                        total_budget: parseInt(promotion.total_budget.toString()),
-                        amount_paid_out: parseInt(promotion.amount_paid_out.toString()),
-                        unprocessed_intents: parseInt(promotion.unprocessed_intents.toString())
-                    })
-                }
-                setPromotions(promotions);
-            } catch (e: any) {
-                throw new Error(e.message);
-            }
-        }
-        load();
-    }, [get_promotion, get_next_promotion_id]);
-
-
-    useEffect(() => {
-        if (!fUser) return;
-        if (!promotions || promotions.length === 0) return
-        const load = async () => {
-            try {
-                const casts_obj: any = {}
-                const { data: { user_casts } } = await axios.post('/api/get_user_promotions', {
-                    username: fUser.username,
-                    promotions
-                });
-                user_casts.map((x: any) => casts_obj[x.id] = {
-                    ...x
-                })
-                setPromotionCasts(casts_obj);
-            } catch (e: any) {
-                throw new Error(e.message);
-            }
-        }
-        load();
-    }, [fUser, promotions]);
-
-    useEffect(() => {
-        if (!fUser) return;
-        const load = async () => {
-            const intents: Record<string, Intent> = {};
-            await Promise.all(
-                promotions.map(async (promotion) => {
-                    try {
-                        const { data } = await axios.post("/api/fetch_intents", { promotion_id: promotion.id });
-                        intents[promotion.id] = data.intents;
-                    } catch (e: any) {
-                        throw new Error(e.message);
+    const { data: promoterPromotions, isLoading: promoterPromotionsLoading, error: errorPromoter } = useQuery({
+        queryKey: ["promoterPromotions", connectedUserData, promotions],
+        queryFn: async () => {
+            if (!connectedUserData || !promotions) return [];
+            const filtered = promotions?.filter(p => connectedUserData.score >= parseFloat(p.neynar_score)).map((p) => {
+                if (p.pro_user) {
+                    if (connectedUserData.isPro) {
+                        return p;
                     }
-                })
-            )
-            setPromotionIntents(intents);
-        }
-        load();
-    }, [fUser, promotions]);
+                    return null;
+                } else {
+                    return p;
+                }
+            }).filter(p => p !== null)
+            return filtered
+        },
+        enabled: !!connectedUserData && !!promotions,
+        staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+        gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+        retry: 2, // Retry failed requests twice
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    })
+
+
 
 
     return (
         <DataContext.Provider value={{
             promotions,
-            promotion_casts: promotionCasts,
-            promotion_intents: promotionIntents
+            promoterPromotions,
+            promoterPromotionsLoading,
+            loading: isLoading,
+            error
         }}>
             {children}
         </DataContext.Provider>
