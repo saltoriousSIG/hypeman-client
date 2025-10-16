@@ -55,14 +55,14 @@ const CastCard: React.FC<CastCardProps> = ({
     const claim = useContract(ExecutionType.WRITABLE, "Claim", "claim");
 
     useEffect(() => {
-        if (promotion.intent) {
-            setIntent(promotion.intent);
+        if (promotion.intents) {
+            setIntent(promotion.intents.find((i: any) => i.wallet.toLowerCase() === address?.toLowerCase()));
         }
     }, [promotion.intent]);
 
 
     const handleTap = () => {
-        if (intent?.castHash) return;
+        if (intent?.cast_hash) return;
         if (!showRerollInput && !isPosting) {
             setShowRerollInput(true)
         }
@@ -70,7 +70,7 @@ const CastCard: React.FC<CastCardProps> = ({
 
     const handleReroll = async () => {
         if (!fUser) return;
-        if (intent?.castHash) return;
+        if (intent?.cast_hash) return;
         try {
             setIsLoading(true)
             const { data } = await axios.post("/api/reroll_promotion_cast", {
@@ -276,7 +276,7 @@ const CastCard: React.FC<CastCardProps> = ({
                 style={{ borderRadius: "24px" }}
                 onClick={() => !showRerollInput && !isPosting && handleTap()}
             >
-                {!showRerollInput && !isPosting && !intent?.castHash && (
+                {!showRerollInput && !isPosting && !intent?.cast_hash && (
                     <div className="absolute top-4 left-4 bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-white/60 border border-white/10">
                         💡 Tap card to reroll content
                     </div>
@@ -290,7 +290,7 @@ const CastCard: React.FC<CastCardProps> = ({
                             </div>
                             <div>
                                 <div className="font-semibold text-white">{promotion.name} Campaign</div>
-                                {!intent?.castHash && <div className="text-sm text-white/40">{showRerollInput ? "Customize your post" : "Tap to reroll"}</div>}
+                                {!intent?.cast_hash && <div className="text-sm text-white/40">{showRerollInput ? "Customize your post" : "Tap to reroll"}</div>}
                             </div>
                         </div>
                         <div className="text-right text-purple-400 font-bold text-lg">${pricing}</div>
@@ -349,12 +349,12 @@ const CastCard: React.FC<CastCardProps> = ({
 
                                 <>
                                     {
-                                        intent?.castHash ?
+                                        promotion.claimable ?
                                             (
                                                 <div className="text-center py-4 px-3 bg-white/10 rounded-xl border border-white/10">
                                                     <div className="text-sm text-white/80 mb-2">✅ Posted Successfully!</div>
                                                     <a
-                                                        href={`https://warpcast.com/${promotionAuthor}/casts/${intent?.castHash}`}
+                                                        href={`https://warpcast.com/${promotionAuthor}/casts/${intent?.cast_hash}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="text-purple-400 font-semibold hover:underline break-all"
