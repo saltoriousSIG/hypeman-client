@@ -43,7 +43,7 @@ export class HypemanAI {
 
   constructor(fid: number, username: string) {
     // Haiku-optimized model
-    this.fastModel = anthropic("claude-3-5-haiku-20241022");
+    this.fastModel = anthropic("claude-haiku-4-5-20251001");
     this.user_casts = [];
     this.username = username;
     this.initPromise = this.init(fid);
@@ -383,7 +383,6 @@ ${contextUrl ? `<url>${contextUrl}</url>` : ""}
         model: this.fastModel,
         messages,
         temperature: options?.temperature || 0.92, // Sweet spot for Haiku creativity
-        topP: 0.95,
         frequencyPenalty: 0.3,
         presencePenalty: 0.3,
         maxRetries: 1, // Fast fail for speed
@@ -460,7 +459,6 @@ ${styleHints}
         model: this.fastModel,
         messages,
         temperature: options?.temperature || 0.92,
-        topP: 0.95,
         frequencyPenalty: 0.3,
         presencePenalty: 0.3,
         maxRetries: 2,
@@ -528,7 +526,6 @@ ${styleHints}
           model: this.fastModel,
           messages,
           temperature,
-          topP: 0.95,
           frequencyPenalty: 0.3 + i * 0.05,
           presencePenalty: 0.3 + i * 0.05,
           maxRetries: 1,

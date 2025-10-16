@@ -52,6 +52,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
           author,
           embed_context
         );
+        console.log(initialCast, "initial cast");
         const cast_obj = {
           id: promotion.id,
           generated_cast: initialCast.text,
@@ -72,6 +73,8 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
         user_casts.push(data);
       }
     }
+
+    console.log(user_casts, "user casts");
 
     return res.status(200).json({ user_casts });
   } catch (e: any) {

@@ -35,7 +35,7 @@ export function validateSignature(handler: any) {
 
       req.fid = fid;
       req.userData = data;
-      console.log(req.userData);
+      req.address = nonce;
       return handler(req, res);
     } catch (e: any) {
       return res.status(500).json({ error: "Internal Server Error" });
