@@ -15,7 +15,7 @@ export default function HomePage() {
     const [activeTab, setActiveTab] = useState<"active" | "completed">("active")
     const [showLoginModal, setShowLoginModal] = useState(false)
 
-    const { promoterPromotions, loading } = useData();
+    const { promoterPromotions, loading, promoterPromotionsLoading } = useData();
 
     const pricing = useGetPostPricing();
 
@@ -111,7 +111,7 @@ export default function HomePage() {
                     </button>
                 </div>
                 <>
-                    {loading ? (
+                    {loading || promoterPromotionsLoading ? (
                         <div className="flex items-center justify-center py-20">
                             <Loader2 className="w-8 h-8 text-white/60 animate-spin" />
                         </div>
