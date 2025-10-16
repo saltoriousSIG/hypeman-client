@@ -40,11 +40,11 @@ export default function HomePage() {
                     <CastCard
                         key={cast.id}
                         promotion={cast}
-                        cast_text={promotion_casts[cast.id]?.generated_cast}
+                        cast_text={cast.cast_data?.text}
                         pricing={pricing}
-                        promotionContent={promotion_casts[cast.id]?.cast_text}
-                        promotionAuthor={promotion_casts[cast.id]?.author}
-                        promotionEmmbedContext={promotion_casts[cast.id]?.cast_embed_context}
+                        promotionContent={cast.cast_data?.text}
+                        promotionAuthor={cast.cast_data.author.username}
+                        promotionEmmbedContext={cast.cast_data?.embeds}
                     />
                 )
             })}

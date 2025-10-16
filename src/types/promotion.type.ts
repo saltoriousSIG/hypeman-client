@@ -1,3 +1,4 @@
+import { Cast } from "@neynar/nodejs-sdk/build/api";
 export enum PromotionState {
   ACTIVE, // Promotion is live and can receive posts
   COMPLETED, // Budget exhausted or manually completed
@@ -22,6 +23,11 @@ export type Promotion = {
   neynar_score: string;
   pro_user: boolean;
   claimable: boolean;
+  cast_data: {
+    text: string;
+    author: Cast["author"];
+    embeds: Cast["embeds"];
+  };
 };
 
 export type PromotionCasts = {
