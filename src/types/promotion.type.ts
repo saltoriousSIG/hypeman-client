@@ -21,6 +21,7 @@ export type Promotion = {
   total_budget: bigint;
   neynar_score: string;
   pro_user: boolean;
+  claimable: boolean;
 };
 
 export type PromotionCasts = {

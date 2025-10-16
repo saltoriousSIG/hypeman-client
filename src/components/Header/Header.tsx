@@ -21,21 +21,16 @@ import { Button } from "@/components/ui/button"
  */
 export default function Header() {
     const { fUser } = useFrameContext()
-    const { promotions, promotion_casts, promotion_intents } = useData()
+    const { promotions } = useData()
     const pricing = useGetPostPricing()
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+    console.log(promotions);
 
     const completedPromotions = useMemo(() => {
-        return promotions.map((p) => {
-            const intent = promotion_intents[p.id]
-            return {
-                ...p,
-                intent
-            }
-        }).filter((p) => {
-            return p.intent?.castHash
-        })
-    }, [promotions, promotion_intents])
+        return promotions?.filter((p) => {
+            return p.claimable
+        }) || []
+    }, [promotions])
 
     const handleAvatarClick = () => {
         setIsDrawerOpen(true)
@@ -56,7 +51,7 @@ export default function Header() {
                         HYPEMAN
                     </h1>
                 </div>
-                <button 
+                <button
                     onClick={handleAvatarClick}
                     className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-purple-600 p-0.5 hover:scale-105 transition-transform duration-300 cursor-pointer"
                 >
@@ -83,11 +78,11 @@ export default function Header() {
                                 <CastCard
                                     key={cast.id}
                                     promotion={cast}
-                                    cast_text={promotion_casts[cast.id]?.generated_cast}
+                                    cast_text={"dummy"}
                                     pricing={pricing}
-                                    promotionContent={promotion_casts[cast.id]?.cast_text}
-                                    promotionAuthor={promotion_casts[cast.id]?.author}
-                                    promotionEmmbedContext={promotion_casts[cast.id]?.cast_embed_context}
+                                    promotionContent={cast.cast_data?.text || ""}
+                                    promotionAuthor={cast.cast_data?.author?.username || ""}
+                                    promotionEmmbedContext={cast.cast_data?.embeds || []}
                                 />
                             ))
                         ) : (
