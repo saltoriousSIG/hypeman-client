@@ -12,7 +12,7 @@ export default function HomePage() {
 
     const [showLoginModal, setShowLoginModal] = useState(false)
 
-    const { promoterPromotions, loading, promoterPromotionsLoading } = useData();
+    const { promoterPromotions } = useData();
 
     const pricing = useGetPostPricing();
 
@@ -40,7 +40,6 @@ export default function HomePage() {
                     <CastCard
                         key={cast.id}
                         promotion={cast}
-                        cast_text={cast.cast_data?.text}
                         pricing={pricing}
                         promotionContent={cast.cast_data?.text}
                         promotionAuthor={cast.cast_data.author.username}

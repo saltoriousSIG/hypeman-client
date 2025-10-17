@@ -1,6 +1,5 @@
 import type React from "react"
 import { useState, useRef, useEffect, useCallback } from "react"
-import { Card, CardContent } from "@/components/ui/card"
 import { Loader2, X } from "lucide-react"
 import { useFrameContext } from "@/providers/FrameProvider"
 import Skeleton from "react-loading-skeleton";
@@ -13,7 +12,6 @@ import useAxios from "@/hooks/useAxios"
 
 interface CastCardProps {
     promotion: any
-    cast_text: string
     pricing: number
     promotionContent: string
     promotionAuthor: string
@@ -23,26 +21,22 @@ interface CastCardProps {
 
 const CastCard: React.FC<CastCardProps> = ({
     promotion,
-    cast_text,
     promotionContent,
     promotionAuthor,
     promotionEmmbedContext,
     pricing,
 }) => {
-    const [sliderOffset, setSliderOffset] = useState(0)
-    const [isDragging, setIsDragging] = useState(false)
-    const [isCompleting, setIsCompleting] = useState(false)
     const [isPosting, setIsPosting] = useState(false)
-    const sliderRef = useRef<HTMLDivElement>(null)
-    const startXRef = useRef(0)
     const [isLoading, setIsLoading] = useState(false)
+    const [generatedCast, setGeneratedCast] = useState<string | null>(null)
     const [rerolledCast, setRerolledCast] = useState<string | null>(null)
     const [rerollNotes, setRerollNotes] = useState("")
     const [showRerollInput, setShowRerollInput] = useState(false)
     const [intent, setIntent] = useState<any | null>();
-    const [isLoadingIntent, setIsLoadingIntent] = useState(false);
     const [postSubmitted, setPostSubmitted] = useState(false);
     const [promoterDetails, setPromoterDetails] = useState<any | null>(null);
+    const [isContentRevealed, setIsContentRevealed] = useState(false);
+    const [isGeneratingContent, setIsGeneratingContent] = useState(false);
 
     const axios = useAxios();
 
@@ -61,12 +55,6 @@ const CastCard: React.FC<CastCardProps> = ({
     }, [promotion.intent]);
 
 
-    const handleTap = () => {
-        if (intent?.cast_hash) return;
-        if (!showRerollInput && !isPosting) {
-            setShowRerollInput(true)
-        }
-    }
 
     const handleReroll = async () => {
         if (!fUser) return;
@@ -76,7 +64,7 @@ const CastCard: React.FC<CastCardProps> = ({
             const { data } = await axios.post("/api/reroll_promotion_cast", {
                 username: fUser.username,
                 promotionId: promotion.id,
-                previousCast: cast_text,
+                previousCast: rerolledCast || generatedCast,
                 promotionContent: promotionContent,
                 promotionAuthor: promotionAuthor,
                 embedContext: promotionEmmbedContext,
@@ -96,70 +84,35 @@ const CastCard: React.FC<CastCardProps> = ({
         setRerollNotes("")
     }
 
-    const handleDragStart = (clientX: number) => {
+    const handleRevealContent = async () => {
         if (!fUser) return;
-        setIsDragging(true)
-        startXRef.current = clientX
-
-        if (!intent && !intentPromiseRef.current && address) {
-            setIsLoadingIntent(true)
-
-            // Store the promise so we can await it later
-            intentPromiseRef.current = axios.post("/api/generate_intent_signature", {
-                promotion_id: promotion.id,
-                wallet: address
-            })
-                .then((res) => {
-                    setIntent(res.data)
-                    setIsLoadingIntent(false)
-                    return res.data
-                })
-                .catch((err) => {
-                    console.error("Error fetching intent signature:", err)
-                    setIsLoadingIntent(false)
-                    intentPromiseRef.current = null
-                    throw err
-                })
-        }
-
-    }
-
-    const handleDragMove = (clientX: number) => {
-        if (!isDragging || !sliderRef.current) return
-
-        const rect = sliderRef.current.getBoundingClientRect()
-        const maxOffset = rect.width - 48 // 48px is knob width
-        const offset = Math.max(0, Math.min(clientX - rect.left - 24, maxOffset))
-        setSliderOffset(offset)
-
-        const threshold = maxOffset * 0.42
-        if (offset >= threshold && !isCompleting) {
-            setIsCompleting(true)
-            setIsDragging(false)
-
-            // Animate to completion
-            setTimeout(() => {
-                setSliderOffset(maxOffset)
-                setTimeout(() => {
-                    handlePost()
-                }, 100)
-            }, 50)
+        
+        try {
+            setIsGeneratingContent(true);
+            const { data } = await axios.post("/api/generate_cast_content", {
+                username: fUser.username,
+                promotionId: promotion.id,
+                promotionContent: promotionContent,
+                promotionAuthor: promotionAuthor,
+                embedContext: promotionEmmbedContext,
+            });
+            setGeneratedCast(data.generated_cast);
+            setIsContentRevealed(true);
+        } catch (e: any) {
+            console.error("Error generating cast content:", e);
+            // Handle error - maybe show a toast or error message
+        } finally {
+            setIsGeneratingContent(false);
         }
     }
 
-    const handleDragEnd = () => {
-        if (!isCompleting) {
-            setSliderOffset(0)
-        }
-        setIsDragging(false)
-    }
 
     const handlePostCast = useCallback(
         async (e?: React.MouseEvent, intent_passed?: any) => {
-            if (!rerolledCast && !cast_text) return;
+            if (!rerolledCast && !generatedCast) return;
             e?.stopPropagation();
             // Post cast logic here
-            const { text, urls } = extractUrls(rerolledCast || cast_text);
+            const { text, urls } = extractUrls(rerolledCast || generatedCast || "");
             const embeds: any = [...urls, promotion.cast_url]
             const response = await sdk.actions.composeCast({
                 text,
@@ -174,13 +127,30 @@ const CastCard: React.FC<CastCardProps> = ({
                     promotion_id: promotion.id,
                 });
             }
-        }, [rerolledCast, cast_text, promotion.cast_url, intent]
+        }, [rerolledCast, generatedCast, promotion.cast_url, intent]
     )
 
     const handlePost = useCallback(async () => {
         try {
             setIsPosting(true)
             let intent_to_pass;
+
+            // Generate intent if not already available
+            if (!intent && !intentPromiseRef.current && address) {
+                intentPromiseRef.current = axios.post("/api/generate_intent_signature", {
+                    promotion_id: promotion.id,
+                    wallet: address
+                })
+                    .then((res) => {
+                        setIntent(res.data)
+                        return res.data
+                    })
+                    .catch((err) => {
+                        console.error("Error fetching intent signature:", err)
+                        intentPromiseRef.current = null
+                        throw err
+                    })
+            }
 
             // If intent is already loaded, use it
             if (intent) {
@@ -189,6 +159,7 @@ const CastCard: React.FC<CastCardProps> = ({
                     promotion_id: promotion.id,
                     intent
                 })
+                await handlePostCast(undefined, intent.intent);
                 return
             }
 
@@ -202,62 +173,19 @@ const CastCard: React.FC<CastCardProps> = ({
                     promotion_id: promotion.id,
                     intent: intentData.intent
                 });
+                await handlePostCast(undefined, intent_to_pass);
             } else {
                 throw new Error("No intent available")
             }
-
-            await handlePostCast(undefined, intent_to_pass);
         } catch (error) {
             console.error("Error posting:", error)
-            // Reset state on error
-            setSliderOffset(0)
-            setIsCompleting(false)
             setIntent(null);
         } finally {
             setIsPosting(false)
         }
-    }, [intent, submit_intent, handlePostCast, cast_text, rerolledCast])
+    }, [intent, submit_intent, handlePostCast, generatedCast, rerolledCast, address, promotion.id])
 
-    const handleMouseDown = (e: React.MouseEvent) => {
-        e.preventDefault()
-        e.stopPropagation()
-        handleDragStart(e.clientX)
-    }
 
-    const handleTouchStart = (e: React.TouchEvent) => {
-        e.preventDefault()
-        e.stopPropagation()
-        handleDragStart(e.touches[0].clientX)
-    }
-
-    const handleTouchMove = (e: React.TouchEvent) => {
-        e.preventDefault()
-        handleDragMove(e.touches[0].clientX)
-    }
-
-    useEffect(() => {
-        const handleGlobalMouseMove = (e: MouseEvent) => {
-            if (isDragging) {
-                handleDragMove(e.clientX)
-            }
-        }
-
-        const handleGlobalMouseUp = () => {
-            if (isDragging) {
-                handleDragEnd()
-            }
-        }
-
-        if (isDragging) {
-            document.addEventListener("mousemove", handleGlobalMouseMove)
-            document.addEventListener("mouseup", handleGlobalMouseUp)
-        }
-
-        return () => {
-            document.removeEventListener("mousemove", handleGlobalMouseMove)
-            document.removeEventListener("mouseup", handleGlobalMouseUp)
-        }
-    }, [isDragging]);
 
     useEffect(() => {
         const load = async () => {
@@ -267,44 +195,58 @@ const CastCard: React.FC<CastCardProps> = ({
         load();
     }, [promotion.id, address]);
 
+    console.log('promotion', promotion);
+
+    const username = promotion.cast_data.author.username;
+    const text = promotion.cast_data.text;
+    const pfp_url = promotion.cast_data.author.pfp_url;
 
     return (
         <div className="space-y-3 mb-5">
-            <Card
-                className={`relative overflow-hidden border-0 cursor-pointer transition-all duration-300 hover:scale-[1.02] bg-white/10 backdrop-blur-sm text-white ${!showRerollInput ? "hover:bg-white/15 hover:ring-1 hover:ring-white/20" : ""
-                    }`}
-                style={{ borderRadius: "24px" }}
-                onClick={() => !showRerollInput && !isPosting && handleTap()}
-            >
-                {!showRerollInput && !isPosting && !intent?.cast_hash && (
-                    <div className="absolute top-4 left-4 bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-white/60 border border-white/10">
-                        💡 Tap card to reroll content
-                    </div>
-                )}
 
-                <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-semibold">
-                                {promotion.name?.charAt(0) || "P"}
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/10">
+
+
+                    {/* User's Original Cast Content */}
+                    <div className="p-4">
+                        <div>
+                            <div className="flex items-center gap-3">
+                                <img src={pfp_url} alt={username} width={48} height={48} className="rounded-full" />
+                                <div className="flex flex-col gap-1">
+                                    <span className="font-semibold text-white text-sm">{username}</span>
+                                    <p className="text-sm leading-relaxed text-white/90">{text}</p>
+                                </div>
                             </div>
-                            <div>
-                                <div className="font-semibold text-white">{promotion.name} Campaign</div>
-                                {!intent?.cast_hash && <div className="text-sm text-white/40">{showRerollInput ? "Customize your post" : "Tap to reroll"}</div>}
-                            </div>
+                            
                         </div>
-                        <div className="text-right text-purple-400 font-bold text-lg">${pricing}</div>
                     </div>
 
                     {showRerollInput ? (
                         <div className="space-y-4 h-full">
-                            {(!cast_text || isLoading) ? (
-                                <div className="space-y-2 h-full">
-                                    <Skeleton count={3} className="!bg-white/10" />
-                                </div>
-                            ) : (
-                                <p className="text-sm leading-relaxed text-white/80 mb-3">{rerolledCast || cast_text}</p>
-                            )}
+                            {/* AI Generated Content Section */}
+                            <div>
+                                {(!generatedCast || isLoading) ? (
+                                    <div className="space-y-2 h-full">
+                                        <Skeleton count={3} className="!bg-white/10" />
+                                    </div>
+                                ) : (
+                                    <div className="bg-purple-500/10 border-t border-l border-r border-purple-500/20 rounded-t-xl p-4 mb-0">
+                                        <div className="flex justify-between items-center gap-2 mb-3">
+                                            <span className="text-sm font-medium text-purple-400">Quote Cast</span>
+                                            {!isPosting && !intent?.cast_hash && isContentRevealed && (
+                                                <button 
+                                                    onClick={handleRevealContent}
+                                                    disabled={isGeneratingContent}
+                                                    className="bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-white/60 border border-white/10 hover:bg-white/20 transition-colors disabled:opacity-50"
+                                                >
+                                                    {isGeneratingContent ? "Generating..." : "Refresh"}
+                                                </button>
+                                            )}
+                                        </div>
+                                        <p className="text-sm leading-relaxed text-white/90">{rerolledCast || generatedCast}</p>
+                                    </div>
+                                )}
+                            </div>
                             <div className="bg-black/20 rounded-2xl p-4 border border-white/10">
                                 <label className="block text-sm font-medium text-white/80 mb-2">Reroll Notes (optional)</label>
                                 <textarea
@@ -315,138 +257,164 @@ const CastCard: React.FC<CastCardProps> = ({
                                 />
                             </div>
                             <div className="flex items-center gap-3">
-                                <button
+                                <Button
                                     onClick={handleReroll}
-                                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-full text-white text-sm font-semibold transition-all duration-300"
+                                    variant="default"
+                                    size="sm"
+                                    className="rounded-full"
                                 >
                                     🔄 Reroll
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     onClick={handleCancelReroll}
-                                    className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-full text-white text-sm font-medium transition-all duration-300"
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-full"
                                 >
                                     <X className="w-4 h-4" />
                                     Cancel
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {(!cast_text || isLoading) ? (
-                                <div className="space-y-2 h-full">
-                                    <Skeleton count={3} className="!bg-white/10" />
-                                </div>
+                            {!isContentRevealed ? (
+                                // Step 1: Show generate button
+                                <Button
+                                onClick={handleRevealContent}
+                                variant="default"
+                                size="lg"
+                                className="w-full rounded-b-lg rounded-t-none cursor-pointer"
+                                disabled={isGeneratingContent}
+                            >
+                                {isGeneratingContent ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                        Generating Content...
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="text-lg mr-2">✨</span>
+                                        Generate Content
+                                    </>
+                                )}
+                            </Button>
                             ) : (
-                                <p className="text-sm leading-relaxed text-white/80 mb-3">{rerolledCast || cast_text}</p>
-                            )}
-
-                            {isPosting ? (
-                                <div className="flex items-center justify-center gap-3 py-4">
-                                    <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
-                                    <span className="text-white/80 font-medium">Posting...</span>
-                                </div>
-                            ) : (
-
+                                // Step 2: Show content and slide-to-post
                                 <>
-                                    {
-                                        promotion.claimable ?
-                                            (
-                                                <div className="text-center py-4 px-3 bg-white/10 rounded-xl border border-white/10">
-                                                    <div className="text-sm text-white/80 mb-2">✅ Posted Successfully!</div>
-                                                    <a
-                                                        href={`https://warpcast.com/${promotionAuthor}/casts/${intent?.cast_hash}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-purple-400 font-semibold hover:underline break-all"
-                                                    >
-                                                        View Cast
-                                                    </a>
-                                                    <div className="w-full mt-2">
-                                                        <Button
-                                                            disabled={promoterDetails?.state === 2 || !intent?.processed}
-                                                            onClick={async () => {
-                                                                await claim([promotion.id])
-                                                            }}
-                                                            className="w-full relative  bg-green-600 rounded-xl shadow-lg flex items-center justify-center cursor-pointer z-40 hover:bg-green-500 hover:text-white transition-all duration-300">
-                                                            Claim
-                                                        </Button>
-                                                    </div>
+                                    {/* AI Generated Content Section */}
+                                        {(!generatedCast || isLoading) ? (
+                                            <div className="space-y-2 h-full">
+                                                <Skeleton count={3} className="!bg-white/10" />
+                                            </div>
+                                        ) : (
+                                            <div className="bg-purple-500/10 border-t border-l border-r border-purple-500/20 rounded-t-xl p-4 mb-0">
+                                                <div className="flex justify-between items-center gap-2 mb-3">
+                                                    <span className="text-sm font-medium text-purple-400">Quote Cast</span>
+                                                    {!isPosting && !intent?.cast_hash && isContentRevealed && (
+                                                        <button 
+                                                            onClick={handleRevealContent}
+                                                            disabled={isGeneratingContent}
+                                                            className="bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-white/60 border border-white/10 hover:bg-white/20 transition-colors disabled:opacity-50"
+                                                        >
+                                                            {isGeneratingContent ? "Generating..." : "Refresh"}
+                                                        </button>
+                                                    )}
                                                 </div>
+                                                <p className="text-sm leading-relaxed text-white/90">{rerolledCast || generatedCast}</p>
+                                            </div>
+                                        )}
+                                    
 
-                                            ) :
-
-                                            (
-                                                <>
-                                                    {intent ? (
-
-                                                        <div className="space-y-2">
-                                                            <div className="w-full">
+                                    {isPosting ? (
+                                        <div className="flex items-center justify-center gap-3 py-4">
+                                            <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
+                                            <span className="text-white/80 font-medium">Posting...</span>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {
+                                                promotion.claimable ?
+                                                    (
+                                                        <div className="text-center py-4 px-3 bg-white/10 rounded-xl border border-white/10">
+                                                            <div className="text-sm text-white/80 mb-2">✅ Posted Successfully!</div>
+                                                            <a
+                                                                href={`https://warpcast.com/${promotionAuthor}/casts/${intent?.cast_hash}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-purple-400 font-semibold hover:underline break-all"
+                                                            >
+                                                                View Cast
+                                                            </a>
+                                                            <div className="w-full mt-2">
                                                                 <Button
-                                                                    onClick={handlePostCast}
-                                                                    className="w-full relative  bg-purple-600 rounded-xl shadow-lg flex items-center justify-center cursor-pointer z-40 hover:bg-purple-500 hover:text-white transition-all duration-300">
-                                                                    Post Cast
+                                                                    disabled={promoterDetails?.state === 2 || !intent?.processed}
+                                                                    onClick={async () => {
+                                                                        await claim([promotion.id])
+                                                                    }}
+                                                                    variant="default"
+                                                                    size="lg"
+                                                                    className="w-full bg-green-600 hover:bg-green-500 rounded-xl"
+                                                                >
+                                                                    Claim
                                                                 </Button>
                                                             </div>
                                                         </div>
-                                                    ) : (
+
+                                                    ) :
+
+                                                    (
                                                         <>
-                                                            {!postSubmitted && (
-                                                                <div
-                                                                    ref={sliderRef}
-                                                                    className="relative h-14 bg-white/5 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10"
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                >
-                                                                    <div
-                                                                        className={`absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 z-10 ${isCompleting ? "transition-all duration-300 ease-out" : ""
-                                                                            }`}
-                                                                        style={{
-                                                                            width: sliderOffset
-                                                                                ? `${((sliderOffset + 48) / (sliderRef.current?.getBoundingClientRect().width || 1)) * 100}%`
-                                                                                : "0%",
-                                                                            maskImage: "linear-gradient(to right, black 85%, transparent 100%)",
-                                                                            WebkitMaskImage: "linear-gradient(to right, black 85%, transparent 100%)",
-                                                                        }}
-                                                                    />
+                                                            {intent ? (
 
-                                                                    {isCompleting && (
-                                                                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/50 via-pink-500/50 to-purple-600/50 animate-pulse z-20" />
-                                                                    )}
-
-                                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                                                                        <span className="text-sm font-medium text-white/60">
-                                                                            {isCompleting ? "Posting..." : "Slide to Post & Earn"}
-                                                                        </span>
+                                                                <div className="space-y-2">
+                                                                    <div className="w-full">
+                                                                        <Button
+                                                                            onClick={handlePostCast}
+                                                                            variant="default"
+                                                                            size="lg"
+                                                                            className="w-full bg-purple-600 hover:bg-purple-500 rounded-xl"
+                                                                        >
+                                                                            Post Cast
+                                                                        </Button>
                                                                     </div>
-
-                                                                    <button
-                                                                        onMouseDown={handleMouseDown}
-                                                                        onTouchStart={handleTouchStart}
-                                                                        onTouchMove={handleTouchMove}
-                                                                        onTouchEnd={handleDragEnd}
-                                                                        onTouchCancel={handleDragEnd}
-                                                                        className={`absolute top-1 left-1 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center cursor-grab active:cursor-grabbing z-40 ${isCompleting ? "transition-all duration-300 ease-out" : ""
-                                                                            }`}
-                                                                        style={{
-                                                                            transform: `translateX(${sliderOffset}px)`,
-                                                                            touchAction: "none",
-                                                                        }}
-                                                                    >
-                                                                        <div className="text-xl">💸</div>
-                                                                    </button>
                                                                 </div>
+                                                            ) : (
+                                                                <>
+                                                                    {!postSubmitted && (
+                                                                        <Button
+                                                                            onClick={handlePost}
+                                                                            variant="default"
+                                                                            size="lg"
+                                                                            className="w-full rounded-t-none rounded-b-lg cursor-pointer"
+                                                                            disabled={isPosting}
+                                                                        >
+                                                                            {isPosting ? (
+                                                                                <>
+                                                                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                                                                    Posting...
+                                                                                </>
+                                            ) : (
+                                                                                <>
+                                                                                    <span className="text-lg mr-2">💸</span>
+                                                                                    Cast this to earn ${pricing}
+                                                                                </>
+                                                                            )}
+                                                                        </Button>
+                                                                    )}
+                                                                </>
                                                             )}
+
                                                         </>
+
                                                     )}
-
-                                                </>
-
-                                            )}
+                                        </>
+                                    )}
                                 </>
                             )}
                         </div>
                     )}
-                </CardContent>
-            </Card>
+                </div>
         </div>
     )
 }
