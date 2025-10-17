@@ -24,7 +24,6 @@ import { pricing_tiers } from "@/lib/calculateUserScore";
 import ShareModal from "@/components/ShareModal/ShareModal"
 import MainLayout from "@/components/Layout/MainLayout"
 import { Cast } from "@neynar/nodejs-sdk/build/api"
-import sdk from "@farcaster/frame-sdk"
 import CastListItem from "@/components/CastListItem/CastListItem"
 import { useCastQuoteCount } from "@/hooks/useCastQuoteCount"
 import { useUserCasts } from "@/hooks/useUserCasts"
@@ -164,18 +163,6 @@ export default function BuyersPage() {
         }
     };
 
-    // Handle viewing a cast in Farcaster client
-    const handleViewCast = async (cast: Cast) => {
-        try {
-            await sdk.actions.viewCast({
-                hash: cast.hash,
-            });
-        } catch (e: any) {
-            console.error("Error viewing cast:", e);
-            toast.error("Failed to open cast");
-        }
-    };
-
     // Handle load more with React Query
     const handleLoadMore = useCallback(async () => {
         if (hasNextPage && !isFetchingNextPage) {
@@ -223,7 +210,6 @@ export default function BuyersPage() {
                                     key={cast.hash}
                                     cast={cast}
                                     onPromote={handleSelectCast}
-                                    onView={handleViewCast}
                                 />
                             ))}
                         </div>

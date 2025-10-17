@@ -18,7 +18,7 @@ export default function MainLayout({ children, className = "" }: MainLayoutProps
     return (
         <div className="min-h-screen bg-black text-white pb-20 relative overflow-hidden">
             {/* Decorative floating background elements */}
-            <div className="absolute inset-0 pointer-events-none">
+            {/* <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-20 left-8 w-20 h-20 bg-purple-500/30 rounded-full blur-xl animate-pulse"></div>
                 <div className="absolute top-40 right-12 w-16 h-16 bg-green-400/40 rounded-full blur-lg animate-bounce"></div>
                 <div className="absolute top-60 left-16 w-12 h-12 bg-yellow-400/50 rounded-full blur-md animate-pulse"></div>
@@ -28,7 +28,7 @@ export default function MainLayout({ children, className = "" }: MainLayoutProps
                 <div className="absolute top-32 right-32 w-6 h-6 bg-white/40 rounded-full blur-sm"></div>
                 <div className="absolute bottom-32 left-32 w-10 h-10 bg-purple-400/30 rounded-full blur-md animate-bounce"></div>
                 <div className="absolute top-96 left-6 w-4 h-4 bg-green-300/50 rounded-full blur-sm"></div>
-            </div>
+            </div> */}
 
             <Header />
 
