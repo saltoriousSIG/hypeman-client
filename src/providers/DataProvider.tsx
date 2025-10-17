@@ -71,13 +71,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         retry: 2, // Retry failed requests twice
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     })
+    const loading = isLoading || promoterPromotionsLoading;
 
     return (
         <DataContext.Provider value={{
             promotions,
             promoterPromotions,
             promoterPromotionsLoading,
-            loading: isLoading,
+            loading,
             error
         }}>
             {children}

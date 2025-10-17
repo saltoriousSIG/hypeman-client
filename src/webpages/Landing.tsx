@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
-import { BarChart3 } from "lucide-react"
+import { BarChart3, Loader2 } from "lucide-react"
 import { useFrameContext } from "@/providers/FrameProvider";
 import CastCard from "@/components/CastCard/CastCard";
 import LoginModal from "@/components/LoginModal/LoginModal";
@@ -35,6 +35,18 @@ export default function HomePage() {
 
     return (
         <MainLayout className="space-y-4">
+            {loading && (
+                <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                        <Loader2 className="w-8 h-8 text-white animate-spin absolute" />
+                    </div>
+
+                    <h3 className="text-xl font-bold text-white mb-2">Loading Promotions...</h3>
+                    <p className="text-white/60 max-w-sm mx-auto leading-relaxed">
+                        Please wait while we fetch the latest promotion opportunities for you.
+                    </p>
+                </div>
+            )}
             {availablePromotions.map((cast) => {
                 return (
                     <CastCard
@@ -49,7 +61,7 @@ export default function HomePage() {
                 )
             })}
 
-            {availablePromotions.length === 0 && (
+            {availablePromotions.length === 0 && !loading && !promoterPromotionsLoading && (
                 <div className="text-center py-12">
                     <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
                         <BarChart3 className="w-8 h-8 text-white" />

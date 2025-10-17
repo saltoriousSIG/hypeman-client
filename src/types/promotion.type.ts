@@ -6,6 +6,7 @@ export enum PromotionState {
 }
 
 export type Promotion = {
+  amount_paid_out: bigint;
   cast_text?: string;
   created_time: bigint;
   creator: string;
