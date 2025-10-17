@@ -189,8 +189,7 @@ const CastCard: React.FC<CastCardProps> = ({
 
     const handleViewCast = async () => {
         try {
-            // Extract hash from cast URL (e.g., "https://warpcast.com/hurls/0x123..." -> "0x123...")
-            const castUrl = promotion.cast_data.cast_url;
+            const castUrl = promotion.cast_url;
             const hash = castUrl.split('/').pop();
             
             await sdk.actions.viewCast({
