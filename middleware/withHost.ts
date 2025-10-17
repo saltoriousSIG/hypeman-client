@@ -3,7 +3,7 @@ import { VercelRequest, VercelResponse } from "@vercel/node";
 const allowedHosts = [
   "https://supervictorious-laurel-idyllically.ngrok-free.dev",
   "https://hypeman-client.vercel.app",
-  'https://harder-conversion-decent-discussion.trycloudflare.com'
+  `https://${process.env.DOMAIN}`
 ];
 
 export function withHost(handler: any) {
