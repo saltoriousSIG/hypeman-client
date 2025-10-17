@@ -1,4 +1,4 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
+import { VercelResponse } from "@vercel/node";
 import { HypemanAI } from "../src/clients/HypemanAI.js";
 import { RedisClient } from "../src/clients/RedisClient.js";
 import { withHost } from "../middleware/withHost.js";
@@ -42,10 +42,11 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       JSON.stringify(cast_obj)
     );
 
-    console.log("REROLLED CAST", { cast });
+    console.log("REROLLED CAST:", { cast });
 
     res.status(200).json({ cast: cast_obj });
   } catch (e: any) {
+    console.error("Error processing reroll:", e);
     res.status(500).json({ error: "Error processing reroll" });
   }
 }

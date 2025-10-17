@@ -37,6 +37,7 @@ const CastCard: React.FC<CastCardProps> = ({
     const [promoterDetails, setPromoterDetails] = useState<any | null>(null);
     const [isContentRevealed, setIsContentRevealed] = useState(false);
     const [isGeneratingContent, setIsGeneratingContent] = useState(false);
+    const [isGeneratingIntent, setIsGeneratingIntent] = useState(false);
 
     const axios = useAxios();
 
@@ -49,10 +50,17 @@ const CastCard: React.FC<CastCardProps> = ({
     const claim = useContract(ExecutionType.WRITABLE, "Claim", "claim");
 
     useEffect(() => {
-        if (promotion.intents) {
-            setIntent(promotion.intents.find((i: any) => i.wallet.toLowerCase() === address?.toLowerCase()));
+        if (promotion.intents && address) {
+            const existingIntent = promotion.intents.find((i: any) => i.wallet && i.wallet.toLowerCase() === address.toLowerCase());
+            console.log("🔍 Checking for existing intent:", {
+                promotionId: promotion.id,
+                address,
+                existingIntent,
+                allIntents: promotion.intents
+            });
+            setIntent(existingIntent);
         }
-    }, [promotion.intent]);
+    }, [promotion.intents, address]);
 
 
 
@@ -85,24 +93,87 @@ const CastCard: React.FC<CastCardProps> = ({
     }
 
     const handleRevealContent = async () => {
-        if (!fUser) return;
+        if (!fUser || !address) return;
         
         try {
             setIsGeneratingContent(true);
+            
+            // First, generate intent signature if not already available
+            let currentIntent = intent;
+            console.log("🚀 Starting intent generation check:", {
+                hasExistingIntent: !!currentIntent,
+                hasPendingPromise: !!intentPromiseRef.current,
+                currentIntent
+            });
+            
+            if (!currentIntent && !intentPromiseRef.current) {
+                console.log("📝 No existing intent found, generating new one...");
+                setIsGeneratingIntent(true);
+                intentPromiseRef.current = axios.post("/api/generate_intent_signature", {
+                    promotion_id: promotion.id,
+                    wallet: address
+                })
+                    .then((res) => {
+                        console.log("✅ Intent generated successfully:", res.data);
+                        setIntent(res.data);
+                        return res.data;
+                    })
+                    .catch((err) => {
+                        console.error("❌ Error generating intent signature:", err);
+                        intentPromiseRef.current = null;
+                        throw err;
+                    });
+                
+                currentIntent = await intentPromiseRef.current;
+                setIsGeneratingIntent(false);
+            } else if (intentPromiseRef.current) {
+                console.log("⏳ Waiting for existing intent generation promise...");
+                setIsGeneratingIntent(true);
+                currentIntent = await intentPromiseRef.current;
+                setIsGeneratingIntent(false);
+            } else {
+                console.log("✅ Using existing intent:", currentIntent);
+            }
+            
+            if (!currentIntent) {
+                throw new Error("Failed to generate intent signature");
+            }
+            
+            // Submit intent to blockchain immediately after generating signature
+            console.log("💳 Submitting intent to blockchain:", currentIntent.intentHash);
+            await submit_intent([currentIntent.intent, currentIntent.signature]);
+            
+            // Save intent to backend
+            await axios.post("/api/add_intent", {
+                promotion_id: promotion.id,
+                intent: currentIntent.intent
+            });
+            console.log("✅ Intent submitted to blockchain and saved to backend");
+            
+            // Now generate cast content after successful intent submission
+            console.log("🎯 Generating cast content with intent:", currentIntent.intentHash);
             const { data } = await axios.post("/api/generate_cast_content", {
                 username: fUser.username,
                 promotionId: promotion.id,
                 promotionContent: promotionContent,
                 promotionAuthor: promotionAuthor,
                 embedContext: promotionEmmbedContext,
+                intent: currentIntent, // Pass intent to the API
             });
             setGeneratedCast(data.generated_cast);
+            // Update intent state with the returned intent (in case it was updated)
+            if (data.intent) {
+                console.log("🔄 Intent updated from API response:", data.intent);
+                setIntent(data.intent);
+            }
+            console.log("🎉 Cast content generated successfully:", data.generated_cast);
             setIsContentRevealed(true);
         } catch (e: any) {
-            console.error("Error generating cast content:", e);
+            console.error("Error generating content:", e);
             // Handle error - maybe show a toast or error message
         } finally {
             setIsGeneratingContent(false);
+            setIsGeneratingIntent(false);
         }
     }
 
@@ -157,57 +228,20 @@ const CastCard: React.FC<CastCardProps> = ({
     const handlePost = useCallback(async () => {
         try {
             setIsPosting(true)
-            let intent_to_pass;
-
-            // Generate intent if not already available
-            if (!intent && !intentPromiseRef.current && address) {
-                intentPromiseRef.current = axios.post("/api/generate_intent_signature", {
-                    promotion_id: promotion.id,
-                    wallet: address
-                })
-                    .then((res) => {
-                        setIntent(res.data)
-                        return res.data
-                    })
-                    .catch((err) => {
-                        console.error("Error fetching intent signature:", err)
-                        intentPromiseRef.current = null
-                        throw err
-                    })
+            
+            // Intent should already be submitted to blockchain from handleRevealContent
+            if (!intent) {
+                throw new Error("No intent available - please generate content first")
             }
-
-            // If intent is already loaded, use it
-            if (intent) {
-                await submit_intent([intent.intent, intent.signature]);
-                await axios.post("/api/add_intent", {
-                    promotion_id: promotion.id,
-                    intent
-                })
-                await handlePostCast(undefined, intent.intent);
-                return
-            }
-
-            // Otherwise, wait for the promise to resolve
-            if (intentPromiseRef.current) {
-                const intentData = await intentPromiseRef.current
-                intent_to_pass = intentData.intent;
-                setIntent(intentData.intent);
-                await submit_intent([intentData.intent, intentData.signature]);
-                await axios.post("/api/add_intent", {
-                    promotion_id: promotion.id,
-                    intent: intentData.intent
-                });
-                await handlePostCast(undefined, intent_to_pass);
-            } else {
-                throw new Error("No intent available")
-            }
+            
+            console.log("📤 Posting cast with existing intent:", intent.intentHash);
+            await handlePostCast(undefined, intent.intent);
         } catch (error) {
             console.error("Error posting:", error)
-            setIntent(null);
         } finally {
             setIsPosting(false)
         }
-    }, [intent, submit_intent, handlePostCast, generatedCast, rerolledCast, address, promotion.id])
+    }, [intent, handlePostCast])
 
 
 
@@ -329,9 +363,14 @@ const CastCard: React.FC<CastCardProps> = ({
                                 variant="default"
                                 size="lg"
                                 className="w-full rounded-b-lg rounded-t-none cursor-pointer"
-                                disabled={isGeneratingContent}
+                                disabled={isGeneratingContent || isGeneratingIntent}
                             >
-                                {isGeneratingContent ? (
+                                {isGeneratingIntent ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                        Submitting Intent Transaction...
+                                    </>
+                                ) : isGeneratingContent ? (
                                     <>
                                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                                         Generating Content...

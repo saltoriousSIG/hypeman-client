@@ -1,4 +1,4 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
+import { VercelResponse } from "@vercel/node";
 import { ExtendedVercelRequest } from "../src/types/request.type.js";
 import { HypemanAI } from "../src/clients/HypemanAI.js";
 import { RedisClient } from "../src/clients/RedisClient.js";
@@ -22,6 +22,19 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
         `user_cast:${req.fid}:${promotion.id}`
       );
       if (!user_cast_data) {
+        // Check if there's an intent for this promotion before generating cast content
+        const existingIntents = await redisClient.lrange(`intent:${promotion.id}`, 0, -1);
+        const userIntent = existingIntents.find((i: any) => {
+          const parsed = typeof i === 'string' ? JSON.parse(i) : i;
+          return parsed.fid === req.fid?.toString();
+        });
+
+        if (!userIntent) {
+          // No intent available, skip cast generation
+          console.log(`No intent found for promotion ${promotion.id}, skipping cast generation`);
+          continue;
+        }
+
         const { data } = await axios.get(
           `https://api.neynar.com/v2/farcaster/cast/?type=url&identifier=${encodeURIComponent(promotion.cast_url)}`,
           {
@@ -47,6 +60,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
             }
           })
           .filter((e: any) => e);
+        
         const initialCast = await hypeman_ai.generateInitialCast(
           text,
           author,
@@ -59,6 +73,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
           cast_author: author,
           cast_text: text,
           cast_embed_context: embed_context,
+          intent: userIntent, // Include intent in cast object
         };
         await redisClient.set(
           `user_cast:${req.fid}:${promotion.id}`,

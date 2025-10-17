@@ -54,7 +54,7 @@ export default function CastListItem({ cast, onPromote }: CastListItemProps) {
         {/* Top row: Quote count on left, buttons on right */}
         <div className="flex items-center justify-between gap-3">
           {/* Quote count - left */}
-          <div className="flex items-center gap-1.5 text-cyan-400 text-sm font-semibold">
+          <div className="flex items-center gap-1.5 text-purple-400 text-sm font-semibold">
             <Quote className="w-4 h-4" />
             <span>{quoteCountDisplay}</span>
           </div>
