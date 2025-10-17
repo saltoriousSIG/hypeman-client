@@ -115,8 +115,15 @@ const CastCard: React.FC<CastCardProps> = ({
                 })
                     .then((res) => {
                         console.log("✅ Intent generated successfully:", res.data);
-                        setIntent(res.data);
-                        return res.data;
+                        // Transform the response to match expected structure
+                        const transformedIntent = {
+                            intentHash: res.data.intent.intentHash,
+                            intent: res.data.intent,
+                            signature: res.data.signature,
+                            messageHash: res.data.messageHash
+                        };
+                        setIntent(transformedIntent);
+                        return transformedIntent;
                     })
                     .catch((err) => {
                         console.error("❌ Error generating intent signature:", err);
@@ -139,18 +146,35 @@ const CastCard: React.FC<CastCardProps> = ({
                 throw new Error("Failed to generate intent signature");
             }
             
-            // Submit intent to blockchain immediately after generating signature
-            console.log("💳 Submitting intent to blockchain:", currentIntent.intentHash);
-            await submit_intent([currentIntent.intent, currentIntent.signature]);
+            // Validate intent has required properties
+            // Check if this is a raw intent (from existing state) or transformed intent (from API)
+            const isRawIntent = currentIntent.intentHash && !currentIntent.intent && !currentIntent.signature;
+            const isTransformedIntent = currentIntent.intentHash && currentIntent.intent && currentIntent.signature;
             
-            // Save intent to backend
-            await axios.post("/api/add_intent", {
-                promotion_id: promotion.id,
-                intent: currentIntent.intent
-            });
-            console.log("✅ Intent submitted to blockchain and saved to backend");
+            if (!isRawIntent && !isTransformedIntent) {
+                console.error("❌ Invalid intent structure:", currentIntent);
+                throw new Error("Invalid intent signature structure");
+            }
             
-            // Now generate cast content after successful intent submission
+            // If it's a raw intent, we need to transform it or skip blockchain submission
+            if (isRawIntent) {
+                console.log("📋 Using existing raw intent, skipping blockchain submission");
+                // Skip blockchain submission for existing intents
+                // Just generate cast content directly
+            } else {
+                // Submit intent to blockchain for new intents
+                console.log("💳 Submitting intent to blockchain:", currentIntent.intentHash);
+                await submit_intent([currentIntent.intent, currentIntent.signature]);
+                
+                // Save intent to backend
+                await axios.post("/api/add_intent", {
+                    promotion_id: promotion.id,
+                    intent: currentIntent.intent
+                });
+                console.log("✅ Intent submitted to blockchain and saved to backend");
+            }
+            
+            // Now generate cast content
             console.log("🎯 Generating cast content with intent:", currentIntent.intentHash);
             const { data } = await axios.post("/api/generate_cast_content", {
                 username: fUser.username,
@@ -158,7 +182,7 @@ const CastCard: React.FC<CastCardProps> = ({
                 promotionContent: promotionContent,
                 promotionAuthor: promotionAuthor,
                 embedContext: promotionEmmbedContext,
-                intent: currentIntent, // Pass intent to the API
+                intent: isRawIntent ? currentIntent : currentIntent.intent, // Pass appropriate intent structure
             });
             setGeneratedCast(data.generated_cast);
             // Update intent state with the returned intent (in case it was updated)
@@ -174,6 +198,31 @@ const CastCard: React.FC<CastCardProps> = ({
         } finally {
             setIsGeneratingContent(false);
             setIsGeneratingIntent(false);
+        }
+    }
+
+    const handleRefreshCast = async () => {
+        if (!fUser) return;
+        
+        try {
+            setIsGeneratingContent(true);
+            
+            console.log("🔄 Refreshing cast content without intent generation");
+            const { data } = await axios.post("/api/generate_cast_content", {
+                username: fUser.username,
+                promotionId: promotion.id,
+                promotionContent: promotionContent,
+                promotionAuthor: promotionAuthor,
+                embedContext: promotionEmmbedContext,
+                // No intent required for refresh
+            });
+            setGeneratedCast(data.generated_cast);
+            console.log("🎉 Cast content refreshed successfully:", data.generated_cast);
+        } catch (e: any) {
+            console.error("Error refreshing cast content:", e);
+            // Handle error - maybe show a toast or error message
+        } finally {
+            setIsGeneratingContent(false);
         }
     }
 
@@ -312,7 +361,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                             <span className="text-sm font-medium text-purple-400">Quote Cast</span>
                                             {!isPosting && !intent?.cast_hash && isContentRevealed && (
                                                 <button 
-                                                    onClick={handleRevealContent}
+                                                    onClick={handleRefreshCast}
                                                     disabled={isGeneratingContent}
                                                     className="bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-white/60 border border-white/10 hover:bg-white/20 transition-colors disabled:opacity-50"
                                                 >
@@ -395,7 +444,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                                     <span className="text-sm font-medium text-purple-400">Your Quote Cast</span>
                                                     {!isPosting && !intent?.cast_hash && isContentRevealed && (
                                                         <button 
-                                                            onClick={handleRevealContent}
+                                                            onClick={handleRefreshCast}
                                                             disabled={isGeneratingContent}
                                                             className="bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-white/60 border border-white/10 hover:bg-white/20 transition-colors disabled:opacity-50"
                                                         >

@@ -22,30 +22,34 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       intent,
     } = req.body;
 
-    // Check if intent is provided - this should be generated before cast content
-    if (!intent) {
+    // Check if intent is provided - only required for initial generation, not refresh
+    const isRefreshOperation = !intent;
+    
+    if (!isRefreshOperation && !intent) {
       return res.status(400).json({ 
         error: "Intent signature required before generating cast content",
         code: "INTENT_REQUIRED"
       });
     }
 
-    // Save intent to Redis if not already saved
-    try {
-      const existingIntents = await redisClient.lrange(`intent:${promotionId}`, 0, -1);
-      const intentExists = existingIntents.some((i: any) => {
-        const parsed = typeof i === 'string' ? JSON.parse(i) : i;
-        return parsed.intentHash === intent.intentHash && 
-               parsed.fid === req.fid?.toString();
-      });
+    // Save intent to Redis if not already saved (only for initial generation, not refresh)
+    if (!isRefreshOperation && intent) {
+      try {
+        const existingIntents = await redisClient.lrange(`intent:${promotionId}`, 0, -1);
+        const intentExists = existingIntents.some((i: any) => {
+          const parsed = typeof i === 'string' ? JSON.parse(i) : i;
+          return parsed.intentHash === intent.intentHash && 
+                 parsed.fid === req.fid?.toString();
+        });
 
-      if (!intentExists) {
-        await redisClient.lpush(`intent:${promotionId}`, JSON.stringify(intent));
-        console.log("Intent saved to Redis:", intent.intentHash);
+        if (!intentExists) {
+          await redisClient.lpush(`intent:${promotionId}`, JSON.stringify(intent));
+          console.log("Intent saved to Redis:", intent.intentHash);
+        }
+      } catch (redisError) {
+        console.error("Error saving intent to Redis:", redisError);
+        // Continue with cast generation even if Redis save fails
       }
-    } catch (redisError) {
-      console.error("Error saving intent to Redis:", redisError);
-      // Continue with cast generation even if Redis save fails
     }
 
     const hypeman_ai = await HypemanAI.getInstance(req.fid as number, username);
@@ -71,7 +75,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       cast_author: promotionAuthor,
       cast_text: promotionContent,
       cast_embed_context: embedContext,
-      intent: intent, // Include intent in cast object for reference
+      ...(intent && { intent }), // Include intent in cast object for reference only if provided
     };
 
     await redisClient.set(
@@ -79,15 +83,16 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       JSON.stringify(cast_obj)
     );
 
-    console.log("Generated cast content with intent:", { 
+    console.log("Generated cast content:", { 
       cast: initialCast, 
-      intentHash: intent.intentHash 
+      isRefreshOperation,
+      intentHash: intent?.intentHash 
     });
 
     res.status(200).json({ 
       generated_cast: initialCast.text,
       model: initialCast.model,
-      intent: intent // Return intent for client reference
+      ...(intent && { intent }) // Return intent for client reference only if provided
     });
   } catch (e: any) {
     console.error("Error generating cast content:", e);
