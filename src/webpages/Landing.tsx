@@ -12,7 +12,7 @@ export default function HomePage() {
 
     const [showLoginModal, setShowLoginModal] = useState(false)
 
-    const { promoterPromotions } = useData();
+    const { promoterPromotions, promoterPromotionsLoading } = useData();
 
     const pricing = useGetPostPricing();
 
@@ -35,7 +35,7 @@ export default function HomePage() {
 
     return (
         <MainLayout className="space-y-4">
-            {loading && (
+            {promoterPromotionsLoading && (
                 <div className="text-center py-12">
                     <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
                         <Loader2 className="w-8 h-8 text-white animate-spin absolute" />
@@ -60,7 +60,7 @@ export default function HomePage() {
                 )
             })}
 
-            {availablePromotions.length === 0 && !loading && !promoterPromotionsLoading && (
+            {availablePromotions.length === 0 && !promoterPromotionsLoading && (
                 <div className="text-center py-12">
                     <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
                         <BarChart3 className="w-8 h-8 text-white" />
