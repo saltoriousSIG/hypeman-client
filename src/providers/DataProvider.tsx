@@ -6,11 +6,25 @@ import { useUserStats } from "./UserStatsProvider";
 interface DataContextValue {
     promotions?: Array<Promotion & {
         claimable: boolean;
-        display_to_promoters: boolean
+        display_to_promoters: boolean;
+        cast_data?: {
+            text: string;
+            embeds: any[];
+            author: {
+                username: string;
+            };
+        };
     }>;
     promoterPromotions?: Array<Promotion & {
         claimable: boolean;
-        display_to_promoters: boolean
+        display_to_promoters: boolean;
+        cast_data?: {
+            text: string;
+            embeds: any[];
+            author: {
+                username: string;
+            };
+        };
     }>;
     promoterPromotionsLoading?: boolean;
     loading?: boolean;
@@ -37,7 +51,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             const { data: { promotions } } = await axios.get<{
                 promotions: Array<Promotion & {
                     claimable: boolean;
-                    display_to_promoters: boolean
+                    display_to_promoters: boolean;
+                    cast_data?: {
+                        text: string;
+                        embeds: any[];
+                        author: {
+                            username: string;
+                        };
+                    };
                 }>
             }>('/api/fetch_promotions');
             return promotions;
@@ -49,7 +70,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     });
 
-    const { data: promoterPromotions, isLoading: promoterPromotionsLoading, error: errorPromoter } = useQuery({
+    const { data: promoterPromotions, isLoading: promoterPromotionsLoading } = useQuery({
         queryKey: ["promoterPromotions", connectedUserData, promotions],
         queryFn: async () => {
             if (!connectedUserData || !promotions) return [];
@@ -71,13 +92,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         retry: 2, // Retry failed requests twice
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     })
+    const loading = isLoading || promoterPromotionsLoading;
 
     return (
         <DataContext.Provider value={{
             promotions,
             promoterPromotions,
             promoterPromotionsLoading,
-            loading: isLoading,
+            loading,
             error
         }}>
             {children}

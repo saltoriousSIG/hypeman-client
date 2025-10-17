@@ -6,6 +6,7 @@ import { useCastQuoteCount } from "@/hooks/useCastQuoteCount";
 interface CastListItemProps {
   cast: Cast;
   onPromote: (cast: Cast) => void;
+  onView?: (cast: Cast) => void;
 }
 
 /**
@@ -29,7 +30,7 @@ interface CastEmbed {
  * Uses React Query for optimal data fetching and caching
  * Displays images from cast embeds if available
  */
-export default function CastListItem({ cast, onPromote }: CastListItemProps) {
+export default function CastListItem({ cast, onPromote, onView }: CastListItemProps) {
   const { data, isLoading, isError } = useCastQuoteCount(cast.hash);
 
   // Determine what to display for quote count
@@ -61,6 +62,15 @@ export default function CastListItem({ cast, onPromote }: CastListItemProps) {
 
           {/* Action buttons - right */}
           <div className="flex items-center gap-2">
+            {onView && (
+              <Button
+                onClick={() => onView(cast)}
+                variant="outline"
+                className="bg-white/5 border-white/20 text-white hover:bg-white/10 text-xs font-semibold px-3 h-8 rounded-lg transition-all active:scale-[0.95] cursor-pointer shrink-0"
+              >
+                View
+              </Button>
+            )}
             <Button
               onClick={() => onPromote(cast)}
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-xs font-semibold px-4 h-8 rounded-lg transition-all active:scale-[0.95] cursor-pointer shrink-0"
