@@ -38,6 +38,8 @@ const CastCard: React.FC<CastCardProps> = ({
     const [isContentRevealed, setIsContentRevealed] = useState(false);
     const [isGeneratingContent, setIsGeneratingContent] = useState(false);
     const [isGeneratingIntent, setIsGeneratingIntent] = useState(false);
+    const [showRefreshFeedback, setShowRefreshFeedback] = useState(false);
+    const [refreshFeedback, setRefreshFeedback] = useState("");
 
     const axios = useAxios();
 
@@ -201,19 +203,21 @@ const CastCard: React.FC<CastCardProps> = ({
         }
     }
 
-    const handleRefreshCast = async () => {
+    const handleRefreshCast = async (userFeedback?: string) => {
         if (!fUser) return;
         
         try {
             setIsGeneratingContent(true);
             
-            console.log("🔄 Refreshing cast content without intent generation");
+            console.log("🔄 Refreshing cast content without intent generation", { userFeedback });
             const { data } = await axios.post("/api/generate_cast_content", {
                 username: fUser.username,
                 promotionId: promotion.id,
                 promotionContent: promotionContent,
                 promotionAuthor: promotionAuthor,
                 embedContext: promotionEmmbedContext,
+                userFeedback: userFeedback, // Pass user feedback to API
+                previousCast: generatedCast, // Pass current cast for refinement
                 // No intent required for refresh
             });
             setGeneratedCast(data.generated_cast);
@@ -224,6 +228,21 @@ const CastCard: React.FC<CastCardProps> = ({
         } finally {
             setIsGeneratingContent(false);
         }
+    }
+
+    const handleRefreshClick = () => {
+        setShowRefreshFeedback(true);
+    }
+
+    const handleRefreshWithFeedback = async () => {
+        await handleRefreshCast(refreshFeedback);
+        setShowRefreshFeedback(false);
+        setRefreshFeedback("");
+    }
+
+    const handleCancelRefresh = () => {
+        setShowRefreshFeedback(false);
+        setRefreshFeedback("");
     }
 
     const handleViewProfile = async () => {
@@ -359,9 +378,9 @@ const CastCard: React.FC<CastCardProps> = ({
                                     <div className="bg-purple-500/10 border-t border-l border-r border-purple-500/20 rounded-t-xl p-4 mb-0">
                                         <div className="flex justify-between items-center gap-2 mb-3">
                                             <span className="text-sm font-medium text-purple-400">Quote Cast</span>
-                                            {!isPosting && !intent?.cast_hash && isContentRevealed && (
+                                            {!isPosting && !intent?.cast_hash && isContentRevealed && !showRefreshFeedback && (
                                                 <button 
-                                                    onClick={handleRefreshCast}
+                                                    onClick={handleRefreshClick}
                                                     disabled={isGeneratingContent}
                                                     className="bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-white/60 border border-white/10 hover:bg-white/20 transition-colors disabled:opacity-50"
                                                 >
@@ -439,23 +458,28 @@ const CastCard: React.FC<CastCardProps> = ({
                                                 <Skeleton count={3} className="!bg-white/10" />
                                             </div>
                                         ) : (
-                                            <div className="bg-purple-500/10 border-t border-l border-r border-purple-500/20 rounded-t-xl p-4 mb-0">
+                                            <div className={`bg-purple-500/10 border-t border-l border-r border-purple-500/20 p-4 ${showRefreshFeedback ? 'rounded-t-xl rounded-b-none mb-0' : 'rounded-t-xl mb-0'}`}>
                                                 <div className="flex justify-between items-center gap-2 mb-2">
                                                     <span className="text-sm font-medium text-purple-400">Your Quote Cast</span>
-                                                    {!isPosting && !intent?.cast_hash && isContentRevealed && (
-                                                        <button 
-                                                            onClick={handleRefreshCast}
-                                                            disabled={isGeneratingContent}
-                                                            className="bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-white/60 border border-white/10 hover:bg-white/20 transition-colors disabled:opacity-50"
-                                                        >
-                                                            {isGeneratingContent ? "Generating..." : "Refresh"}
-                                                        </button>
-                                                    )}
                                                 </div>
                                                 <p className="text-sm leading-relaxed text-white/90">{rerolledCast || generatedCast}</p>
+                                                
+                                                {/* Refresh Feedback Section - now part of the purple container */}
+                                                {showRefreshFeedback && (
+                                                    <div className="mt-4 pt-4 border-t border-purple-500/20">
+                                                        <label className="block text-sm font-medium text-white/80 mb-2">
+                                                            How would you like to improve this cast? (optional)
+                                                        </label>
+                                                        <textarea
+                                                            value={refreshFeedback}
+                                                            onChange={(e) => setRefreshFeedback(e.target.value)}
+                                                            className="w-full bg-black/20 rounded-xl p-3 border border-white/10 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[80px] text-white placeholder-white/50"
+                                                            placeholder="e.g., make it more professional, add more excitement, use fewer emojis, make it shorter..."
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
-                                    
 
                                     {isPosting ? (
                                         <div className="flex items-center justify-center gap-3 py-4">
@@ -499,39 +523,113 @@ const CastCard: React.FC<CastCardProps> = ({
                                                             {intent ? (
 
                                                                 <div className="space-y-2">
-                                                                    <div className="w-full">
-                                                                        <Button
-                                                                            onClick={handlePostCast}
-                                                                            variant="default"
-                                                                            size="lg"
-                                                                            className="w-full bg-purple-600 hover:bg-purple-500 rounded-xl"
-                                                                        >
-                                                                            Post Cast
-                                                                        </Button>
+                                                                    <div className="flex gap-0 w-full">
+                                                                        {showRefreshFeedback ? (
+                                                                            <>
+                                                                                <Button
+                                                                                    onClick={handleCancelRefresh}
+                                                                                    variant="outline"
+                                                                                    size="lg"
+                                                                                    className="flex-1 bg-white/10 hover:bg-white/20 border-white/20 text-white/80 rounded-bl-xl rounded-tr-none rounded-tl-none rounded-br-none border-r-0"
+                                                                                >
+                                                                                    <X className="w-4 h-4" />
+                                                                                    Cancel
+                                                                                </Button>
+                                                                                <Button
+                                                                                    onClick={handleRefreshWithFeedback}
+                                                                                    disabled={isGeneratingContent}
+                                                                                    variant="default"
+                                                                                    size="lg"
+                                                                                    className="flex-1 rounded-bl-none rounded-br-xl rounded-tr-none rounded-tl-none bg-purple-600 hover:bg-purple-500"
+                                                                                >
+                                                                                    {isGeneratingContent ? "Generating..." : "🔄 Generate"}
+                                                                                </Button>
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                {!isPosting && !intent?.cast_hash && isContentRevealed && (
+                                                                                    <Button
+                                                                                        onClick={handleRefreshClick}
+                                                                                        disabled={isGeneratingContent}
+                                                                                        variant="outline"
+                                                                                        size="lg"
+                                                                                        className="flex-1 bg-white/10 hover:bg-white/20 border-white/20 text-white/80 rounded-bl-xl rounded-tr-none rounded-tl-none rounded-br-none border-r-0"
+                                                                                    >
+                                                                                        {isGeneratingContent ? "Generating..." : "Refresh"}
+                                                                                    </Button>
+                                                                                )}
+                                                                                <Button
+                                                                                    onClick={handlePostCast}
+                                                                                    variant="default"
+                                                                                    size="lg"
+                                                                                    className={`${!isPosting && !intent?.cast_hash && isContentRevealed ? 'flex-1 rounded-bl-none rounded-br-xl rounded-tr-none rounded-tl-none' : 'w-full rounded-b-xl rounded-t-none'} bg-purple-600 hover:bg-purple-500`}
+                                                                                >
+                                                                                    Post Cast
+                                                                                </Button>
+                                                                            </>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             ) : (
                                                                 <>
                                                                     {!postSubmitted && (
-                                                                        <Button
-                                                                            onClick={handlePost}
-                                                                            variant="default"
-                                                                            size="lg"
-                                                                            className="w-full rounded-t-none rounded-b-lg cursor-pointer"
-                                                                            disabled={isPosting}
-                                                                        >
-                                                                            {isPosting ? (
+                                                                        <div className="flex gap-0 w-full">
+                                                                            {showRefreshFeedback ? (
                                                                                 <>
-                                                                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                                                                    Posting...
+                                                                                    <Button
+                                                                                        onClick={handleCancelRefresh}
+                                                                                        variant="outline"
+                                                                                        size="lg"
+                                                                                        className="flex-1 bg-white/10 hover:bg-white/20 border-white/20 text-white/80 rounded-bl-lg rounded-tr-none rounded-tl-none rounded-br-none border-r-0"
+                                                                                    >
+                                                                                        <X className="w-4 h-4" />
+                                                                                        Cancel
+                                                                                    </Button>
+                                                                                    <Button
+                                                                                        onClick={handleRefreshWithFeedback}
+                                                                                        disabled={isGeneratingContent}
+                                                                                        variant="default"
+                                                                                        size="lg"
+                                                                                        className="flex-1 rounded-bl-none rounded-br-lg rounded-tr-none rounded-tl-none bg-purple-600 hover:bg-purple-500"
+                                                                                    >
+                                                                                        {isGeneratingContent ? "Generating..." : "🔄 Generate"}
+                                                                                    </Button>
                                                                                 </>
-                                            ) : (
+                                                                            ) : (
                                                                                 <>
-                                                                                    <span className="text-lg">💸</span>
-                                                                                    Cast this to earn ${pricing}
+                                                                                    {isContentRevealed && (
+                                                                                        <Button
+                                                                                            onClick={handleRefreshClick}
+                                                                                            disabled={isGeneratingContent}
+                                                                                            variant="outline"
+                                                                                            size="lg"
+                                                                                            className="flex-1 bg-white/10 hover:bg-white/20 border-white/20 text-white/80 rounded-bl-lg rounded-tr-none rounded-tl-none rounded-br-none border-r-0"
+                                                                                        >
+                                                                                            {isGeneratingContent ? "Generating..." : "Refresh"}
+                                                                                        </Button>
+                                                                                    )}
+                                                                                    <Button
+                                                                                        onClick={handlePost}
+                                                                                        variant="default"
+                                                                                        size="lg"
+                                                                                        className={`${isContentRevealed ? 'flex-1 rounded-bl-none rounded-br-lg rounded-tr-none rounded-tl-none' : 'w-full rounded-b-lg rounded-t-none'} cursor-pointer`}
+                                                                                        disabled={isPosting}
+                                                                                    >
+                                                                                        {isPosting ? (
+                                                                                            <>
+                                                                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                                                                                Posting...
+                                                                                            </>
+                                                        ) : (
+                                                                                            <>
+                                                                                                <span className="text-lg">💸</span>
+                                                                                                Cast this to earn ${pricing}
+                                                                                            </>
+                                                                                        )}
+                                                                                    </Button>
                                                                                 </>
                                                                             )}
-                                                                        </Button>
+                                                                        </div>
                                                                     )}
                                                                 </>
                                                             )}

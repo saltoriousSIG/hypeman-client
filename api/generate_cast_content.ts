@@ -20,6 +20,8 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       promotionAuthor,
       embedContext,
       intent,
+      userFeedback,
+      previousCast,
     } = req.body;
 
     // Check if intent is provided - only required for initial generation, not refresh
@@ -54,24 +56,38 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
 
     const hypeman_ai = await HypemanAI.getInstance(req.fid as number, username);
 
-    // Generate the initial cast content
-    const initialCast = await hypeman_ai.generateInitialCast(
-      promotionContent,
-      promotionAuthor,
-      embedContext
-    );
+    // Generate cast content - use refineCast if user feedback is provided, otherwise generateInitialCast
+    let castResult;
+    if (userFeedback && userFeedback.trim()) {
+      // Use refineCast with the provided previous cast
+      castResult = await hypeman_ai.refineCast(
+        promotionContent,
+        promotionAuthor,
+        embedContext,
+        userFeedback,
+        previousCast || "", // Use provided previous cast or empty string
+        { temperature: 0.92 }
+      );
+    } else {
+      // Use generateInitialCast for regular generation
+      castResult = await hypeman_ai.generateInitialCast(
+        promotionContent,
+        promotionAuthor,
+        embedContext
+      );
+    }
 
-    if (!initialCast.success) {
+    if (!castResult.success) {
       return res.status(500).json({ 
         error: "Failed to generate cast content",
-        details: initialCast.error 
+        details: castResult.error 
       });
     }
 
     // Store the generated content in Redis for future rerolls
     const cast_obj = {
       id: promotionId,
-      generated_cast: initialCast.text,
+      generated_cast: castResult.text,
       cast_author: promotionAuthor,
       cast_text: promotionContent,
       cast_embed_context: embedContext,
@@ -84,14 +100,15 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
     );
 
     console.log("Generated cast content:", { 
-      cast: initialCast, 
+      cast: castResult, 
       isRefreshOperation,
-      intentHash: intent?.intentHash 
+      intentHash: intent?.intentHash,
+      userFeedback: userFeedback ? "provided" : "none"
     });
 
     res.status(200).json({ 
-      generated_cast: initialCast.text,
-      model: initialCast.model,
+      generated_cast: castResult.text,
+      model: castResult.model,
       ...(intent && { intent }) // Return intent for client reference only if provided
     });
   } catch (e: any) {
