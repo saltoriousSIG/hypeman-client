@@ -27,6 +27,7 @@ interface DataContextValue {
         };
     }>;
     promoterPromotionsLoading?: boolean;
+    refetchPromotions: () => Promise<any>;
     loading?: boolean;
     error: any;
 }
@@ -45,7 +46,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const axios = useAxios();
     const { connectedUserData } = useUserStats();
 
-    const { data: promotions, isLoading, error } = useQuery({
+    const { data: promotions, isLoading, error, refetch } = useQuery({
         queryKey: ["promotions"],
         queryFn: async () => {
             const { data: { promotions } } = await axios.get<{
@@ -70,7 +71,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     });
 
-    const { data: promoterPromotions, isLoading: promoterPromotionsLoading } = useQuery({
+    const { data: promoterPromotions, isPending: promoterPromotionsLoading } = useQuery({
         queryKey: ["promoterPromotions", connectedUserData, promotions],
         queryFn: async () => {
             if (!connectedUserData || !promotions) return [];
@@ -92,6 +93,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         retry: 2, // Retry failed requests twice
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     })
+
     const loading = isLoading || promoterPromotionsLoading;
 
     return (
@@ -100,6 +102,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             promoterPromotions,
             promoterPromotionsLoading,
             loading,
+            refetchPromotions: refetch,
             error
         }}>
             {children}

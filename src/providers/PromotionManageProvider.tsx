@@ -17,6 +17,10 @@ interface PromotionManageContextValue {
     promotionInsights?: any[];
     insightsLoading?: boolean;
     insightsError?: any;
+    activePromotions: any;
+    completedPromotions: any;
+    activePromotionsCount?: number;
+    completedPromotionsCount?: number;
     handleEndPromootion: (promotionId: number) => Promise<void>;
     handleAddPromotionBudget: (promotionId: number, amount: bigint) => Promise<void>;
 }
@@ -56,6 +60,19 @@ export function PromotionManageProvider({ children }: { children: React.ReactNod
     }, [creatorPromotions]);
 
     const creatorPromotionCount = creatorPromotions?.length || 0
+
+    const activePromotions = useMemo(() => {
+        if (!creatorPromotions) return [];
+        return creatorPromotions.filter(promo => promo.state === 0);
+    }, [creatorPromotions]);
+
+    const completedPromotions = useMemo(() => {
+        if (!creatorPromotions) return [];
+        return creatorPromotions.filter(promo => promo.state === 1);
+    }, [creatorPromotions]);
+
+    const activePromotionsCount = activePromotions.length
+    const completedPromotionsCount = completedPromotions.length;
 
     const { data: promotionInsights, isLoading, error } = useQuery({
         queryKey: ['creatorPromotionInsights', creatorPromotions],
@@ -98,9 +115,12 @@ export function PromotionManageProvider({ children }: { children: React.ReactNod
             totalBudgetSpent,
             totalBudgetAllocated,
             creatorPromotionCount,
+            activePromotionsCount,
             promotionInsights,
             insightsLoading: isLoading,
             insightsError: error,
+            activePromotions,
+            completedPromotions,
             handleEndPromootion,
             handleAddPromotionBudget
         }}>

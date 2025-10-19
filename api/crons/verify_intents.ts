@@ -7,6 +7,7 @@ import { zeroHash, pad } from "viem";
 import setupAdminWallet from "../../src/lib/setupAdminWallet.js";
 import { trim } from "viem";
 import axios from "axios";
+import { HypemanAI } from "../../src/clients/HypemanAI.js";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
@@ -33,6 +34,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const intentsAbiFileContents = fs.readFileSync(intentsAbiFilePath, "utf8");
     const intents_abi = JSON.parse(intentsAbiFileContents);
 
+    const hypeman = await HypemanAI.getInstance(0, "hypeman_admin");
+
     const { publicClient, walletClient, account } = setupAdminWallet();
 
     // Example: Read from contract
@@ -49,7 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     for (let i = 0; i < Number(next_promotion_id); i++) {
       const list = await redis.lrange(`intent:${i}`, 0, -1);
-      console.log(list);
+      console.log(list, "LIST");
       if (list.length > 0) {
         for (const [index, item] of list.entries()) {
           const promoter_details: any = await publicClient.readContract({
@@ -62,6 +65,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           console.log(item, "ITEM");
           console.log(promoter_details, "PROMOTER DETAILS");
           const submitted_cast = await redis.get(`user_cast:${item.fid}:${i}`);
+          console.log(
+            promoter_details.fid !== 0n && promoter_details.state === 0
+          );
+
           if (promoter_details.fid !== 0n && promoter_details.state === 0) {
             // check cast content matches what is in redis
             if (item.cast_hash) {
@@ -72,12 +79,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const {
                   data: { cast },
                 } = await axios.get(
-                  `https://api.neynar.com/v2/farcaster/cast?identifier=${cast_hash}&type=hash`
+                  `https://api.neynar.com/v2/farcaster/cast?identifier=${cast_hash}&type=hash`,
+                  {
+                    headers: {
+                      "x-api-key": process.env.NEYNAR_API_KEY || "",
+                    },
+                  }
                 );
-                if (
-                  cast.text !==
-                  JSON.parse(submitted_cast || "{}").generated_cast
-                ) {
+                console.log(submitted_cast.generated_cast, "SUBMITTED CAST");
+
+                const { sentimentMatch } = await hypeman.compareContent(
+                  submitted_cast.generated_cast,
+                  cast.text
+                );
+                console.log(sentimentMatch, "SENTIMENT MATCH");
+
+                if (!sentimentMatch) {
                   intents_to_process.push({
                     intent_hash: item.intentHash,
                     promotion_id: item.promotion_id
@@ -86,8 +103,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     wallet: item.wallet,
                     fid: BigInt(item.fid),
                     cast_hash: zeroHash,
-                    post_time: BigInt(item.timestamp),
+                    post_time: BigInt(
+                      item.timestamp || Math.floor(Date.now() / 1000)
+                    ),
                   });
+                  await redis.lrem(`intent:${i}`, 1, JSON.stringify(item));
                 } else {
                   intents_to_process.push({
                     intent_hash: item.intentHash,
@@ -96,11 +116,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                       : BigInt(item.promotionId),
                     wallet: item.wallet,
                     fid: BigInt(item.fid),
-                    cast_hash: pad(item.castHash, { size: 32 }),
-                    post_time: BigInt(item.timestamp),
+                    cast_hash: pad(item.cast_hash, { size: 32 }),
+                    post_time: BigInt(
+                      item.timestamp || Math.floor(Date.now() / 1000)
+                    ),
+                  });
+                  await redis.lset(`intent:${i}`, index, {
+                    ...item,
+                    processed: true,
                   });
                 }
               } catch (e: any) {
+                console.log("Error fetching cast:", e, e.message);
                 intents_to_process.push({
                   intent_hash: item.intentHash,
                   promotion_id: item.promotion_id
@@ -109,16 +136,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                   wallet: item.wallet,
                   fid: BigInt(item.fid),
                   cast_hash: zeroHash,
-                  post_time: BigInt(item.timestamp),
+                  post_time: BigInt(
+                    item.timestamp || Math.floor(Date.now() / 1000)
+                  ),
                 });
-              } finally {
-                await redis.lset(`intent:${i}`, index, {
-                  ...item,
-                  processed: true,
-                });
+                await redis.lrem(`intent:${i}`, 1, JSON.stringify(item));
               }
             } else {
-              if (Date.now() / 1000 > Number(item.expiry)) {
+              if (
+                item.expiry &&
+                parseInt(item.expiry) < Math.floor(Date.now() / 1000)
+              ) {
                 intents_to_process.push({
                   intent_hash: item.intentHash,
                   promotion_id: item.promotion_id
@@ -141,6 +169,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
     }
+    console.log(intents_to_process, "INTENTS TO PROCESS");
     const { request } = await publicClient.simulateContract({
       account,
       address: DIAMOND_ADDRESS as `0x${string}`,

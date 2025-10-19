@@ -32,13 +32,13 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
     const index = list.findIndex(
       (i: any) =>
         i.intentHash === intent_hash &&
-        promotion_id.toString() == i.promotionId &&
+        promotion_id.toString() == i.promotion_id &&
         i.fid == req.fid?.toString()
     );
     const intent = list.find(
       (i: any) =>
         i.intentHash === intent_hash &&
-        promotion_id == i.promotionId &&
+        promotion_id == i.promotion_id &&
         i.fid == req.fid
     );
 

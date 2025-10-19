@@ -6,6 +6,7 @@ import { Share, Bell, Check } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { useFrameContext } from "@/providers/FrameProvider";
 import useAxios from "@/hooks/useAxios";
+import sdk from "@farcaster/frame-sdk";
 
 interface ShareModalProps {
     showShareModal: boolean;
@@ -64,7 +65,14 @@ const ShareModal: React.FC<ShareModalProps> = ({ showShareModal, handleShowShare
         )
 
     }
-    const handleShareToTimeline = () => { }
+
+    const handleShareToTimeline = async () => {
+        await sdk.actions.composeCast({
+            text: `I just created a promotion on Hypeman! Check it out!`,
+            embeds: ["https://hypeman-client.vercel.app/"]
+        });
+    }
+
     const handleNotifyFollowers = () => {
         console.log(selectedFollowers)
     }

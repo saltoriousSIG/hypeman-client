@@ -107,9 +107,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const index = list.findIndex(
           (i: any) =>
             i.intentHash === decoded.args.intentHash &&
-            decoded.args.promotionId.toString() == i.promotionId &&
-            i.fid == decoded.args.fid.toString()
+            decoded.args.promotionId.toString() === i.promotion_id &&
+            i.fid === decoded.args.fid.toString()
         );
+        console.log(index, "INTENT INDEX IN REDIS");
+        console.log(decoded.args, "DECODED ARGS");
         // Only add to redis if fid is not 0 (meaning the promoter is registered)
         if (promoter_details.fid !== 0n) {
           if (index === -1) {

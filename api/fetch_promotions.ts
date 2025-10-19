@@ -59,6 +59,14 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       });
 
       const list = await redis.lrange(`intent:${i}`, 0, -1);
+      const current_user_intent = list.find((intent: any) => {
+        return intent.fid === req.fid?.toString();
+      });
+
+      const existing_generated_cast = await redis.get(
+        `user_cast:${req.fid}:${i}`
+      );
+      console.log(current_user_intent, "CURRENT USER INTENT");
 
       try {
         const {
@@ -84,13 +92,15 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
           committed_budget: promotion.committed_budget.toString(),
           promoters,
           intents: list,
+          existing_generated_cast,
           display_to_promoters:
             promotion.state === 0 && BigInt(promotion.remaining_budget) > 0n,
           claimable:
-            promoterData &&
-            promoterData.fid > BigInt(0) &&
-            promoterData.state > BigInt(0) &&
-            promoterData.cast_hash !== zeroHash,
+            (promoterData &&
+              promoterData.fid > BigInt(0) &&
+              promoterData.state > BigInt(0) &&
+              promoterData.cast_hash !== zeroHash) ||
+            !!current_user_intent?.cast_hash,
           cast_data: {
             text: cast.text,
             embeds: cast.embeds,
@@ -111,6 +121,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
           unprocessed_intents: promotion.unprocessed_intents.toString(),
           display_to_promoters: false,
           intents: list,
+          existing_generated_cast,
           cast_data_fetch_error: e.message,
           cast_data: null,
         });

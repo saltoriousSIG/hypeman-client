@@ -1,7 +1,8 @@
-import { generateText } from "ai";
+import { generateText, generateObject } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import axios from "axios";
 import { Cast } from "@neynar/nodejs-sdk/build/api";
+import { z } from "zod";
 
 interface GenerationOptions {
   temperature?: number;
@@ -32,6 +33,12 @@ interface VoiceProfile {
   punctuationStyle: string;
 }
 
+const ContentComparisonSchema = z.object({
+  sentimentmatch: z
+    .boolean()
+    .describe("Whether the two texts convey the same core message and meaning"),
+});
+
 export class HypemanAI {
   private static instance: HypemanAI;
   private initPromise: Promise<void> | null = null;
@@ -61,6 +68,9 @@ export class HypemanAI {
   }
 
   private async init(fid: number): Promise<void> {
+    if (fid === 0) {
+      return;
+    }
     try {
       await this.fetchUserCasts(fid);
       this.voiceProfile = this.analyzeVoice(this.user_casts);
@@ -612,5 +622,46 @@ ${styleHints}
       valid: issues.length === 0,
       issues,
     };
+  }
+
+  async compareContent(expected: string, actual: string) {
+    try {
+      const normalizedExpected = expected.trim().toLowerCase();
+      const normalizedActual = actual.trim().toLowerCase();
+      if (normalizedExpected === normalizedActual) {
+        return { sentimentMatch: true };
+      }
+      const { object } = await generateObject({
+        model: this.fastModel,
+        schema: ContentComparisonSchema,
+        prompt: `You are a content similarity analyzer. Compare these two texts and determine if they convey the same core message and meaning.
+        Focus on whether they're saying the same thing, not exact wording.
+        Be lenient with minor differences in style, emojis, punctuation.
+        
+        Text 1: ${expected}
+        Text 2: ${actual}
+        
+        Determine if these texts convey the same message.`,
+        temperature: 0.3,
+        maxRetries: 2,
+        abortSignal: AbortSignal.timeout(10000),
+      });
+      return {
+        sentimentMatch: object.sentimentmatch,
+      };
+    } catch (e: any) {
+      const expectedWords = expected.toLowerCase().split(/\s+/);
+      const actualWords = actual.toLowerCase().split(/\s+/);
+      const overlap = expectedWords.filter((word) =>
+        actualWords.some(
+          (actualWord) => actualWord.includes(word) || word.includes(actualWord)
+        )
+      );
+
+      const overlapRatio =
+        overlap.length / Math.max(expectedWords.length, actualWords.length);
+
+      return { sentimentMatch: overlapRatio > 0.6 };
+    }
   }
 }

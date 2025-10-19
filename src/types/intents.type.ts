@@ -9,4 +9,5 @@ export interface Intent {
   expiry: bigint | string;
   nonce: bigint | string;
   castHash?: string;
+  timestamp?: string;
 }

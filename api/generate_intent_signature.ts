@@ -136,6 +136,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
         fee: intent.fee.toString(),
         expiry: intent.expiry.toString(),
         nonce: intent.nonce.toString(),
+        timestamp: Math.floor(Date.now() / 1000).toString(),
       },
       signature,
       messageHash,
