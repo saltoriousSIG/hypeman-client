@@ -205,6 +205,8 @@ export default function BuyersPage() {
         !!selectedCast // Only fetch when a cast is selected
     );
 
+    const total = budget * (1 + (platformFee || 0));
+
     return (
         <MainLayout className="pb-20 space-y-4">
             {isLoading ? (
@@ -377,6 +379,11 @@ export default function BuyersPage() {
                                     <div className="flex justify-between text-xs text-white/40">
                                         <span>3 USDC</span>
                                         <span>30 USDC</span>
+                                    </div>
+
+                                    <div className="flex justify-between text-xs text-white/40">
+                                        <span></span>
+                                        <span>Total: {total.toFixed(2)} USDC</span>
                                     </div>
 
                                     {budget < pricing_tiers.tier1 && (
