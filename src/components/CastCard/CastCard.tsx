@@ -6,7 +6,7 @@ import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css'
 import useContract, { ExecutionType } from "@/hooks/useContract"
 import { Button } from "../ui/button"
-import { extractUrls } from "@/lib/utils"
+import { extractUrls, convertWarpcastUrlToCastHash } from "@/lib/utils"
 import sdk from "@farcaster/frame-sdk"
 import useAxios from "@/hooks/useAxios"
 import { useData } from "@/providers/DataProvider";
@@ -268,11 +268,14 @@ const CastCard: React.FC<CastCardProps> = ({
                 if (!rerolledCast && !generatedCast) return;
                 e?.stopPropagation();
                 // Post cast logic here
-                const { text, urls } = extractUrls(rerolledCast || generatedCast || "");
-                const embeds: any = [...urls, promotion.cast_url]
+                const { text } = extractUrls(rerolledCast || generatedCast || "");
+                
+                // Convert Warpcast URL to cast hash for embedding
+                const castHash = await convertWarpcastUrlToCastHash(promotion.cast_url);
+
                 const response = await sdk.actions.composeCast({
                     text,
-                    embeds,
+                    embeds: [castHash],
                 });
                 if (response.cast) {
                     //decide what to do here, do i add bytes string now or let the intent timeout
@@ -554,7 +557,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                                                                 size="lg"
                                                                                 className="flex-1 rounded-bl-none rounded-br-xl rounded-tr-none rounded-tl-none bg-purple-600 hover:bg-purple-500"
                                                                             >
-                                                                                {isGeneratingContent ? "Generating..." : "🔄 Generate"}
+                                                                                {isGeneratingContent ? "Generating..." : "Regenerate"}
                                                                             </Button>
                                                                         </>
                                                                     ) : (

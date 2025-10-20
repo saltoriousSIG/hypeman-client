@@ -37,3 +37,32 @@ export const extractHashFromFCUrl = (uri: string) => {
   const hash = urlObj.pathname.split("/").pop();
   return hash;
 };
+
+export const convertWarpcastUrlToCastHash = async (warpcastUrl: string): Promise<string> => {
+  try {
+    // Use Neynar API to get the cast data and extract the proper hash
+    const response = await fetch(
+      `https://api.neynar.com/v2/farcaster/cast?identifier=${encodeURIComponent(warpcastUrl)}&type=url`,
+      {
+        headers: {
+          "x-api-key": process.env.NEYNAR_API_KEY as string,
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch cast data: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data.cast.hash;
+  } catch (error) {
+    console.error("Error converting Warpcast URL to cast hash:", error);
+    throw error;
+  }
+};
+
+// Example usage:
+// const warpcastUrl = 'https://warpcast.com/hurls/0x53584562ccc4c84beca48bae375a8587645d3953';
+// const castHash = await convertWarpcastUrlToCastHash(warpcastUrl);
+// console.log(castHash); // Output: 0x80f4789802945d0f609d810336f719266b3b4368
