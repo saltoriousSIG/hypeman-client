@@ -65,6 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     "/src/abis",
     "PromotionData.json"
   );
+
   const dataAbiFileContents = fs.readFileSync(dataAbiFilePath, "utf8");
   const data_abi = JSON.parse(dataAbiFileContents);
 
