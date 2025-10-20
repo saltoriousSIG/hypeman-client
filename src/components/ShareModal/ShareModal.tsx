@@ -73,10 +73,6 @@ const ShareModal: React.FC<ShareModalProps> = ({ showShareModal, handleShowShare
         });
     }
 
-    const handleNotifyFollowers = () => {
-        console.log(selectedFollowers)
-    }
-
     const handleSkipForNow = () => {
         handleShowShareModal(false);
         setSelectedFollowers([])
@@ -168,7 +164,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ showShareModal, handleShowShare
                             Share to Timeline
                         </Button>
 
-                        <Button
+                        {/* <Button
                             onClick={handleNotifyFollowers}
                             className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-11 text-white font-medium"
                             disabled={selectedFollowers.length === 0}
@@ -178,7 +174,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ showShareModal, handleShowShare
                             {selectedFollowers.length > 0 && (
                                 <Badge className="ml-2 bg-white/20 text-white border-0">{selectedFollowers.length}</Badge>
                             )}
-                        </Button>
+                        </Button> */}
 
                         <Button
                             onClick={handleSkipForNow}

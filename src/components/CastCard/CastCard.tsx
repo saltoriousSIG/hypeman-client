@@ -56,12 +56,6 @@ const CastCard: React.FC<CastCardProps> = ({
     useEffect(() => {
         if (promotion.intents && address) {
             const existingIntent = promotion.intents.find((i: any) => i.wallet && i.wallet.toLowerCase() === address.toLowerCase());
-            console.log("🔍 Checking for existing intent:", {
-                promotionId: promotion.id,
-                address,
-                existingIntent,
-                allIntents: promotion.intents
-            });
             if (existingIntent) {
                 setIntent(existingIntent);
                 setGeneratedCast(promotion.existing_generated_cast.generated_cast);
@@ -106,21 +100,14 @@ const CastCard: React.FC<CastCardProps> = ({
 
             // First, generate intent signature if not already available
             let currentIntent = intent;
-            console.log("🚀 Starting intent generation check:", {
-                hasExistingIntent: !!currentIntent,
-                hasPendingPromise: !!intentPromiseRef.current,
-                currentIntent
-            });
 
             if (!currentIntent && !intentPromiseRef.current) {
-                console.log("📝 No existing intent found, generating new one...");
                 setIsGeneratingIntent(true);
                 intentPromiseRef.current = axios.post("/api/generate_intent_signature", {
                     promotion_id: promotion.id,
                     wallet: address
                 })
                     .then((res) => {
-                        console.log("✅ Intent generated successfully:", res.data);
                         // Transform the response to match expected structure
                         const transformedIntent = {
                             intentHash: res.data.intent.intentHash,
@@ -140,12 +127,11 @@ const CastCard: React.FC<CastCardProps> = ({
                 currentIntent = await intentPromiseRef.current;
                 setIsGeneratingIntent(false);
             } else if (intentPromiseRef.current) {
-                console.log("⏳ Waiting for existing intent generation promise...");
                 setIsGeneratingIntent(true);
                 currentIntent = await intentPromiseRef.current;
                 setIsGeneratingIntent(false);
             } else {
-                console.log("✅ Using existing intent:", currentIntent);
+                console.log("✅ Using existing intent:");
             }
 
             if (!currentIntent) {
@@ -170,7 +156,7 @@ const CastCard: React.FC<CastCardProps> = ({
             } else {
                 try {
                     // Submit intent to blockchain for new intents
-                    console.log("💳 Submitting intent to blockchain:", currentIntent.intentHash);
+                    console.log("💳 Submitting intent to blockchain:");
                     await axios.post("/api/add_intent", {
                         promotion_id: promotion.id,
                         intent: currentIntent.intent
@@ -185,7 +171,7 @@ const CastCard: React.FC<CastCardProps> = ({
             }
 
             // Now generate cast content
-            console.log("🎯 Generating cast content with intent:", currentIntent.intentHash);
+            console.log("🎯 Generating cast content with intent:");
             const { data } = await axios.post("/api/generate_cast_content", {
                 username: fUser.username,
                 promotionId: promotion.id,
@@ -197,10 +183,8 @@ const CastCard: React.FC<CastCardProps> = ({
             setGeneratedCast(data.generated_cast);
             // Update intent state with the returned intent (in case it was updated)
             if (data.intent) {
-                console.log("🔄 Intent updated from API response:", data.intent);
                 setIntent(data.intent);
             }
-            console.log("🎉 Cast content generated successfully:", data.generated_cast);
             setIsContentRevealed(true);
         } catch (e: any) {
             toast.error(`Error generating content: ${e.message}`);
@@ -218,7 +202,6 @@ const CastCard: React.FC<CastCardProps> = ({
         try {
             setIsGeneratingContent(true);
 
-            console.log("🔄 Refreshing cast content without intent generation", { userFeedback });
             const { data } = await axios.post("/api/generate_cast_content", {
                 username: fUser.username,
                 promotionId: promotion.id,
@@ -231,7 +214,6 @@ const CastCard: React.FC<CastCardProps> = ({
             });
             toast.success("Cast content refreshed successfully!");
             setGeneratedCast(data.generated_cast);
-            console.log("🎉 Cast content refreshed successfully:", data.generated_cast);
         } catch (e: any) {
             console.error("Error refreshing cast content:", e);
             toast.error("Error refreshing cast content");
@@ -323,7 +305,6 @@ const CastCard: React.FC<CastCardProps> = ({
                 throw new Error("No intent available - please generate content first")
             }
 
-            console.log("📤 Posting cast with existing intent:", intent.intentHash);
             await handlePostCast(undefined, intent.intent);
         } catch (error) {
             console.error("Error posting:", error)
@@ -342,7 +323,6 @@ const CastCard: React.FC<CastCardProps> = ({
         load();
     }, [promotion.id, address]);
 
-    console.log('promotion', promotion);
 
     const username = promotion.cast_data.author.username;
     const text = promotion.cast_data.text;

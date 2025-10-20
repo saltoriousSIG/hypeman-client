@@ -9,7 +9,6 @@ const PromotionManage: React.FC<PromotionManageProps> = () => {
     const [activeTab, setActiveTab] = useState<"active" | "completed">("active");
 
     const { activePromotions, completedPromotions, activePromotionsCount, completedPromotionsCount } = usePromotionManage();
-    console.log(activePromotions, "active promotions");
     const getCurrentPromotions = () => {
         switch (activeTab) {
             case "active":

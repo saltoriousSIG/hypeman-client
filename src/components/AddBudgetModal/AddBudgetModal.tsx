@@ -62,7 +62,6 @@ export function AddBudgetModal({ isOpen, onClose, promotion }: AddBudgetModalPro
             const fee = numAmount * platformFee;
             const calculated_allowance = numAmount + fee;
             const tx = await approve([DIAMOND_ADDRESS, parseUnits(calculated_allowance.toString(), 6)]);
-            console.log(tx, "approve tx");
             setApproved(true);
         }, [amount, approve, platformFee]
     )

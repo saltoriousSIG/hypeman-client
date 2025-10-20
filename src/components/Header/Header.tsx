@@ -24,7 +24,6 @@ export default function Header() {
     const { promotions } = useData()
     const pricing = useGetPostPricing()
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
-    console.log(promotions);
 
     const completedPromotions = useMemo(() => {
         return promotions?.filter((p) => {

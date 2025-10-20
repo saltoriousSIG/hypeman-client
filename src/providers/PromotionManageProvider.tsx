@@ -81,7 +81,6 @@ export function PromotionManageProvider({ children }: { children: React.ReactNod
             const insights = []
             for (let promotion of creatorPromotions) {
                 const insight = await promotion_insights([promotion.id]);
-                console.log(insights, "insights")
                 insights.push(insight);
             }
             return insights;
