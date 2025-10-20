@@ -285,6 +285,7 @@ ${styleHints}
 - Never invent URLs
 - Under 280 characters
 - Match examples' tone exactly
+- No generic promotional language
 </restrictions>`,
       },
       {
@@ -393,8 +394,8 @@ ${contextUrl ? `<url>${contextUrl}</url>` : ""}
         model: this.fastModel,
         messages,
         temperature: options?.temperature || 0.92, // Sweet spot for Haiku creativity
-        frequencyPenalty: 0.3,
-        presencePenalty: 0.3,
+        frequencyPenalty: 0.65,
+        presencePenalty: 0.5,
         maxRetries: 1, // Fast fail for speed
         abortSignal: AbortSignal.timeout(15000), // 15s timeout
       });
@@ -469,8 +470,8 @@ ${styleHints}
         model: this.fastModel,
         messages,
         temperature: options?.temperature || 0.92,
-        frequencyPenalty: 0.3,
-        presencePenalty: 0.3,
+        frequencyPenalty: 0.65,
+        presencePenalty: 0.5,
         maxRetries: 2,
         abortSignal: AbortSignal.timeout(20000),
       });
