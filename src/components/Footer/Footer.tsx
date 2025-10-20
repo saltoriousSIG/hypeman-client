@@ -9,7 +9,7 @@ const Footer: React.FC = () => {
                 <NavLink to="/" className="flex-1">
                     {({ isActive }) => (
                         <button
-                            className={`w-full flex items-center justify-center gap-2 px-6 py-6 text-white text-base font-semibold transition-all duration-300 border-r cursor-pointer ${isActive
+                            className={`w-full flex items-center flex-col gap-1 px-6 py-6 text-white text-sm font-black transition-all duration-300 border-r cursor-pointer ${isActive
                                 ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25 border-white/10 font-bold'
                                 : 'bg-white/10 hover:bg-white/20 border-white/10'
                                 }`}
@@ -22,8 +22,8 @@ const Footer: React.FC = () => {
                 <NavLink to="/creators" className="flex-1">
                     {({ isActive }) => (
                         <button
-                            className={`w-full flex items-center justify-center gap-2 px-6 py-6 text-white text-base font-semibold transition-all duration-300 border-r cursor-pointer ${isActive
-                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25 border-white/10 font-bold'
+                            className={`w-full flex items-center flex-col gap-1 px-6 py-6 text-white text-sm font-black transition-all duration-300 border-r cursor-pointer ${isActive
+                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25 border-white/10 font-black'
                                 : 'bg-white/10 hover:bg-white/20 border-white/10'
                                 }`}
                         >
@@ -35,7 +35,7 @@ const Footer: React.FC = () => {
                 <NavLink to="/manage" className="flex-1">
                     {({ isActive }) => (
                         <button
-                            className={`w-full flex items-center justify-center gap-2 px-6 py-6 text-white text-base font-semibold transition-all duration-300 cursor-pointer ${isActive
+                            className={`w-full flex items-center flex-col gap-1 px-6 py-6 text-white text-sm font-black transition-all duration-300 cursor-pointer ${isActive
                                 ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25 font-bold'
                                 : 'bg-white/10 hover:bg-white/20'
                                 }`}
