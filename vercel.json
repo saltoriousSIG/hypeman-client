@@ -11,7 +11,7 @@
       "destination": "/index.html"
     },
     {
-      "source": "/creators/*",
+      "source": "/creators",
       "destination": "/index.html"
     },
     {
