@@ -185,7 +185,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Wait for transaction confirmation
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         txHash: receipt.transactionHash,
         processed: intents_to_process.length,
