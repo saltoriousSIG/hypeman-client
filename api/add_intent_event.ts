@@ -128,6 +128,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             };
             if (promoter_details.cast_hash !== zeroHash) {
               intent_to_add.cast_hash = promoter_details.cast_hash;
+              intent_to_add.processed = true;
             }
             await redis.lpush(
               `intent:${decoded.args.promotionId.toString()}`,
@@ -146,6 +147,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             };
             if (promoter_details.cast_hash !== zeroHash) {
               intent_to_add.cast_hash = promoter_details.cast_hash;
+              intent_to_add.processed = true;
             }
             await redis.lset(
               `intent:${decoded.args.promotionId.toString()}`,
