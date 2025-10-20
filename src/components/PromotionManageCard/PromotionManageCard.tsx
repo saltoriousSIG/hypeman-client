@@ -125,16 +125,6 @@ const PromotionManageCard: React.FC<PromotionManageCardProps> = ({ promotion, ac
                                     style={{ width: `${budgetSpentPercentage}%` }}
                                 />
                             </div>
-                            {promotion.state === 0 && (
-                                <button
-                                    onClick={() => onAddBudget && onAddBudget(promotion.id)}
-                                    className="w-full flex items-center justify-center gap-1 px-2 py-1 bg-green-500/20 hover:bg-green-500/30 rounded-lg text-xs font-medium text-green-400 border border-green-400/20 transition-all duration-300"
-                                    title="Add to budget"
-                                >
-                                    <Plus className="w-3 h-3" />
-                                    Add Funds
-                                </button>
-                            )}
                         </div>
                         <div className="bg-black/20 rounded-xl p-3">
                             <div className="flex items-center gap-2 mb-1">
