@@ -170,22 +170,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
     console.log(intents_to_process, "INTENTS TO PROCESS");
-    const { request } = await publicClient.simulateContract({
-      account,
-      address: DIAMOND_ADDRESS as `0x${string}`,
-      abi: intents_abi,
-      functionName: "batchProcessIntents",
-      args: [intents_to_process],
-    });
 
-    const hash = await walletClient.writeContract(request);
+    if (intents_to_process.length === 0) {
+      const { request } = await publicClient.simulateContract({
+        account,
+        address: DIAMOND_ADDRESS as `0x${string}`,
+        abi: intents_abi,
+        functionName: "batchProcessIntents",
+        args: [intents_to_process],
+      });
 
-    // Wait for transaction confirmation
-    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      const hash = await walletClient.writeContract(request);
+
+      // Wait for transaction confirmation
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+      res.status(200).json({
+        success: true,
+        txHash: receipt.transactionHash,
+        processed: intents_to_process.length,
+      });
+    }
 
     res.status(200).json({
       success: true,
-      txHash: receipt.transactionHash,
+      txHash: null,
       processed: intents_to_process.length,
     });
   } catch (e: any) {
