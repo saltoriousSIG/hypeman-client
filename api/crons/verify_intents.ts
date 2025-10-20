@@ -171,7 +171,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     console.log(intents_to_process, "INTENTS TO PROCESS");
 
-    if (intents_to_process.length === 0) {
+    if (intents_to_process.length > 0) {
       const { request } = await publicClient.simulateContract({
         account,
         address: DIAMOND_ADDRESS as `0x${string}`,
