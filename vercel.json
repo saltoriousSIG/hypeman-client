@@ -10,6 +10,20 @@
       "schedule": "*/5 * * * *"
     }
   ],
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/creators/*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/manage",
+      "destination": "/index.html"
+    }
+  ],
   "functions": {
     "api/**/*.{js,ts}": {
       "maxDuration": 300
