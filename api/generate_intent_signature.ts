@@ -7,13 +7,11 @@ import {
   type Address,
   type Hex,
 } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
 import { getUserStats } from "../src/lib/getUserStats.js";
 import { calculateUserScore } from "../src/lib/calculateUserScore.js";
 import { parseUnits } from "viem";
 import { RedisClient } from "../src/clients/RedisClient.js";
 import { withHost } from "../middleware/withHost.js";
-import { v4 as uuidv4 } from "uuid";
 import { randomBytes } from "crypto";
 import { validateSignature } from "../middleware/validateSignature.js";
 import { Intent } from "../src/types/intents.type.js";

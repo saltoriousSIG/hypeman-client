@@ -85,13 +85,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
 
       if (decoded && decoded.eventName === "IntentSubmitted") {
-        const intent_from_hash = await publicClient.readContract({
-          address: DIAMOND_ADDRESS as `0x${string}`,
-          abi: data_abi,
-          functionName: "getPromoterDetails",
-          args: [decoded.args.promotionId.toString(), decoded.args.wallet],
-        });
-
         const promoter_details: any = await publicClient.readContract({
           address: DIAMOND_ADDRESS as `0x${string}`,
           abi: data_abi,
