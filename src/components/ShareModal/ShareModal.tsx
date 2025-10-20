@@ -40,31 +40,31 @@ const ShareModal: React.FC<ShareModalProps> = ({ showShareModal, handleShowShare
         }
     }, [])
 
-    useEffect(() => {
-        if (!fUser) return;
-        const load = async () => {
-            try {
-                const { data } = await axios.post(`/api/fetch_user_followers`, {
-                    cursor: null
-                });
-                setUserFollowers(data.users);
-                setCursor(data.cursor);
-            } catch (e: any) {
-                throw new Error(e.message);
-            }
-        }
-        load();
-    }, [fUser]);
+    // useEffect(() => {
+    //     if (!fUser) return;
+    //     const load = async () => {
+    //         try {
+    //             const { data } = await axios.post(`/api/fetch_user_followers`, {
+    //                 cursor: null
+    //             });
+    //             setUserFollowers(data.users);
+    //             setCursor(data.cursor);
+    //         } catch (e: any) {
+    //             throw new Error(e.message);
+    //         }
+    //     }
+    //     load();
+    // }, [fUser]);
 
-    const toggleFollower = (follower_id: number, username: `@${string}`) => {
-        setSelectedFollowers((prev) =>
-            prev.some((u) => u.id === follower_id) ? prev.filter((user) => user.id !== follower_id) : [...prev, {
-                id: follower_id,
-                username
-            }],
-        )
+    // const toggleFollower = (follower_id: number, username: `@${string}`) => {
+    //     setSelectedFollowers((prev) =>
+    //         prev.some((u) => u.id === follower_id) ? prev.filter((user) => user.id !== follower_id) : [...prev, {
+    //             id: follower_id,
+    //             username
+    //         }],
+    //     )
 
-    }
+    // }
 
     const handleShareToTimeline = async () => {
         await sdk.actions.composeCast({
@@ -83,22 +83,22 @@ const ShareModal: React.FC<ShareModalProps> = ({ showShareModal, handleShowShare
         setCursor('')
     }
 
-    const handleLoadMore = useCallback(
-        async () => {
-            if (!fUser) return
-            try {
-                const { data } = await axios.post(`/api/fetch_user_followers`, {
-                    fid: fUser?.fid,
-                    cursor
-                })
-                setUserFollowers([...userFollowers, ...data.users]);
-                setCursor(data.cursor);
-            } catch (e: any) {
-                console.log(e)
-                throw new Error(e.message);
-            }
-        }, [fUser, cursor]
-    )
+    // const handleLoadMore = useCallback(
+    //     async () => {
+    //         if (!fUser) return
+    //         try {
+    //             const { data } = await axios.post(`/api/fetch_user_followers`, {
+    //                 fid: fUser?.fid,
+    //                 cursor
+    //             })
+    //             setUserFollowers([...userFollowers, ...data.users]);
+    //             setCursor(data.cursor);
+    //         } catch (e: any) {
+    //             console.log(e)
+    //             throw new Error(e.message);
+    //         }
+    //     }, [fUser, cursor]
+    // )
 
     return (
         <Dialog open={showShareModal} onOpenChange={handleShowShareModal}>
@@ -113,7 +113,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ showShareModal, handleShowShare
                     <p className="text-white/70 text-sm">
                         Let your followers know about this promotion opportunity! Select who to share with:
                     </p>
-
+                    {/* 
                     <div className="max-h-64 overflow-y-auto space-y-2 p-1">
                         {userFollowers.map((follower) => (
                             <div
@@ -157,7 +157,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ showShareModal, handleShowShare
                         >
                             Load More
                         </Button>
-                    </div>
+                    </div> */}
 
                     <div className="flex flex-col gap-2 pt-4 border-t border-white/20">
                         <Button

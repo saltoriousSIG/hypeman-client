@@ -21,7 +21,7 @@ interface PromotionManageContextValue {
     completedPromotions: any;
     activePromotionsCount?: number;
     completedPromotionsCount?: number;
-    handleEndPromootion: (promotionId: number) => Promise<void>;
+    handleEndPromotion: (promotionId: number) => Promise<void>;
     handleAddPromotionBudget: (promotionId: number, amount: bigint) => Promise<void>;
 }
 
@@ -93,7 +93,7 @@ export function PromotionManageProvider({ children }: { children: React.ReactNod
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     });
 
-    const handleEndPromootion = async (promotionId: number) => {
+    const handleEndPromotion = async (promotionId: number) => {
         try {
             await end_promotion([promotionId]);
         } catch (e: any) {
@@ -121,7 +121,7 @@ export function PromotionManageProvider({ children }: { children: React.ReactNod
             insightsError: error,
             activePromotions,
             completedPromotions,
-            handleEndPromootion,
+            handleEndPromotion,
             handleAddPromotionBudget
         }}>
             {children}

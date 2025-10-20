@@ -10,6 +10,7 @@ import { extractUrls } from "@/lib/utils"
 import sdk from "@farcaster/frame-sdk"
 import useAxios from "@/hooks/useAxios"
 import { useData } from "@/providers/DataProvider";
+import { toast } from "sonner";
 
 interface CastCardProps {
     promotion: any
@@ -17,7 +18,6 @@ interface CastCardProps {
     promotionContent: string
     promotionAuthor: string
     promotionEmmbedContext?: any[]
-
 }
 
 const CastCard: React.FC<CastCardProps> = ({
@@ -44,7 +44,7 @@ const CastCard: React.FC<CastCardProps> = ({
 
     const axios = useAxios();
 
-    const { fUser, address } = useFrameContext();
+    const { fUser, address, isFrameAdded, handleAddFrame } = useFrameContext();
     const { refetchPromotions } = useData();
 
     const intentPromiseRef = useRef<Promise<any> | null>(null)
@@ -168,17 +168,20 @@ const CastCard: React.FC<CastCardProps> = ({
                 // Skip blockchain submission for existing intents
                 // Just generate cast content directly
             } else {
-                // Submit intent to blockchain for new intents
-                console.log("💳 Submitting intent to blockchain:", currentIntent.intentHash);
-
-                await axios.post("/api/add_intent", {
-                    promotion_id: promotion.id,
-                    intent: currentIntent.intent
-                });
-
-                await submit_intent([currentIntent.intent, currentIntent.signature]);
-
-                console.log("✅ Intent submitted to blockchain and saved to backend");
+                try {
+                    // Submit intent to blockchain for new intents
+                    console.log("💳 Submitting intent to blockchain:", currentIntent.intentHash);
+                    await axios.post("/api/add_intent", {
+                        promotion_id: promotion.id,
+                        intent: currentIntent.intent
+                    });
+                    await submit_intent([currentIntent.intent, currentIntent.signature]);
+                    toast.success("Intent submitted successfully!");
+                    console.log("✅ Intent submitted to blockchain and saved to backend");
+                } catch (e: any) {
+                    toast.error("Error submitting intent to blockchain");
+                    console.error("❌ Error submitting intent to blockchain:", e);
+                }
             }
 
             // Now generate cast content
@@ -200,6 +203,7 @@ const CastCard: React.FC<CastCardProps> = ({
             console.log("🎉 Cast content generated successfully:", data.generated_cast);
             setIsContentRevealed(true);
         } catch (e: any) {
+            toast.error(`Error generating content: ${e.message}`);
             console.error("Error generating content:", e);
             // Handle error - maybe show a toast or error message
         } finally {
@@ -225,10 +229,12 @@ const CastCard: React.FC<CastCardProps> = ({
                 previousCast: generatedCast, // Pass current cast for refinement
                 // No intent required for refresh
             });
+            toast.success("Cast content refreshed successfully!");
             setGeneratedCast(data.generated_cast);
             console.log("🎉 Cast content refreshed successfully:", data.generated_cast);
         } catch (e: any) {
             console.error("Error refreshing cast content:", e);
+            toast.error("Error refreshing cast content");
             // Handle error - maybe show a toast or error message
         } finally {
             setIsGeneratingContent(false);
@@ -276,24 +282,34 @@ const CastCard: React.FC<CastCardProps> = ({
 
     const handlePostCast = useCallback(
         async (e?: React.MouseEvent, intent_passed?: any) => {
-            if (!rerolledCast && !generatedCast) return;
-            e?.stopPropagation();
-            // Post cast logic here
-            const { text, urls } = extractUrls(rerolledCast || generatedCast || "");
-            const embeds: any = [...urls, promotion.cast_url]
-            const response = await sdk.actions.composeCast({
-                text,
-                embeds,
-            });
-            if (response.cast) {
-                //decide what to do here, do i add bytes string now or let the intent timeout
-                setPostSubmitted(true);
-                await axios.post("/api/submit_cast_hash_to_intent", {
-                    cast_hash: response.cast.hash,
-                    intent_hash: intent_passed?.intentHash || intent?.intentHash,
-                    promotion_id: promotion.id,
+            try {
+                if (!rerolledCast && !generatedCast) return;
+                e?.stopPropagation();
+                // Post cast logic here
+                const { text, urls } = extractUrls(rerolledCast || generatedCast || "");
+                const embeds: any = [...urls, promotion.cast_url]
+                const response = await sdk.actions.composeCast({
+                    text,
+                    embeds,
                 });
-                await refetchPromotions()
+                if (response.cast) {
+                    //decide what to do here, do i add bytes string now or let the intent timeout
+                    setPostSubmitted(true);
+                    await axios.post("/api/submit_cast_hash_to_intent", {
+                        cast_hash: response.cast.hash,
+                        intent_hash: intent_passed?.intentHash || intent?.intentHash,
+                        promotion_id: promotion.id,
+                    });
+                    toast.success("Cast posted successfully!")
+                    await refetchPromotions()
+                    if (!isFrameAdded) {
+                        await handleAddFrame();
+                    }
+                } else {
+                    toast.error("Error posting cast")
+                }
+            } catch (e: any) {
+                toast.error(`Error posting cast: ${e.message}`)
             }
         }, [rerolledCast, generatedCast, promotion.cast_url, intent]
     )
@@ -517,6 +533,8 @@ const CastCard: React.FC<CastCardProps> = ({
                                                                 disabled={promoterDetails?.state === 2 || !intent?.processed}
                                                                 onClick={async () => {
                                                                     await claim([promotion.id])
+                                                                    toast.success("Claim submitted!");
+                                                                    await refetchPromotions();
                                                                 }}
                                                                 variant="default"
                                                                 size="lg"

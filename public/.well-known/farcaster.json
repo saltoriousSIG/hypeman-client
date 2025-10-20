@@ -2,16 +2,16 @@
   "frame": {
     "name": "Hypeman",
     "version": "1",
-    "iconUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1758053572/cropped-Screenshot_2025-09-15_at_4.59.20_PM_gvvmjo.png",
-    "homeUrl": "https://hypeman-client.vercel.app",
-    "imageUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1758053572/cropped-Screenshot_2025-09-15_at_4.59.20_PM_gvvmjo.png",
-    "splashImageUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1758053572/cropped-Screenshot_2025-09-15_at_4.59.20_PM_gvvmjo.png",
+    "iconUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1760928394/cropped_circle_image_lpxbc2.png",
+    "homeUrl": "https://hypeman.social",
+    "imageUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1760928637/replicate-prediction-ppnmz3g0yxrme0cssvhtx2r54w_alqowu.jpg",
+    "splashImageUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1760928637/replicate-prediction-ppnmz3g0yxrme0cssvhtx2r54w_alqowu.jpg",
     "splashBackgroundColor": "#000000",
-    "webhookUrl": "https://hypeman-client.vercel.app/api/webhook",
-    "subtitle": "Hype your posts",
-    "description": "Hype your posts",
+    "webhookUrl": "https://api.neynar.com/f/app/3f88b4b3-7a91-4cb5-baa7-b8a1cb89a94c/event",
+    "subtitle": "Find your Hypeman",
+    "description": "Paid promotion on Farcaster made easy. Amplify your reach through targeted promotions.",
     "primaryCategory": "utility",
-    "heroImageUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1758053572/cropped-Screenshot_2025-09-15_at_4.59.20_PM_gvvmjo.png"
+    "heroImageUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1760928637/replicate-prediction-ppnmz3g0yxrme0cssvhtx2r54w_alqowu.jpg"
   },
   "accountAssociation": {
     "header": "eyJmaWQiOjQ4MzcxMywidHlwZSI6ImF1dGgiLCJrZXkiOiIweDQ2M0IxRThFNzhCMjgwMjdiNDIzRWE2ZjAwNjk1ZjAxYTg0RUZlNzIifQ",

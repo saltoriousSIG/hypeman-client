@@ -51,8 +51,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let intents_to_process = [];
 
     for (let i = 0; i < Number(next_promotion_id); i++) {
-      const list = await redis.lrange(`intent:${i}`, 0, -1);
-      console.log(list, "LIST");
+      const redis_list = await redis.lrange(`intent:${i}`, 0, -1);
+      const list = redis_list.filter((item) => !item.processed);
       if (list.length > 0) {
         for (const [index, item] of list.entries()) {
           const promoter_details: any = await publicClient.readContract({

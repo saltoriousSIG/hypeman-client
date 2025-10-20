@@ -1,13 +1,13 @@
 export const embedConfig = {
   version: "next",
   imageUrl:
-    "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1758053572/cropped-Screenshot_2025-09-15_at_4.59.20_PM_gvvmjo.png",
+    "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1760928636/replicate-prediction-t60cxw0m31rmc0csxfbbam7xgr_vlc51o.jpg",
   button: {
-    title: "HYPE",
+    title: "Find your Hypeman",
     action: {
       type: "launch_frame",
       name: "Hypeman",
-      url: "https://hypeman-client.vercel.app/",
+      url: "https://hypeman.social",
     },
   },
 } as const;

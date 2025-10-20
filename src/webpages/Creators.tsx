@@ -28,9 +28,10 @@ import sdk from "@farcaster/frame-sdk"
 import CastListItem from "@/components/CastListItem/CastListItem"
 import { useCastQuoteCount } from "@/hooks/useCastQuoteCount"
 import { useUserCasts } from "@/hooks/useUserCasts"
+import { useData } from "@/providers/DataProvider"
 
 export default function BuyersPage() {
-    const { address, fUser } = useFrameContext();
+    const { address, fUser, isFrameAdded, handleAddFrame } = useFrameContext();
 
     const [selectedCast, setSelectedCast] = useState<Cast | null>(null);
     const [budget, setBudget] = useState<number>(10);
@@ -40,6 +41,8 @@ export default function BuyersPage() {
     const [showShareModal, setShowShareModal] = useState<boolean>(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
     const [drawerStep, setDrawerStep] = useState<1 | 2>(1);
+
+    const { platformFee, refetchPromotions } = useData();
 
     const handleShowShareModal = (state: boolean) => setShowShareModal(state);
 
@@ -69,10 +72,11 @@ export default function BuyersPage() {
 
     // Check if budget is approved
     useEffect(() => {
+        if (!platformFee) return;
         const load = async () => {
             if (!budget || !selectedCast) return;
             const user_allowance = await allowance([address, DIAMOND_ADDRESS]);
-            const fee = budget * 0.1;
+            const fee = budget * platformFee;
             const calculated_allowance = budget + fee;
             setIsApproved(parseInt(user_allowance.toString()) >= parseUnits(`${calculated_allowance}`, 6));
         }
@@ -81,11 +85,12 @@ export default function BuyersPage() {
 
     // Handle approve
     const handleApprove = useCallback(async () => {
+        if (!platformFee) return;
         if (budget < pricing_tiers.tier1) {
             return toast.error(`Minimum budget is ${pricing_tiers.tier1} USDC`);
         }
         try {
-            const fee = budget * 0.1;
+            const fee = budget * platformFee;
             const calculated_allowance = budget + fee;
             await approve([DIAMOND_ADDRESS, parseUnits(`${calculated_allowance}`, 6)]);
             setIsApproved(true);
@@ -94,7 +99,7 @@ export default function BuyersPage() {
             console.error(e, e.message);
             toast.error("Approval failed");
         }
-    }, [approve, budget]);
+    }, [approve, budget, platformFee]);
 
     // Handle create promotion
     const handleCreatePromotion = useCallback(async () => {
@@ -123,6 +128,12 @@ export default function BuyersPage() {
             await create_promotion([createParams]);
             toast.success("Promotion created successfully!");
             handleShowShareModal(true);
+            await refetchPromotions();
+
+            if (!isFrameAdded) {
+                await handleAddFrame();
+            }
+
             // Reset state and close drawer
             setIsDrawerOpen(false);
             setSelectedCast(null);
