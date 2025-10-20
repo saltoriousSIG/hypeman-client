@@ -29,7 +29,11 @@ export default function HomePage() {
     }, [isAuthenticated]);
 
     const availablePromotions = useMemo(() => {
-        return promoterPromotions?.filter(p => p.display_to_promoters && !p.claimable) || [];
+        // If user data is not available yet, show all promotions that are displayable
+        // Once user data is available, filter by score and pro status
+        if (!promoterPromotions) return [];
+        
+        return promoterPromotions.filter(p => p.display_to_promoters && !p.claimable);
     }, [promoterPromotions]);
 
     return (

@@ -92,7 +92,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             }).filter(p => p !== null)
             return filtered
         },
-        enabled: !!connectedUserData && !!promotions,
+        enabled: !!promotions, // Only depend on promotions being available, not user data
         staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
         gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
         retry: 2, // Retry failed requests twice
@@ -112,7 +112,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     });
 
-    const loading = isLoading || promoterPromotionsLoading || isPlatformFeeLoading;
+    const loading = isLoading || isPlatformFeeLoading;
 
     return (
         <DataContext.Provider value={{
