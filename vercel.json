@@ -4,12 +4,7 @@
   "devCommand": "vite --port $PORT",
   "installCommand": "npm install",
   "framework": null,
-  "crons": [
-    {
-      "path": "/api/crons/verify_intents",
-      "schedule": "*/5 * * * *"
-    }
-  ],
+
   "rewrites": [
     {
       "source": "/",
@@ -22,6 +17,12 @@
     {
       "source": "/manage",
       "destination": "/index.html"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/crons/verify_intents",
+      "schedule": "*/5 * * * *"
     }
   ],
   "functions": {
