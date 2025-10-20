@@ -167,7 +167,7 @@ const CastCard: React.FC<CastCardProps> = ({
                 } catch (e: any) {
                     toast.error("Error submitting intent to blockchain");
                     console.error("❌ Error submitting intent to blockchain:", e);
-                    throw new Error(e.message);
+                    throw new Error('Error submitting intent to blockchain');
                 }
             }
 
