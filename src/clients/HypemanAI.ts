@@ -495,7 +495,6 @@ ${styleHints}
       };
     }
   }
-
   /**
    * HAIKU-OPTIMIZED: Generate variations
    * - Temperature variation for diversity
