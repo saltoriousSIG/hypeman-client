@@ -69,7 +69,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ showShareModal, handleShowShare
     const handleShareToTimeline = async () => {
         await sdk.actions.composeCast({
             text: `I just created a promotion on Hypeman! Check it out!`,
-            embeds: ["https://hypeman-client.vercel.app/"]
+            embeds: ["https://hypeman.social"]
         });
     }
 
