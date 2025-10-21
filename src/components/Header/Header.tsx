@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react"
-import { BarChart3, Plus } from "lucide-react"
+import { BarChart3, Plus, DollarSign } from "lucide-react"
 import { useFrameContext } from "@/providers/FrameProvider"
 import { useData } from "@/providers/DataProvider"
 import useGetPostPricing from "@/hooks/useGetPostPricing"
@@ -27,7 +27,13 @@ export default function Header() {
 
     const completedPromotions = useMemo(() => {
         return promotions?.filter((p) => {
-            return p.claimable
+            return p.claimable && fUser?.fid
+        }) || []
+    }, [promotions, fUser])
+
+    const processingPromotions = useMemo(() => {
+        return promotions?.filter((p) => {
+            return p.unprocessed_intents && parseInt(p.unprocessed_intents) > 0
         }) || []
     }, [promotions])
 
@@ -56,7 +62,7 @@ export default function Header() {
                             onClick={async () => {
                                 await handleAddFrame();
                             }}
-                            className="relative flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold text-white/90 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-400/30 hover:border-pink-400/50 transition-all duration-500 group overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-purple-500/20 hover:scale-105">
+                            className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white/90 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-400/30 hover:border-pink-400/50 transition-all duration-500 group overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-purple-500/20 hover:scale-105">
                             <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
                             <div className="relative z-10 w-4 h-4 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center group-hover:rotate-90 transition-transform duration-500">
                                 <Plus className="w-2.5 h-2.5 text-white" />
@@ -69,13 +75,25 @@ export default function Header() {
 
                     <button
                         onClick={handleAvatarClick}
-                        className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-purple-600 p-0.5 hover:scale-105 transition-transform duration-300 cursor-pointer"
+                        className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-purple-600 p-0.5 hover:scale-105 transition-transform duration-300 cursor-pointer"
                     >
-                        <img
-                            src={fUser?.pfpUrl || "/placeholder.svg"}
-                            alt={fUser?.username}
-                            className="w-full h-full rounded-full object-cover"
-                        />
+                        {completedPromotions.length > 0 && fUser?.fid ? (
+                            <div className="w-full h-full rounded-full flex items-center justify-center">
+                                <DollarSign 
+                                    className={`w-4 h-4 text-white font-bold ${
+                                        processingPromotions.length > 0 
+                                            ? 'animate-pulse' 
+                                            : ''
+                                    }`} 
+                                />
+                            </div>
+                        ) : (
+                            <img
+                                src={fUser?.pfpUrl || "/placeholder.svg"}
+                                alt={fUser?.username}
+                                className="w-full h-full rounded-full object-cover"
+                            />
+                        )}
                     </button>
                 </div>
             </header>

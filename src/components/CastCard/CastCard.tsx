@@ -6,11 +6,12 @@ import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css'
 import useContract, { ExecutionType } from "@/hooks/useContract"
 import { Button } from "../ui/button"
-import { extractUrls, convertWarpcastUrlToCastHash } from "@/lib/utils"
+import { extractUrls } from "@/lib/utils"
 import sdk from "@farcaster/frame-sdk"
 import useAxios from "@/hooks/useAxios"
 import { useData } from "@/providers/DataProvider";
 import { toast } from "sonner";
+import { useIntentProcessingStatus } from "@/hooks/useIntentProcessingStatus";
 
 interface CastCardProps {
     promotion: any
@@ -35,12 +36,14 @@ const CastCard: React.FC<CastCardProps> = ({
     const [showRerollInput, setShowRerollInput] = useState(false)
     const [intent, setIntent] = useState<any | null>();
     const [postSubmitted, setPostSubmitted] = useState(false);
-    const [promoterDetails, setPromoterDetails] = useState<any | null>(null);
+    const [_promoterDetails, setPromoterDetails] = useState<any | null>(null); // Used in useEffect to load promoter details
     const [isContentRevealed, setIsContentRevealed] = useState(false);
     const [isGeneratingContent, setIsGeneratingContent] = useState(false);
     const [isGeneratingIntent, setIsGeneratingIntent] = useState(false);
     const [showRefreshFeedback, setShowRefreshFeedback] = useState(false);
     const [refreshFeedback, setRefreshFeedback] = useState("");
+    const [hasClaimed, setHasClaimed] = useState(false);
+    const [isClaiming, setIsClaiming] = useState(false);
 
     const axios = useAxios();
 
@@ -52,6 +55,13 @@ const CastCard: React.FC<CastCardProps> = ({
     const submit_intent = useContract(ExecutionType.WRITABLE, "Intents", "submitIntent");
     const get_promoter_details = useContract(ExecutionType.READABLE, "Data", "getPromoterDetails");
     const claim = useContract(ExecutionType.WRITABLE, "Claim", "claim");
+
+    // Use React Query hook for intent processing status
+    const { data: isIntentProcessed, isLoading: isCheckingIntent } = useIntentProcessingStatus({
+        promotionId: promotion.id,
+        intentHash: intent?.intentHash || "",
+        enabled: !!intent?.intentHash && promotion.claimable && !hasClaimed
+    });
 
     useEffect(() => {
         if (promotion.intents && address) {
@@ -271,7 +281,10 @@ const CastCard: React.FC<CastCardProps> = ({
                 const { text } = extractUrls(rerolledCast || generatedCast || "");
                 
                 // Convert Warpcast URL to cast hash for embedding
-                const castHash = await convertWarpcastUrlToCastHash(promotion.cast_url);
+                const { data } = await axios.post("/api/convert_warpcast_url", {
+                    warpcastUrl: promotion.cast_url
+                });
+                const castHash = data.castHash;
 
                 const response = await sdk.actions.composeCast({
                     text,
@@ -322,9 +335,11 @@ const CastCard: React.FC<CastCardProps> = ({
         const load = async () => {
             const details = await get_promoter_details([promotion.id, address]);
             setPromoterDetails(details);
+            // Set hasClaimed based on promoter state (state 2 means already claimed)
+            setHasClaimed(details?.state === 2);
         }
         load();
-    }, [promotion.id, address]);
+    }, [promotion.id, address, get_promoter_details]);
 
 
     const username = promotion.cast_data.author.username;
@@ -334,7 +349,7 @@ const CastCard: React.FC<CastCardProps> = ({
     return (
         <div className="space-y-3 mb-5">
 
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/10">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/10 overflow-hidden">
 
 
                 {/* User's Original Cast Content */}
@@ -418,7 +433,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                 size="sm"
                                 className="rounded-full"
                             >
-                                🔄 Reroll
+                                Reroll
                             </Button>
                             <Button
                                 onClick={handleCancelReroll}
@@ -426,7 +441,6 @@ const CastCard: React.FC<CastCardProps> = ({
                                 size="sm"
                                 className="rounded-full"
                             >
-                                <X className="w-4 h-4" />
                                 Cancel
                             </Button>
                         </div>
@@ -435,30 +449,29 @@ const CastCard: React.FC<CastCardProps> = ({
                     <div className="space-y-4">
                         {!isContentRevealed && !promotion.claimable ? (
                             // Step 1: Show generate button
-                            <Button
+                            <div className="text-center p-4 bg-black">  
+                            <button
                                 onClick={handleRevealContent}
-                                variant="default"
-                                size="lg"
-                                className="w-full rounded-b-lg rounded-t-none cursor-pointer"
                                 disabled={isGeneratingContent || isGeneratingIntent}
+                                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isGeneratingIntent ? (
                                     <>
-                                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                        <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
                                         Submitting Intent Transaction...
                                     </>
                                 ) : isGeneratingContent ? (
                                     <>
-                                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                        <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
                                         Generating Content...
                                     </>
                                 ) : (
                                     <>
-                                        <span className="text-lg">✨</span>
-                                        Generate Your Quote Cast & Earn ${pricing}
+                                        Cast to Earn ${pricing}
                                     </>
                                 )}
-                            </Button>
+                            </button>
+                            </div>
                         ) : (
                             // Step 2: Show content and slide-to-post
                             <>
@@ -468,7 +481,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                         <Skeleton count={3} className="!bg-white/10" />
                                     </div>
                                 ) : (
-                                    <div className={`bg-purple-500/10 border-t border-l border-r ${promotion.claimable && "hidden"} border-purple-500/20 p-4 ${showRefreshFeedback ? 'rounded-t-xl rounded-b-none mb-0' : 'rounded-t-xl mb-0'}`}>
+                                    <div className={`bg-black border-t border-l border-r ${promotion.claimable && "hidden"} border-purple-500/20 p-4 pb-0 ${showRefreshFeedback ? 'rounded-t-xl rounded-b-none mb-0' : 'rounded-t-xl mb-0'}`}>
                                         <div className="flex justify-between items-center gap-2 mb-2">
                                             <span className="text-sm font-medium text-purple-400">Your Quote Cast</span>
                                         </div>
@@ -501,34 +514,45 @@ const CastCard: React.FC<CastCardProps> = ({
                                         {
                                             promotion.claimable ?
                                                 (
-                                                    <div className="text-center py-4 px-3 bg-white/10 rounded-xl border border-white/10">
-                                                        <div className="text-sm text-white/80 mb-2">✅ Posted Successfully!</div>
-                                                        <a
-                                                            href={`https://farcaster.xyz/${fUser?.username}/${intent?.cast_hash}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-purple-400 font-semibold hover:underline break-all"
-                                                        >
-                                                            View Cast
-                                                        </a>
-                                                        <div className="w-full mt-2 flex flex-col items-center justify-center">
-                                                            <Button
-                                                                disabled={promoterDetails?.state === 2 || !intent?.processed}
-                                                                onClick={async () => {
-                                                                    await claim([promotion.id])
-                                                                    toast.success("Claim submitted!");
-                                                                    await refetchPromotions();
-                                                                }}
-                                                                variant="default"
-                                                                size="lg"
-                                                                className="w-full bg-green-600 hover:bg-green-500 rounded-xl"
-                                                            >
-                                                                Claim
-                                                            </Button>
-                                                            {(!intent?.processed) && (
-                                                                <div className="text-xs text-white/80 mt-2">Your claim is being processed...</div>
-                                                            )}
-                                                        </div>
+                                                    <div className="text-center p-4 bg-black">
+                                                        {hasClaimed ? (
+                                                            <div className="text-sm text-white/80">✅ Successfully Claimed</div>
+                                                        ) : (
+                                                            <div className="w-full flex flex-col items-center justify-center">
+                                                                <button
+                                                                    disabled={!isIntentProcessed || isCheckingIntent || isClaiming}
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            setIsClaiming(true);
+                                                                            await claim([promotion.id]);
+                                                                            toast.success("Claim submitted!");
+                                                                            setHasClaimed(true); // Update local state immediately
+                                                                            await refetchPromotions();
+                                                                        } catch (error) {
+                                                                            console.error("Error claiming:", error);
+                                                                            toast.error("Failed to claim. Please try again.");
+                                                                        } finally {
+                                                                            setIsClaiming(false);
+                                                                        }
+                                                                    }}
+                                                                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                >
+                                                                    {isClaiming ? (
+                                                                        <>
+                                                                            <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                                                                            Claiming...
+                                                                        </>
+                                                                    ) : !isIntentProcessed || isCheckingIntent ? (
+                                                                        <>
+                                                                            <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                                                                            Your claim is being processed...
+                                                                        </>
+                                                                    ) : (
+                                                                        `Claim $${pricing}`
+                                                                    )}
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </div>
 
                                                 ) :
@@ -538,49 +562,47 @@ const CastCard: React.FC<CastCardProps> = ({
                                                         {intent ? (
 
                                                             <div className="space-y-2">
-                                                                <div className="flex gap-0 w-full">
+                                                                <div className="flex gap-4 w-full p-4 bg-black">
                                                                     {showRefreshFeedback ? (
                                                                         <>
-                                                                            <Button
+                                                                            <button
                                                                                 onClick={handleCancelRefresh}
-                                                                                variant="outline"
-                                                                                size="lg"
-                                                                                className="flex-1 bg-white/10 hover:bg-white/20 border-white/20 text-white/80 rounded-bl-xl rounded-tr-none rounded-tl-none rounded-br-none border-r-0"
+                                                                                className="relative flex items-center justify-center gap-2 px-4 py-4 rounded-xl text-sm font-semibold text-white/90 bg-gradient-to-r from-gray-500/10 to-gray-600/10 border border-gray-400/30 hover:border-gray-300/50 transition-all duration-500 group overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-gray-500/20 hover:scale-105 flex-1 cursor-pointer"
                                                                             >
-                                                                                <X className="w-4 h-4" />
-                                                                                Cancel
-                                                                            </Button>
-                                                                            <Button
+                                                                                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+                                                                                <span className="relative z-10 bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent group-hover:from-gray-200 group-hover:to-gray-300 transition-all duration-300">
+                                                                                    Cancel
+                                                                                </span>
+                                                                            </button>
+                                                                            <button
                                                                                 onClick={handleRefreshWithFeedback}
                                                                                 disabled={isGeneratingContent}
-                                                                                variant="default"
-                                                                                size="lg"
-                                                                                className="flex-1 rounded-bl-none rounded-br-xl rounded-tr-none rounded-tl-none bg-purple-600 hover:bg-purple-500"
+                                                                                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                                                             >
-                                                                                {isGeneratingContent ? "Generating..." : "Regenerate"}
-                                                                            </Button>
+                                                                                {isGeneratingContent ? "Updating..." : "Update Cast"}
+                                                                            </button>
                                                                         </>
                                                                     ) : (
                                                                         <>
                                                                             {!isPosting && !intent?.cast_hash && isContentRevealed && (
-                                                                                <Button
+                                                                                <button
                                                                                     onClick={handleRefreshClick}
                                                                                     disabled={isGeneratingContent}
-                                                                                    variant="outline"
-                                                                                    size="lg"
-                                                                                    className="flex-1 bg-white/10 hover:bg-white/20 border-white/20 text-white/80 rounded-bl-xl rounded-tr-none rounded-tl-none rounded-br-none border-r-0"
+                                                                                    className="relative flex items-center justify-center gap-2 px-4 py-4 rounded-xl text-sm font-semibold text-white/90 bg-gradient-to-r from-gray-500/10 to-gray-600/10 border border-gray-400/30 hover:border-gray-300/50 transition-all duration-500 group overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-gray-500/20 hover:scale-105 flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                                                                 >
-                                                                                    {isGeneratingContent ? "Generating..." : "Refresh"}
-                                                                                </Button>
+                                                                                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+                                                                                     <span className="relative z-10 bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent group-hover:from-gray-200 group-hover:to-gray-300 transition-all duration-300">
+                                                                                        {isGeneratingContent ? "Generating..." : "Refresh"}
+                                                                                    </span>
+                                                                                </button>
                                                                             )}
-                                                                            <Button
+                                                                            <button
                                                                                 onClick={handlePostCast}
-                                                                                variant="default"
-                                                                                size="lg"
-                                                                                className={`${!isPosting && !intent?.cast_hash && isContentRevealed ? 'flex-1 rounded-bl-none rounded-br-xl rounded-tr-none rounded-tl-none' : 'w-full rounded-b-xl rounded-t-none'} bg-purple-600 hover:bg-purple-500`}
+                                                                                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] cursor-pointer"
+                                                                                style={{ width: !isPosting && !intent?.cast_hash && isContentRevealed ? 'calc(50% - 0.25rem)' : '100%' }}
                                                                             >
                                                                                 Post Cast
-                                                                            </Button>
+                                                                            </button>
                                                                         </>
                                                                     )}
                                                                 </div>
@@ -588,51 +610,50 @@ const CastCard: React.FC<CastCardProps> = ({
                                                         ) : (
                                                             <>
                                                                 {!postSubmitted && (
-                                                                    <div className="flex gap-0 w-full">
+                                                                    <div className="flex gap-2 w-full">
                                                                         {showRefreshFeedback ? (
                                                                             <>
-                                                                                <Button
+                                                                                <button
                                                                                     onClick={handleCancelRefresh}
-                                                                                    variant="outline"
-                                                                                    size="lg"
-                                                                                    className="flex-1 bg-white/10 hover:bg-white/20 border-white/20 text-white/80 rounded-bl-lg rounded-tr-none rounded-tl-none rounded-br-none border-r-0"
+                                                                                    className="relative flex items-center justify-center gap-2 px-4 py-4 rounded-xl text-sm font-semibold text-white/90 bg-gradient-to-r from-gray-500/10 to-gray-600/10 border border-gray-400/30 hover:border-gray-300/50 transition-all duration-500 group overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-gray-500/20 hover:scale-105 flex-1 cursor-pointer"
                                                                                 >
-                                                                                    <X className="w-4 h-4" />
-                                                                                    Cancel
-                                                                                </Button>
-                                                                                <Button
+                                                                                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+                                                                                    <span className="relative z-10 bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent group-hover:from-gray-200 group-hover:to-gray-300 transition-all duration-300">
+                                                                                        <X className="w-4 h-4 inline mr-1" />
+                                                                                        Cancel
+                                                                                    </span>
+                                                                                </button>
+                                                                                <button
                                                                                     onClick={handleRefreshWithFeedback}
                                                                                     disabled={isGeneratingContent}
-                                                                                    variant="default"
-                                                                                    size="lg"
-                                                                                    className="flex-1 rounded-bl-none rounded-br-lg rounded-tr-none rounded-tl-none bg-purple-600 hover:bg-purple-500"
+                                                                                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                                                                 >
                                                                                     {isGeneratingContent ? "Generating..." : "🔄 Generate"}
-                                                                                </Button>
+                                                                                </button>
                                                                             </>
                                                                         ) : (
                                                                             <>
                                                                                 {isContentRevealed && (
-                                                                                    <Button
+                                                                                    <button
                                                                                         onClick={handleRefreshClick}
                                                                                         disabled={isGeneratingContent}
-                                                                                        variant="outline"
-                                                                                        size="lg"
-                                                                                        className="flex-1 bg-white/10 hover:bg-white/20 border-white/20 text-white/80 rounded-bl-lg rounded-tr-none rounded-tl-none rounded-br-none border-r-0"
+                                                                                        className="relative flex items-center justify-center gap-2 px-4 py-4 rounded-xl text-sm font-semibold text-white/90 bg-gradient-to-r from-gray-500/10 to-gray-600/10 border border-gray-400/30 hover:border-gray-300/50 transition-all duration-500 group overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-gray-500/20 hover:scale-105 flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                                                                     >
-                                                                                        {isGeneratingContent ? "Generating..." : "Refresh"}
-                                                                                    </Button>
+                                                                                        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+                                                                                        <span className="relative z-10 bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent group-hover:from-gray-200 group-hover:to-gray-300 transition-all duration-300">
+                                                                                            {isGeneratingContent ? "Generating..." : "Refresh"}
+                                                                                        </span>
+                                                                                    </button>
                                                                                 )}
-                                                                                <Button
+                                                                                <button
                                                                                     onClick={handlePost}
-                                                                                    variant="default"
-                                                                                    size="lg"
-                                                                                    className={`${isContentRevealed ? 'flex-1 rounded-bl-none rounded-br-lg rounded-tr-none rounded-tl-none' : 'w-full rounded-b-lg rounded-t-none'} cursor-pointer`}
                                                                                     disabled={isPosting}
+                                                                                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                                    style={{ width: isContentRevealed ? 'calc(50% - 0.25rem)' : '100%' }}
                                                                                 >
                                                                                     {isPosting ? (
                                                                                         <>
-                                                                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                                                                            <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
                                                                                             Posting...
                                                                                         </>
                                                                                     ) : (
@@ -641,7 +662,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                                                                             Cast this to earn ${pricing}
                                                                                         </>
                                                                                     )}
-                                                                                </Button>
+                                                                                </button>
                                                                             </>
                                                                         )}
                                                                     </div>

@@ -79,8 +79,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const { data: promoterPromotions, isPending: promoterPromotionsLoading } = useQuery({
         queryKey: ["promoterPromotions", connectedUserData, promotions],
         queryFn: async () => {
-            if (!connectedUserData || !promotions) return [];
-            const filtered = promotions?.filter(p => connectedUserData.score >= parseFloat(p.neynar_score)).map((p) => {
+            if (!promotions) return [];
+            
+            // If no user data yet, return all displayable promotions
+            if (!connectedUserData) {
+                return promotions.filter(p => p.display_to_promoters && !p.claimable);
+            }
+            
+            // Apply user-specific filtering when user data is available
+            const filtered = promotions?.filter(p => 
+                connectedUserData.score >= parseFloat(p.neynar_score) && 
+                p.display_to_promoters && 
+                !p.claimable
+            ).map((p) => {
                 if (p.pro_user) {
                     if (connectedUserData.isPro) {
                         return p;
@@ -92,7 +103,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             }).filter(p => p !== null)
             return filtered
         },
-        enabled: !!promotions, // Only depend on promotions being available, not user data
+        enabled: !!promotions, // Only depend on promotions being available
         staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
         gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
         retry: 2, // Retry failed requests twice

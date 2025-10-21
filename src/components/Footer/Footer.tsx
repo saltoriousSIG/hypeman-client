@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { DollarSign, Plus, Settings } from "lucide-react";
+import { Volume2, Plus, Settings } from "lucide-react";
 
 const Footer: React.FC = () => {
     return (
@@ -9,22 +9,22 @@ const Footer: React.FC = () => {
                 <NavLink to="/" className="flex-1">
                     {({ isActive }) => (
                         <button
-                            className={`w-full flex items-center flex-col gap-1 px-6 py-6 text-white text-sm font-black transition-all duration-300 border-r cursor-pointer ${isActive
-                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25 border-white/10 font-bold'
-                                : 'bg-white/10 hover:bg-white/20 border-white/10'
+                            className={`w-full flex items-center flex-col gap-1 px-6 py-6 text-sm font-semibold transition-all duration-300 border-r cursor-pointer border-white/10 ${isActive
+                                ? 'text-pink-400'
+                                : 'text-white hover:bg-white/20'
                                 }`}
                         >
-                            <DollarSign className="w-5 h-5" />
-                            Earn
+                            <Volume2 className="w-5 h-5" />
+                            Hype
                         </button>
                     )}
                 </NavLink>
                 <NavLink to="/creators" className="flex-1">
                     {({ isActive }) => (
                         <button
-                            className={`w-full flex items-center flex-col gap-1 px-6 py-6 text-white text-sm font-black transition-all duration-300 border-r cursor-pointer ${isActive
-                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25 border-white/10 font-black'
-                                : 'bg-white/10 hover:bg-white/20 border-white/10'
+                            className={`w-full flex items-center flex-col gap-1 px-6 py-6 text-sm font-semibold transition-all duration-300 border-r cursor-pointer border-white/10 ${isActive
+                                ? 'text-pink-400'
+                                : 'text-white hover:bg-white/20'
                                 }`}
                         >
                             <Plus className="w-5 h-5" />
@@ -35,9 +35,9 @@ const Footer: React.FC = () => {
                 <NavLink to="/manage" className="flex-1">
                     {({ isActive }) => (
                         <button
-                            className={`w-full flex items-center flex-col gap-1 px-6 py-6 text-white text-sm font-black transition-all duration-300 cursor-pointer ${isActive
-                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25 font-bold'
-                                : 'bg-white/10 hover:bg-white/20'
+                            className={`w-full flex items-center flex-col gap-1 px-6 py-6 text-sm font-semibold transition-all duration-300 cursor-pointer ${isActive
+                                ? 'text-pink-400'
+                                : 'text-white hover:bg-white/20'
                                 }`}
                         >
                             <Settings className="w-5 h-5" />

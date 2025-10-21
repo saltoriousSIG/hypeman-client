@@ -24,6 +24,7 @@ export type Promotion = {
   neynar_score: string;
   pro_user: boolean;
   claimable: boolean;
+  unprocessed_intents?: string;
   cast_data: {
     text: string;
     author: Cast["author"];

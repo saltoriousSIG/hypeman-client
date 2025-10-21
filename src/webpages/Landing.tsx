@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
-import { BarChart3, Loader2 } from "lucide-react"
+import { BarChart3, Loader2, X } from "lucide-react"
 import { useFrameContext } from "@/providers/FrameProvider";
 import CastCard from "@/components/CastCard/CastCard";
 import LoginModal from "@/components/LoginModal/LoginModal";
@@ -29,11 +29,7 @@ export default function HomePage() {
     }, [isAuthenticated]);
 
     const availablePromotions = useMemo(() => {
-        // If user data is not available yet, show all promotions that are displayable
-        // Once user data is available, filter by score and pro status
-        if (!promoterPromotions) return [];
-        
-        return promoterPromotions.filter(p => p.display_to_promoters && !p.claimable);
+        return promoterPromotions || [];
     }, [promoterPromotions]);
 
     return (
@@ -66,11 +62,11 @@ export default function HomePage() {
             {availablePromotions.length === 0 && !loading && (
                 <div className="text-center py-12">
                     <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <BarChart3 className="w-8 h-8 text-white" />
+                        <X className="w-8 h-8 text-white" />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">No Available Promotions</h3>
+                    <h3 className="text-xl font-bold text-white mb-2">No Promotions</h3>
                     <p className="text-white/60 max-w-sm mx-auto leading-relaxed">
-                        Check back soon for new promotion opportunities.
+                        Check back soon.
                     </p>
                 </div>
             )}
