@@ -6,7 +6,7 @@ import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css'
 import useContract, { ExecutionType } from "@/hooks/useContract"
 import { Button } from "../ui/button"
-import { extractUrls } from "@/lib/utils"
+import { extractUrls, extractHashFromFCUrl } from "@/lib/utils"
 import sdk from "@farcaster/frame-sdk"
 import useAxios from "@/hooks/useAxios"
 import { useData } from "@/providers/DataProvider";
@@ -279,12 +279,12 @@ const CastCard: React.FC<CastCardProps> = ({
                 e?.stopPropagation();
                 // Post cast logic here
                 const { text } = extractUrls(rerolledCast || generatedCast || "");
-                
-                // Convert Warpcast URL to cast hash for embedding
-                const { data } = await axios.post("/api/convert_warpcast_url", {
-                    warpcastUrl: promotion.cast_url
-                });
-                const castHash = data.castHash;
+
+                // Extract cast hash from Warpcast URL
+                const castHash = extractHashFromFCUrl(promotion.cast_url);
+                if (!castHash) {
+                    throw new Error("Invalid cast URL - unable to extract hash");
+                }
 
                 const response = await sdk.actions.composeCast({
                     text,
