@@ -248,25 +248,10 @@ async function handler(req: VercelRequest, res: VercelResponse) {
       if (decoded && decoded.eventName === "PromotionCreated") {
         console.log("=== PROMOTION CREATED EVENT DECODED ===");
         console.log("Promotion ID:", decoded.args.id.toString());
-        console.log("Creator:", decoded.args.creator);
-        console.log("Creator FID:", decoded.args.creatorFid.toString());
-        console.log("Total Budget:", decoded.args.totalBudget.toString());
-        console.log("Token:", decoded.args.token);
-        console.log("Is Open Promotion:", decoded.args.isOpenPromotion);
-        console.log("Timestamp:", decoded.args.timestamp.toString());
-        console.log("=========================================");
 
         // Fetch creator, hash, cast text, and totalBudget using the promotion ID
         try {
           const promotionDetails = await getPromotionDetails(decoded.args.id.toString());
-
-          console.log("=== PROMOTION DATA ===");
-          console.log("Promotion ID:", decoded.args.id.toString());
-          console.log("Creator:", promotionDetails.creator);
-          console.log("Hash:", promotionDetails.hash);
-          console.log("Cast Text:", promotionDetails.castText);
-          console.log("Total Budget:", promotionDetails.totalBudget);
-          console.log("=====================");
 
           // Generate promotional cast using HypemanAI
           try {
