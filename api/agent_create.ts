@@ -292,68 +292,14 @@ async function handler(req: VercelRequest, res: VercelResponse) {
                 console.log("Failed to publish cast:", publishResult.error);
               }
 
-              // Create comprehensive promotion data object with publishing results
-              const promotionData = {
-                id: decoded.args.id.toString(),
-                creator: promotionDetails.creator,
-                hash: promotionDetails.hash,
-                castText: promotionDetails.castText,
-                totalBudget: promotionDetails.totalBudget,
-                promotionalCast: promotionalResult.text,
-                publishedCastHash: publishResult.success ? publishResult.castHash : null,
-                publishError: publishResult.success ? null : publishResult.error,
-              };
-
-              console.log("Promotion data:", JSON.stringify(promotionData, null, 2));
-            } else {
-              console.log("Failed to generate promotional cast:", promotionalResult.error);
-              
-              // Create promotion data object for failed generation
-              const promotionData = {
-                id: decoded.args.id.toString(),
-                creator: promotionDetails.creator,
-                hash: promotionDetails.hash,
-                castText: promotionDetails.castText,
-                totalBudget: promotionDetails.totalBudget,
-                promotionalCast: null,
-                promotionalError: promotionalResult.error,
-                publishedCastHash: null,
-                publishError: "Promotional cast generation failed",
-              };
-
-              console.log("Promotion data:", JSON.stringify(promotionData, null, 2));
             }
           } catch (aiError) {
             console.error("Error generating promotional cast:", aiError);
-            
-            const promotionData = {
-              id: decoded.args.id.toString(),
-              creator: promotionDetails.creator,
-              hash: promotionDetails.hash,
-              castText: promotionDetails.castText,
-              totalBudget: promotionDetails.totalBudget,
-              promotionalCast: null,
-              promotionalError: "Failed to initialize HypemanAI",
-            };
-
-            console.log("Promotion data:", JSON.stringify(promotionData, null, 2));
           }
 
         } catch (error) {
           console.error("Error fetching promotion details:", error);
           console.log("Falling back to event data only");
-          
-          const promotionData = {
-            id: decoded.args.id.toString(),
-            creator: "Not available - contract call failed",
-            hash: "Not available - contract call failed",
-            castText: "Not available - contract call failed",
-            totalBudget: decoded.args.totalBudget.toString(),
-            promotionalCast: null,
-            promotionalError: "Contract call failed",
-          };
-
-          console.log("Promotion data:", JSON.stringify(promotionData, null, 2));
         }
       }
     }
