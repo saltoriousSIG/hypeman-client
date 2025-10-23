@@ -9,6 +9,7 @@ import path from "path";
 import axios from "axios";
 import { RedisClient } from "../src/clients/RedisClient.js";
 import { zeroHash } from "viem";
+import { getUserStats } from "../src/lib/getUserStats.js";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
@@ -36,6 +37,8 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       functionName: "getNextPromotionId",
       args: [],
     });
+    const { score, isPro } = await getUserStats(req.fid as number);
+    console.log(score, isPro, "USER STATS IN FETCH PROMOTIONS");
 
     for (let i = 0; i < Number(next_promotion_id); i++) {
       const promotion: any = await publicClient.readContract({
@@ -94,7 +97,10 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
           intents: list,
           existing_generated_cast,
           display_to_promoters:
-            promotion.state === 0 && BigInt(promotion.remaining_budget) > 0n,
+            promotion.state === 0 &&
+            BigInt(promotion.remaining_budget) > 0n &&
+            (promotion.pro_user ? isPro : true) &&
+            score >= promotion.neynar_score,
           claimable:
             (promoterData &&
               promoterData.fid > BigInt(0) &&

@@ -39,6 +39,7 @@ export const getUserStats = async (fid: number) => {
       avgRecasts,
       avgReplies,
       casts: casts.casts,
+      isPro: data.users[0]?.pro?.status === "subscribed",
     };
   } catch (e: any) {
     console.log(e);
