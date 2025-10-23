@@ -391,6 +391,7 @@ ${styleHints}
 - Do NOT copy phrases directly from the original cast
 - Do not under any circumstances mention that an AI is involved in the creation of the promotional cast
 - Do not under any circumstances use dashes or em dashes in anything you write
+- Do not start every cast with "yo" or "check this out". Write naturally like ${this.username}  
 </restrictions>`;
 
     const textContent = `<task>Write a reply to promote this</task>
