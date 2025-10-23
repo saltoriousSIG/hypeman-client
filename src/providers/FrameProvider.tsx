@@ -92,8 +92,8 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
             const response = await sdk.actions.signIn({
                 nonce: `${address}`, // 1 hour from now
             });
-            localStorage.setItem("signature", response.signature);
-            localStorage.setItem("message", response.message);
+            sessionStorage.setItem("signature", response.signature);
+            sessionStorage.setItem("message", response.message);
             setIsAuthenticated(true);
             return response.signature;
         } catch (e: any) {
@@ -103,8 +103,8 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (!address || !fUser) return;
-        const storage_signature = localStorage.getItem("signature");
-        const storage_message = localStorage.getItem("message");
+        const storage_signature = sessionStorage.getItem("signature");
+        const storage_message = sessionStorage.getItem("message");
         // should check if this is still valid;
         if (!storage_signature || !storage_message) {
             const result = handleSignin();

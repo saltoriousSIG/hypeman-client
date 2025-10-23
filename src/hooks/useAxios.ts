@@ -10,10 +10,10 @@ const useAxios = () => {
 
     instance.interceptors.request.use((config) => {
       config.headers["x-fc-message"] = btoa(
-        localStorage.getItem("message") || ""
+        sessionStorage.getItem("message") || ""
       );
       config.headers["x-fc-signature"] =
-        localStorage.getItem("signature") || "";
+        sessionStorage.getItem("signature") || "";
       config.headers["x-fc-nonce"] = address || "";
       return config;
     });
