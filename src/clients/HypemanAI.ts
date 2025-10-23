@@ -381,10 +381,16 @@ ${styleHints}
 
 <restrictions>
 - You're replying to ${promotionAuthor}'s post (not writing as them)
+- Your writing style must MATCH EXACTLY how ${this.username} writes via examples given.
 - Only use facts from provided content
 - Never invent URLs
 - Under 280 characters
 - Match examples' tone exactly
+- Make it sound like a genuine recommendation, not an ad
+- Keep the promotional cast distinct from the original content
+- Do NOT copy phrases directly from the original cast
+- Do not under any circumstances mention that an AI is involved in the creation of the promotional cast
+- Do not under any circumstances use dashes or em dashes in anything you write
 </restrictions>`;
 
     const textContent = `<task>Write a reply to promote this</task>
@@ -404,8 +410,13 @@ ${imageDataArray.length > 0 ? `<image_note>${imageDataArray.length} image(s) att
 <requirements>
 - Reply like ${this.username} would
 - Be genuine, not salesy
+- Write like you are a friend with a genuine interest in what is being promoted
+- Stick exactly to the voice and style of the examples
+- If the example use vulgar language, you may use similar language
+- Stick to the writing style, tone, and punctuation habits of the examples, you must embody ${this.username}
 - Mention @${promotionAuthor} if natural
 ${imageDataArray.length > 0 ? "- Reference the image content if it adds value to your reply" : ""}
+- 
 </requirements>
 
 <o>Only the cast text</o>`;
@@ -832,6 +843,7 @@ ${styleHints}
 - You're promoting @${creatorUsername}'s cast (they wrote the original content)
 - MUST mention @${creatorUsername} in the cast
 - MUST include the budget amount prominently
+- Do not confuse the promotional cast budget with the original creators post, you can mention the budget, but do not imply that the creator is charging that amount, or the post costs that amount to view 
 - Under 280 characters
 - Match examples' tone exactly
 - Make it sound like a genuine recommendation, not an ad
@@ -839,7 +851,8 @@ ${styleHints}
 - Keep the promotional cast distinct from the original content
 - Do NOT copy phrases directly from the original cast
 - Don't invent any facts about the content
-- Do not confuse the promotional cast budget with the original creators post, you can mention the budget, but do not imply that the creator is charging that amount, or the post costs that amount to view 
+- Do not under any circumstances mention that an AI is involved in the creation of the promotional cast
+- Do not under any circumstances use dashes or em dashes in anything you write
 </restrictions>`,
         },
         {
