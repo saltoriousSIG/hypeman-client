@@ -120,6 +120,7 @@ export function PromotionManageProvider({ children }: { children: React.ReactNod
             insightsError: error,
             activePromotions,
             completedPromotions,
+            completedPromotionsCount,
             handleEndPromotion,
             handleAddPromotionBudget
         }}>

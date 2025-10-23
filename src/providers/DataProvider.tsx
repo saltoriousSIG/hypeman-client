@@ -80,18 +80,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         queryKey: ["promoterPromotions", connectedUserData, promotions],
         queryFn: async () => {
             if (!promotions) return [];
-            
+
             // If no user data yet, return all displayable promotions
             if (!connectedUserData) {
                 return promotions.filter(p => p.display_to_promoters && !p.claimable);
             }
-            
+
             // Apply user-specific filtering when user data is available
-            const filtered = promotions?.filter(p => 
-                connectedUserData.score >= parseFloat(p.neynar_score) && 
-                p.display_to_promoters && 
-                !p.claimable
-            ).map((p) => {
+            const filtered = promotions?.filter(p => {
+                return (
+                    connectedUserData.score >= parseFloat(p.neynar_score) &&
+                    p.display_to_promoters &&
+                    !p.claimable
+                )
+            }).map((p) => {
                 if (p.pro_user) {
                     if (connectedUserData.isPro) {
                         return p;
@@ -124,6 +126,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     });
 
     const loading = isLoading || isPlatformFeeLoading;
+    console.log(promotions);
 
     return (
         <DataContext.Provider value={{

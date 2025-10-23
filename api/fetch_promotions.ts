@@ -90,7 +90,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
           created_time: promotion.created_time.toString(),
           unprocessed_intents: promotion.unprocessed_intents.toString(),
           committed_budget: promotion.committed_budget.toString(),
-          promoters,
+          promoters: Array.from(new Set(promoters)),
           intents: list,
           existing_generated_cast,
           display_to_promoters:
@@ -114,7 +114,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
           creator_fid: promotion.creator_fid.toString(),
           total_budget: promotion.total_budget.toString(),
           amount_paid_out: promotion.amount_paid_out.toString(),
-          promoters,
+          promoters: Array.from(new Set(promoters)),
           remaining_budget: promotion.remaining_budget.toString(),
           created_time: promotion.created_time.toString(),
           committed_budget: promotion.committed_budget.toString(),

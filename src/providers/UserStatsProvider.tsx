@@ -51,7 +51,7 @@ export const UserStatsProvider = ({ children }: { children: ReactNode }) => {
 
             return {
                 score: data.user.score,
-                isPro: data.user?.pro.status === "subscribed",
+                isPro: data.user?.pro?.status === "subscribed",
                 follower_count: data.user.follower_count,
                 avgLikes,
                 avgRecasts,
@@ -66,6 +66,7 @@ export const UserStatsProvider = ({ children }: { children: ReactNode }) => {
         retry: 2, // Retry failed requests twice
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     })
+    console.log(error, connectedUserData)
 
     return (
         <UserStatsContext.Provider value={{ loading, error, connectedUserData }}>
