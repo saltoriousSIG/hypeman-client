@@ -46,7 +46,10 @@ const CastCard: React.FC<CastCardProps> = ({
     const [hasClaimed, setHasClaimed] = useState(false);
     const [isClaiming, setIsClaiming] = useState(false);
 
-    const { connectedUserData: { score, isPro } } = useUserStats() as { connectedUserData: UserStats };
+    const { connectedUserData } = useUserStats() as { connectedUserData: UserStats };
+
+    const score = connectedUserData?.score || 0;
+    const isPro = connectedUserData?.isPro || false;
 
     const axios = useAxios();
 
