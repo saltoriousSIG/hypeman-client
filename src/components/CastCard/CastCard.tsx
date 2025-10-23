@@ -12,6 +12,7 @@ import useAxios from "@/hooks/useAxios"
 import { useData } from "@/providers/DataProvider";
 import { toast } from "sonner";
 import { useIntentProcessingStatus } from "@/hooks/useIntentProcessingStatus";
+import { useUserStats, UserStats } from "@/providers/UserStatsProvider";
 
 interface CastCardProps {
     promotion: any
@@ -44,6 +45,8 @@ const CastCard: React.FC<CastCardProps> = ({
     const [refreshFeedback, setRefreshFeedback] = useState("");
     const [hasClaimed, setHasClaimed] = useState(false);
     const [isClaiming, setIsClaiming] = useState(false);
+
+    const { connectedUserData: { score, isPro } } = useUserStats() as { connectedUserData: UserStats };
 
     const axios = useAxios();
 
@@ -104,6 +107,14 @@ const CastCard: React.FC<CastCardProps> = ({
 
     const handleRevealContent = async () => {
         if (!fUser || !address) return;
+
+        if (promotion.pro_user && !isPro) {
+            return toast.error("This promotion is only available to Pro users.");
+        }
+
+        if (score < parseFloat(promotion.neynar_score)) {
+            return toast.error("Your Neynar score is not high enough to reveal this content.");
+        }
 
         try {
             setIsGeneratingContent(true);
@@ -449,28 +460,28 @@ const CastCard: React.FC<CastCardProps> = ({
                     <div className="space-y-4">
                         {!isContentRevealed && !promotion.claimable ? (
                             // Step 1: Show generate button
-                            <div className="text-center p-4 bg-black">  
-                            <button
-                                onClick={handleRevealContent}
-                                disabled={isGeneratingContent || isGeneratingIntent}
-                                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {isGeneratingIntent ? (
-                                    <>
-                                        <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
-                                        Submitting Intent Transaction...
-                                    </>
-                                ) : isGeneratingContent ? (
-                                    <>
-                                        <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
-                                        Generating Content...
-                                    </>
-                                ) : (
-                                    <>
-                                        Cast to Earn ${pricing}
-                                    </>
-                                )}
-                            </button>
+                            <div className="text-center p-4 bg-black">
+                                <button
+                                    onClick={handleRevealContent}
+                                    disabled={isGeneratingContent || isGeneratingIntent}
+                                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isGeneratingIntent ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
+                                            Submitting Intent Transaction...
+                                        </>
+                                    ) : isGeneratingContent ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
+                                            Generating Content...
+                                        </>
+                                    ) : (
+                                        <>
+                                            Cast to Earn ${pricing}
+                                        </>
+                                    )}
+                                </button>
                             </div>
                         ) : (
                             // Step 2: Show content and slide-to-post
@@ -591,7 +602,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                                                                     className="relative flex items-center justify-center gap-2 px-4 py-4 rounded-xl text-sm font-semibold text-white/90 bg-gradient-to-r from-gray-500/10 to-gray-600/10 border border-gray-400/30 hover:border-gray-300/50 transition-all duration-500 group overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-gray-500/20 hover:scale-105 flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                                                                 >
                                                                                     <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-                                                                                     <span className="relative z-10 bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent group-hover:from-gray-200 group-hover:to-gray-300 transition-all duration-300">
+                                                                                    <span className="relative z-10 bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent group-hover:from-gray-200 group-hover:to-gray-300 transition-all duration-300">
                                                                                         {isGeneratingContent ? "Generating..." : "Refresh"}
                                                                                     </span>
                                                                                 </button>
