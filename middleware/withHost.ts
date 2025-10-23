@@ -29,7 +29,8 @@ export function withHost(handler: any) {
 
     console.log(baseOrigin, "baseOrigin after parsing");
 
-    if (!allowedHosts.includes(baseOrigin)) {
+    // Allow requests without origin headers (for webhooks)
+    if (baseOrigin && !allowedHosts.includes(baseOrigin)) {
       return res.status(403).json({ error: "Forbidden" });
     }
 

@@ -649,7 +649,7 @@ ${styleHints}
       return {
         sentimentMatch: object.sentimentmatch,
       };
-    } catch (e: any) {
+    } catch {
       const expectedWords = expected.toLowerCase().split(/\s+/);
       const actualWords = actual.toLowerCase().split(/\s+/);
       const overlap = expectedWords.filter((word) =>
@@ -662,6 +662,111 @@ ${styleHints}
         overlap.length / Math.max(expectedWords.length, actualWords.length);
 
       return { sentimentMatch: overlapRatio > 0.6 };
+    }
+  }
+
+  /**
+   * Generate a promotional cast for a given cast text and budget
+   * @param castText - The original cast text to promote
+   * @param budget - The budget amount for the promotion
+   * @param creatorUsername - The username of the creator to mention
+   * @returns Promise with promotional cast text
+   */
+  async generatePromotionalCast(
+    castText: string,
+    budget: string,
+    creatorUsername: string
+  ): Promise<GenerationResult> {
+    try {
+      if (this.topExamples.length === 0) {
+        return {
+          success: false,
+          error: "No suitable casts found for voice training",
+          model: "claude-3-5-haiku-20241022",
+        };
+      }
+
+      // Convert budget to readable format (assuming it's in USDC - 6 decimals)
+      const budgetInUsdc = (parseFloat(budget) / 1e6).toFixed(2);
+      const budgetDisplay = `$${budgetInUsdc} USDC`;
+
+      const styleHints = this.generateStyleHints();
+
+      const messages = [
+        {
+          role: "system" as const,
+          content: `You are ${this.username}. Write EXACTLY like these examples:
+
+<examples>
+${this.topExamples.map((cast, i) => `<example${i + 1}>${cast.text}</example${i + 1}>`).join("\n")}
+</examples>
+
+<voice_rules>
+${styleHints}
+</voice_rules>
+
+<restrictions>
+- You're promoting @${creatorUsername}'s cast (they wrote the original content)
+- MUST mention @${creatorUsername} in the cast
+- MUST include the budget amount prominently
+- Under 280 characters
+- Match examples' tone exactly
+- Make it sound like a genuine recommendation, not an ad
+- Be enthusiastic but authentic
+</restrictions>`,
+        },
+        {
+          role: "user" as const,
+          content: `<task>Write a promotional cast recommending this content</task>
+
+<original_cast>
+${castText}
+</original_cast>
+
+<creator>
+Original Creator: @${creatorUsername} (they wrote the cast above)
+</creator>
+
+<budget>
+Budget: ${budgetDisplay}
+</budget>
+
+<requirements>
+- MUST mention @${creatorUsername} (the original creator)
+- MUST include the budget amount
+- Make it sound natural and authentic
+- You're promoting their content, not writing as them
+</requirements>
+
+<output>Only the promotional cast text</output>`,
+        },
+      ];
+
+      const result = await generateText({
+        model: this.fastModel,
+        messages,
+        temperature: 0.9,
+        frequencyPenalty: 0.6,
+        presencePenalty: 0.4,
+        maxRetries: 2,
+        abortSignal: AbortSignal.timeout(15000),
+      });
+
+      let promotionalText = this.extractCastFromResponse(result.text);
+      promotionalText = this.postProcessCast(promotionalText);
+
+      return {
+        success: true,
+        text: promotionalText,
+        model: "claude-3-5-haiku-20241022",
+        generationType: "promotional",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+        model: "claude-3-5-haiku-20241022",
+      };
     }
   }
 }
