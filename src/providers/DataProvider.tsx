@@ -111,7 +111,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (!refetch) return;
 
         const signinEventHandler = () => {
-            if (!promotions || promotions.length === 0) {
+            if (!promotions) {
                 refetch();
             }
         }
