@@ -2,6 +2,7 @@ import { createContext, useEffect, useState, useContext, useCallback } from "rea
 import sdk from "@farcaster/frame-sdk";
 import { MiniAppSDK } from "@farcaster/miniapp-sdk/dist/types";
 import { useAccount, useConnect } from "wagmi";
+import { fuse } from "viem/chains";
 
 interface FrameContextValue {
     errors: Record<string, Error> | null;
@@ -87,14 +88,16 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const handleSignin = useCallback(async () => {
+        if (!fUser || !address) return;
         try {
             // probably check if the signature is still valid here
             const response = await sdk.actions.signIn({
                 nonce: `${address}`, // 1 hour from now
             });
-            sessionStorage.setItem("signature", response.signature);
-            sessionStorage.setItem("message", response.message);
+            sessionStorage.setItem(`signature:${fUser.fid}`, response.signature);
+            sessionStorage.setItem(`message:${fUser.fid}`, response.message);
             setIsAuthenticated(true);
+            window.dispatchEvent(new Event("fc-signin-success"));
             return response.signature;
         } catch (e: any) {
             return null
@@ -103,8 +106,8 @@ export function FrameSDKProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (!address || !fUser) return;
-        const storage_signature = sessionStorage.getItem("signature");
-        const storage_message = sessionStorage.getItem("message");
+        const storage_signature = sessionStorage.getItem(`signature:${fUser.fid}`);
+        const storage_message = sessionStorage.getItem(`message:${fUser.fid}`);
         // should check if this is still valid;
         if (!storage_signature || !storage_message) {
             const result = handleSignin();

@@ -1,8 +1,7 @@
-import { useContext, createContext } from "react";
+import { useContext, createContext, useEffect } from "react";
 import useAxios from "@/hooks/useAxios";
 import { useQuery } from "@tanstack/react-query";
 import { Promotion } from "@/types/promotion.type";
-import { useUserStats } from "./UserStatsProvider";
 import useContract, { ExecutionType } from "@/hooks/useContract";
 
 interface DataContextValue {
@@ -47,7 +46,6 @@ export function useData() {
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
     const axios = useAxios();
-    const { connectedUserData } = useUserStats();
 
     const getPlatformFee = useContract(ExecutionType.READABLE, "Data", "getPlatformFee");
 
@@ -108,6 +106,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         retry: 2, // Retry failed requests twice
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     });
+
+    useEffect(() => {
+        if (!refetch) return;
+
+        const signinEventHandler = () => {
+            if (!promotions || promotions.length === 0) {
+                refetch();
+            }
+        }
+
+        window.addEventListener("fc-signin-success", signinEventHandler);
+        return () => {
+            window.removeEventListener("fc-signin-success", signinEventHandler);
+        }
+    }, [refetch, promotions]);
 
     const loading = isLoading || isPlatformFeeLoading;
     console.log(promotions);
