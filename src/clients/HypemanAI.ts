@@ -33,6 +33,39 @@ interface VoiceProfile {
   punctuationStyle: string;
 }
 
+interface EmbedContext {
+  // For image embeds
+  metadata?: {
+    content_type?: string;
+    content_length?: number | null;
+    image?: {
+      width_px: number;
+      height_px: number;
+    };
+    // For miniapp/frame embeds
+    frame?: any;
+    html?: any;
+    _status?: string;
+    [key: string]: any;
+  };
+  url?: string;
+  // For cast embeds
+  cast?: {
+    text: string;
+    author: {
+      username: string;
+      display_name?: string;
+      [key: string]: any;
+    };
+    [key: string]: any;
+  };
+  cast_id?: {
+    fid: number;
+    hash: string;
+  };
+  [key: string]: any; // Allow for other properties
+}
+
 const ContentComparisonSchema = z.object({
   sentimentmatch: z
     .boolean()
@@ -247,29 +280,96 @@ export class HypemanAI {
   }
 
   /**
-   * HAIKU-OPTIMIZED PROMPT
+   * Helper function to fetch image and convert to base64
+   */
+  private async fetchImageAsBase64(url: string): Promise<string | null> {
+    try {
+      const response = await axios.get(url, {
+        responseType: "arraybuffer",
+        timeout: 10000,
+      });
+
+      const base64 = Buffer.from(response.data, "binary").toString("base64");
+
+      return base64;
+    } catch (error) {
+      console.error("Failed to fetch image:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Extract all image URLs from embedContext
+   */
+  private extractImageFromEmbeds(embedContext: EmbedContext[]): string[] {
+    if (!embedContext || embedContext.length === 0) return [];
+
+    // Look for all embeds with image content_type in metadata
+    const imageUrls: string[] = [];
+
+    for (const embed of embedContext) {
+      if (embed.metadata?.content_type?.startsWith("image/") && embed.url) {
+        imageUrls.push(embed.url);
+      }
+    }
+
+    return imageUrls;
+  }
+
+  /**
+   * HAIKU-OPTIMIZED PROMPT WITH IMAGE SUPPORT
    * - XML tags for structure
    * - 8-10 clear examples
    * - Concise instructions
-   * - Prefilling support
+   * - Image analysis when available
    */
-  buildVoiceLearningPrompt(
+  async buildVoiceLearningPrompt(
     promotionContent: string,
     promotionAuthor: string,
-    embedContext: { type: string; value: string }[]
+    embedContext: EmbedContext[]
   ) {
-    const contextUrl = embedContext.find((x) => x.type === "url")?.value;
+    // Build additional context from all embeds
+    const contextParts: string[] = [];
+
+    for (const embed of embedContext) {
+      // Add URL context
+      if (embed.url) {
+        contextParts.push(`url: ${embed.url}`);
+      }
+
+      // Add embedded cast context
+      if (embed.cast?.text) {
+        const castAuthor = embed.cast.author?.username || "unknown";
+        contextParts.push(
+          `embedded cast by @${castAuthor}: "${embed.cast.text}"`
+        );
+      }
+
+      // Add frame/miniapp context
+      if (embed.metadata?.frame?.title) {
+        contextParts.push(`frame: ${embed.metadata.frame.title}`);
+      }
+    }
+
+    const contextUrl = embedContext.find((e) => e.url)?.url;
     const additionalContext =
-      embedContext.length > 0
-        ? embedContext.map((e) => `${e.type}: ${e.value}`).join("\n")
-        : "";
+      contextParts.length > 0 ? contextParts.join("\n") : "";
 
     const styleHints = this.generateStyleHints();
 
-    return [
-      {
-        role: "system" as const,
-        content: `You are ${this.username}. Write EXACTLY like these examples:
+    // Check for images (separate from other context)
+    const imageUrls = this.extractImageFromEmbeds(embedContext);
+    const imageDataArray: string[] = [];
+
+    // Fetch all images
+    for (const imageUrl of imageUrls) {
+      const imageData = await this.fetchImageAsBase64(imageUrl);
+      if (imageData) {
+        imageDataArray.push(imageData);
+      }
+    }
+
+    const systemContent = `You are ${this.username}. Write EXACTLY like these examples:
 
 <examples>
 ${this.topExamples.map((cast, i) => `<example${i + 1}>${cast.text}</example${i + 1}>`).join("\n")}
@@ -285,91 +385,113 @@ ${styleHints}
 - Never invent URLs
 - Under 280 characters
 - Match examples' tone exactly
-- No generic promotional language
-</restrictions>`,
-      },
-      {
-        role: "user" as const,
-        content: `<task>Write a natural reply (not an ad)</task>
+</restrictions>`;
+
+    const textContent = `<task>Write a reply to promote this</task>
 
 <content>
 ${promotionContent}
 </content>
 
+<author>
+Original Author: @${promotionAuthor}
+</author>
+
 ${additionalContext ? `<context>\n${additionalContext}\n</context>` : ""}
-
 ${contextUrl ? `<url>${contextUrl}</url>` : ""}
+${imageDataArray.length > 0 ? `<image_note>${imageDataArray.length} image(s) attached. Analyze and reference them naturally in your reply if relevant.</image_note>` : ""}
 
-<output>Only the cast text</output>`,
+<requirements>
+- Reply like ${this.username} would
+- Be genuine, not salesy
+- Mention @${promotionAuthor} if natural
+${imageDataArray.length > 0 ? "- Reference the image content if it adds value to your reply" : ""}
+</requirements>
+
+<o>Only the cast text</o>`;
+
+    // Build the user message content with or without images
+    const userContent: any[] = [];
+
+    // Add all images first if available (Claude performs better with images before text)
+    for (const imageData of imageDataArray) {
+      userContent.push({
+        type: "image",
+        image: imageData,
+      });
+    }
+
+    // Add text content
+    userContent.push({
+      type: "text",
+      text: textContent,
+    });
+
+    return [
+      {
+        role: "system" as const,
+        content: systemContent,
+      },
+      {
+        role: "user" as const,
+        content: userContent,
       },
     ];
   }
 
-  /**
-   * Clean extraction - handle any wrapper text
-   */
-  private extractCastFromResponse(fullResponse: string): string {
-    return (
-      fullResponse
-        .replace(/^(Here's|Here is|Cast:|Output:)/i, "")
-        .replace(/<\/?[^>]+(>|$)/g, "") // Remove any XML tags in output
-        .trim()
-        .split("\n")
-        .filter((line) => line.trim().length > 0)
-        .pop()
-        ?.trim() || fullResponse.trim()
-    );
+  // ... rest of the methods remain the same until generateVariations
+
+  private extractCastFromResponse(text: string): string {
+    text = text.trim();
+    const oTagMatch = text.match(/<o>([\s\S]*?)<\/o>/);
+    if (oTagMatch) {
+      return oTagMatch[1].trim();
+    }
+    const lines = text.split("\n");
+    if (lines.length > 0) {
+      return lines[0].trim();
+    }
+    return text;
   }
 
-  /**
-   * Fast warmup - single example style priming
-   */
-  private async performVoiceWarmup(): Promise<void> {
-    if (this.topExamples.length === 0) return;
+  private postProcessCast(castText: string): string {
+    castText = castText.replace(/<\/?cast>/g, "").trim();
+    castText = castText.replace(/^["']|["']$/g, "");
+    if (castText.length > 280) {
+      castText = castText.substring(0, 277) + "...";
+    }
+    return castText;
+  }
 
+  async performVoiceWarmup(): Promise<void> {
+    if (this.topExamples.length === 0) return;
     try {
+      const warmupExample = this.topExamples[0];
       await generateText({
         model: this.fastModel,
         messages: [
           {
+            role: "system",
+            content: `You are ${this.username}. Match this style exactly: ${warmupExample.text}`,
+          },
+          {
             role: "user",
-            content: `Copy this style: "${this.topExamples[0].text}"\n\nWrite 1 sentence about tech in that style.`,
+            content: "Write a short test message in this style.",
           },
         ],
-        temperature: 1.0,
+        temperature: 0.9,
+        maxRetries: 0,
+        abortSignal: AbortSignal.timeout(5000),
       });
-    } catch {
-      // Silent fail - warmup is optional
+    } catch (error) {
+      // Warmup failure is non-critical
     }
   }
 
-  /**
-   * Post-process - ensure quality
-   */
-  private postProcessCast(castText: string): string {
-    let processed = castText.trim();
-
-    // Remove common artifacts
-    processed = processed.replace(/^(Here's|Here is|Cast:)/i, "").trim();
-
-    // Ensure character limit
-    if (processed.length > 280) {
-      processed = processed.substring(0, 277) + "...";
-    }
-
-    return processed;
-  }
-
-  /**
-   * HAIKU-OPTIMIZED: Fast initial generation
-   * - Voice warmup
-   * - Optimal temperature (0.9-0.95 for creativity)
-   * - Minimal retries for speed
-   */
   async generateInitialCast(
     promotionContent: string,
     promotionAuthor: string,
-    embedContext: { type: string; value: string }[],
+    embedContext: EmbedContext[],
     options?: GenerationOptions
   ): Promise<GenerationResult> {
     try {
@@ -377,14 +499,14 @@ ${contextUrl ? `<url>${contextUrl}</url>` : ""}
         return {
           success: false,
           error: "No suitable casts found for voice training",
-          model: "claude-3-5-haiku-20241022",
+          model: "claude-haiku-4-5-20251001",
         };
       }
 
       // Quick warmup
       await this.performVoiceWarmup();
 
-      const messages = this.buildVoiceLearningPrompt(
+      const messages = await this.buildVoiceLearningPrompt(
         promotionContent,
         promotionAuthor,
         embedContext
@@ -406,14 +528,14 @@ ${contextUrl ? `<url>${contextUrl}</url>` : ""}
       return {
         success: true,
         text: castText,
-        model: "claude-3-5-haiku-20241022",
+        model: "claude-haiku-4-5-20251001",
         generationType: "initial",
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
-        model: "claude-3-5-haiku-20241022",
+        model: "claude-haiku-4-5-20251001",
       };
     }
   }
@@ -424,7 +546,7 @@ ${contextUrl ? `<url>${contextUrl}</url>` : ""}
   async refineCast(
     promotionContent: string,
     promotionAuthor: string,
-    embedContext: { type: string; value: string }[],
+    embedContext: EmbedContext[],
     userFeedback: string,
     previousCast: string,
     options?: GenerationOptions
@@ -434,11 +556,11 @@ ${contextUrl ? `<url>${contextUrl}</url>` : ""}
         return {
           success: false,
           error: "No suitable casts found for voice training",
-          model: "claude-3-5-haiku-20241022",
+          model: "claude-haiku-4-5-20251001",
         };
       }
 
-      const baseMessages = this.buildVoiceLearningPrompt(
+      const baseMessages = await this.buildVoiceLearningPrompt(
         promotionContent,
         promotionAuthor,
         embedContext
@@ -462,7 +584,7 @@ ${styleHints}
 
 <task>Rewrite completely (under 280 chars). Match voice. Address feedback.</task>
 
-<output>Only the revised cast</output>`,
+<o>Only the revised cast</o>`,
         },
       ];
 
@@ -482,7 +604,7 @@ ${styleHints}
       return {
         success: true,
         text: castText,
-        model: "claude-3-5-haiku-20241022",
+        model: "claude-haiku-4-5-20251001",
         generationType: "refinement",
         originalCast: previousCast,
         feedback: userFeedback,
@@ -491,12 +613,13 @@ ${styleHints}
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
-        model: "claude-3-5-haiku-20241022",
+        model: "claude-haiku-4-5-20251001",
       };
     }
   }
+
   /**
-   * HAIKU-OPTIMIZED: Generate variations
+   * HAIKU-OPTIMIZED: Generate variations with image support
    * - Temperature variation for diversity
    * - Shared warmup
    */
@@ -504,7 +627,7 @@ ${styleHints}
     count: number = 3,
     promotionContent: string,
     promotionAuthor: string,
-    embedContext: { type: string; value: string }[]
+    embedContext: EmbedContext[]
   ): Promise<GenerationResult[]> {
     const variations: GenerationResult[] = [];
 
@@ -513,7 +636,7 @@ ${styleHints}
         {
           success: false,
           error: "No suitable casts found for voice training",
-          model: "claude-3-5-haiku-20241022",
+          model: "claude-haiku-4-5-20251001",
         },
       ];
     }
@@ -523,7 +646,7 @@ ${styleHints}
 
     for (let i = 0; i < count; i++) {
       try {
-        const messages = this.buildVoiceLearningPrompt(
+        const messages = await this.buildVoiceLearningPrompt(
           promotionContent,
           promotionAuthor,
           embedContext
@@ -548,7 +671,7 @@ ${styleHints}
         variations.push({
           success: true,
           text: castText,
-          model: "claude-3-5-haiku-20241022",
+          model: "claude-haiku-4-5-20251001",
           generationType: "variation",
           variationIndex: i,
         });
@@ -556,7 +679,7 @@ ${styleHints}
         variations.push({
           success: false,
           error: error instanceof Error ? error.message : "Unknown error",
-          model: "claude-3-5-haiku-20241022",
+          model: "claude-haiku-4-5-20251001",
           variationIndex: i,
         });
       }
@@ -682,7 +805,7 @@ ${styleHints}
         return {
           success: false,
           error: "No suitable casts found for voice training",
-          model: "claude-3-5-haiku-20241022",
+          model: "claude-haiku-4-5-20251001",
         };
       }
 
@@ -713,6 +836,10 @@ ${styleHints}
 - Match examples' tone exactly
 - Make it sound like a genuine recommendation, not an ad
 - Be enthusiastic but authentic
+- Keep the promotional cast distinct from the original content
+- Do NOT copy phrases directly from the original cast
+- Don't invent any facts about the content
+- Do not confuse the promotional cast budget with the original creators post, you can mention the budget, but do not imply that the creator is charging that amount, or the post costs that amount to view 
 </restrictions>`,
         },
         {
@@ -738,7 +865,7 @@ Budget: ${budgetDisplay}
 - You're promoting their content, not writing as them
 </requirements>
 
-<output>Only the promotional cast text</output>`,
+<o>Only the promotional cast text</o>`,
         },
       ];
 
@@ -758,14 +885,14 @@ Budget: ${budgetDisplay}
       return {
         success: true,
         text: promotionalText,
-        model: "claude-3-5-haiku-20241022",
+        model: "claude-haiku-4-5-20251001",
         generationType: "promotional",
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
-        model: "claude-3-5-haiku-20241022",
+        model: "claude-haiku-4-5-20251001",
       };
     }
   }
