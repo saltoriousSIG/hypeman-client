@@ -3,7 +3,7 @@ import { RedisClient } from "../../src/clients/RedisClient.js";
 import { DIAMOND_ADDRESS } from "../../src/lib/utils.js";
 import fs from "fs";
 import path from "path";
-import { zeroHash, pad } from "viem";
+import { zeroHash, pad, InvalidRequestRpcError } from "viem";
 import setupAdminWallet from "../../src/lib/setupAdminWallet.js";
 import { trim } from "viem";
 import axios from "axios";
@@ -62,12 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             args: [BigInt(i), item.wallet as `0x${string}`],
           });
 
-          console.log(item, "ITEM");
-          console.log(promoter_details, "PROMOTER DETAILS");
           const submitted_cast = await redis.get(`user_cast:${item.fid}:${i}`);
-          console.log(
-            promoter_details.fid !== 0n && promoter_details.state === 0
-          );
 
           if (promoter_details.fid !== 0n && promoter_details.state === 0) {
             // check cast content matches what is in redis
@@ -86,13 +81,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     },
                   }
                 );
-                console.log(submitted_cast.generated_cast, "SUBMITTED CAST");
 
                 const { sentimentMatch } = await hypeman.compareContent(
                   submitted_cast.generated_cast,
                   cast.text
                 );
-                console.log(sentimentMatch, "SENTIMENT MATCH");
 
                 if (!sentimentMatch) {
                   intents_to_process.push({
@@ -107,7 +100,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                       item.timestamp || Math.floor(Date.now() / 1000)
                     ),
                   });
-                  await redis.lrem(`intent:${i}`, 1, JSON.stringify(item));
                 } else {
                   intents_to_process.push({
                     intent_hash: item.intentHash,
@@ -121,13 +113,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                       item.timestamp || Math.floor(Date.now() / 1000)
                     ),
                   });
-                  await redis.lset(`intent:${i}`, index, {
-                    ...item,
-                    processed: true,
-                  });
                 }
               } catch (e: any) {
-                console.log("Error fetching cast:", e, e.message);
                 intents_to_process.push({
                   intent_hash: item.intentHash,
                   promotion_id: item.promotion_id
@@ -140,7 +127,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     item.timestamp || Math.floor(Date.now() / 1000)
                   ),
                 });
-                await redis.lrem(`intent:${i}`, 1, JSON.stringify(item));
               }
             } else {
               if (
@@ -157,7 +143,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                   cast_hash: zeroHash,
                   post_time: 0,
                 });
-                await redis.lrem(`intent:${i}`, 1, JSON.stringify(item));
               }
             }
           } else if (promoter_details.state !== 0n) {
@@ -184,6 +169,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Wait for transaction confirmation
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+      // only update redis after successful tx
+      for (const intent of intents_to_process) {
+        const list = await redis.lrange(`intent:${intent.promotion_id}`, 0, -1);
+        if (intent.cast_hash === zeroHash) {
+          const target_intent = list.find((item) => {
+            return item.intentHash === intent.intent_hash;
+          });
+          if (target_intent) {
+            await redis.lrem(
+              `intent:${intent.promotion_id}`,
+              1,
+              JSON.stringify(target_intent)
+            );
+          }
+        } else {
+          const index = list.findIndex((item) => {
+            return item.intentHash === intent.intent_hash;
+          });
+          if (index !== -1) {
+            const item = list[index];
+            await redis.lset(`intent:${intent.promotion_id}`, index, {
+              ...item,
+              processed: true,
+            });
+          }
+        }
+      }
 
       return res.status(200).json({
         success: true,
