@@ -25,12 +25,42 @@ interface ValidationResult {
 }
 
 interface VoiceProfile {
+  // Basic metrics
   avgLength: number;
+  avgSentenceLength: number;
+
+  // Vocabulary fingerprint
+  uniqueWords: string[]; // Words used frequently by this user
+  favoredAdjectives: string[];
+  slangTerms: string[];
+  technicalTerms: string[];
+
+  // Structural patterns
+  openingPatterns: string[]; // How they start messages
+  closingPatterns: string[]; // How they end messages
+  questionFrequency: number; // % of casts that are questions
+
+  // Linguistic markers
   usesEmoji: boolean;
+  emojiStyle: string[]; // Specific emojis they use
   usesProfanity: boolean;
+  profanityWords: string[];
+
+  // Punctuation and formatting
+  ellipsisUsage: boolean;
+  exclamationUsage: number; // per cast average
+  capitalPattern: "standard" | "lowercase" | "mixed";
+
+  // Personality markers
+  enthusiasmMarkers: string[]; // How they show excitement
+  cautionaryWords: string[]; // "imo", "tbh", etc.
+  fillerWords: string[]; // "like", "honestly", etc.
+
+  // What they avoid
+  avoidedPatterns: string[];
+
+  // Energy
   energyLevel: "high" | "medium" | "low";
-  commonPhrases: string[];
-  punctuationStyle: string;
 }
 
 interface EmbedContext {
@@ -142,104 +172,381 @@ export class HypemanAI {
   }
 
   /**
-   * Fast voice analysis - extract key patterns only
+   * Deep voice analysis - extract unique patterns that differentiate this user
    */
   private analyzeVoice(casts: Cast[]): VoiceProfile {
     const texts = casts.map((c) => c.text);
     const allText = texts.join(" ");
 
+    // === BASIC METRICS ===
     const avgLength =
       texts.reduce((sum, t) => sum + t.length, 0) / texts.length;
-    const usesEmoji = /[\p{Emoji}]/gu.test(allText);
-    const profanityWords = ["fuck", "shit", "damn", "hell"];
-    const usesProfanity = profanityWords.some((word) =>
-      allText.toLowerCase().includes(word)
+
+    // Calculate average sentence length
+    const allSentences = texts.flatMap((t) =>
+      t.split(/[.!?]+/).filter((s) => s.trim().length > 0)
     );
+    const avgSentenceLength =
+      allSentences.length > 0
+        ? allSentences.reduce((sum, s) => sum + s.length, 0) /
+          allSentences.length
+        : avgLength;
 
-    // Energy level based on punctuation
-    const exclamations = (allText.match(/!/g) || []).length;
-    const energyRatio = exclamations / texts.length;
-    const energyLevel =
-      energyRatio > 0.5 ? "high" : energyRatio < 0.2 ? "low" : "medium";
+    // === VOCABULARY FINGERPRINT ===
+    // Extract all words and find frequently used ones
+    const wordFreq: { [key: string]: number } = {};
+    const allWords = allText
+      .toLowerCase()
+      .replace(/[^\w\s']/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length > 3); // Filter out short words
 
-    // Extract 2-3 word phrases that appear 3+ times
-    const phraseCounts: { [key: string]: number } = {};
-    texts.forEach((text) => {
-      const words = text.toLowerCase().split(/\s+/);
-      for (let i = 0; i < words.length - 1; i++) {
-        const phrase = words.slice(i, i + 2).join(" ");
-        if (phrase.length > 5) {
-          phraseCounts[phrase] = (phraseCounts[phrase] || 0) + 1;
-        }
+    allWords.forEach((word) => {
+      wordFreq[word] = (wordFreq[word] || 0) + 1;
+    });
+
+    // Find unique/characteristic words (used 3+ times)
+    const uniqueWords = Object.entries(wordFreq)
+      .filter(([word, count]) => count >= 3)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([word]) => word);
+
+    // Find favored adjectives
+    const commonAdjectives = [
+      "good",
+      "great",
+      "nice",
+      "cool",
+      "awesome",
+      "amazing",
+      "sick",
+      "dope",
+      "fire",
+      "clean",
+      "solid",
+      "wild",
+      "crazy",
+      "insane",
+      "real",
+      "true",
+      "best",
+      "perfect",
+      "beautiful",
+    ];
+    const favoredAdjectives = commonAdjectives
+      .filter((adj) => allText.toLowerCase().includes(adj))
+      .filter(
+        (adj) =>
+          (allText.toLowerCase().match(new RegExp(adj, "g")) || []).length >= 2
+      )
+      .slice(0, 5);
+
+    // Detect slang usage
+    const slangTerms: string[] = [];
+    const slangPatterns = [
+      { pattern: /\bfr\b|\bfr fr\b/i, term: "fr" },
+      { pattern: /\blowkey\b/i, term: "lowkey" },
+      { pattern: /\bhighkey\b/i, term: "highkey" },
+      { pattern: /\byo+\b/i, term: "yo" },
+      { pattern: /\bvibing\b|\bvibe\b/i, term: "vibe/vibing" },
+      { pattern: /\bhits different\b/i, term: "hits different" },
+      { pattern: /\blmao\b|\blmfao\b/i, term: "lmao" },
+      { pattern: /\bngl\b/i, term: "ngl" },
+      { pattern: /\btbh\b/i, term: "tbh" },
+      { pattern: /\bimo\b/i, term: "imo" },
+      { pattern: /\baf\b/i, term: "af" },
+      { pattern: /\bfinna\b|\bgonna\b/i, term: "finna/gonna" },
+      { pattern: /\bhonestly\b/i, term: "honestly" },
+      { pattern: /\blegit\b/i, term: "legit" },
+    ];
+
+    slangPatterns.forEach(({ pattern, term }) => {
+      if (pattern.test(allText)) {
+        slangTerms.push(term);
       }
     });
-    const commonPhrases = Object.entries(phraseCounts)
-      .filter(([_, count]) => count >= 3)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([phrase]) => phrase);
 
-    // Punctuation style
-    const hasEllipsis = allText.includes("...");
-    const hasDashes = allText.includes("—") || allText.includes(" - ");
-    const punctuationStyle = hasEllipsis
-      ? "uses ellipses"
-      : hasDashes
-        ? "uses dashes"
-        : "standard";
+    // Detect technical/crypto terms
+    const technicalPatterns = [
+      "protocol",
+      "onchain",
+      "token",
+      "mint",
+      "airdrop",
+      "dao",
+      "defi",
+      "nft",
+      "wallet",
+      "transaction",
+      "smart contract",
+      "blockchain",
+    ];
+    const technicalTerms = technicalPatterns.filter((term) =>
+      allText.toLowerCase().includes(term.toLowerCase())
+    );
+
+    // === STRUCTURAL PATTERNS ===
+    // Analyze how they open messages
+    const openings: { [key: string]: number } = {};
+    texts.forEach((text) => {
+      const firstWords = text.toLowerCase().split(/\s+/).slice(0, 2).join(" ");
+      if (firstWords.length > 0) {
+        openings[firstWords] = (openings[firstWords] || 0) + 1;
+      }
+    });
+    const openingPatterns = Object.entries(openings)
+      .filter(([_, count]) => count >= 2)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([pattern]) => pattern);
+
+    // Analyze how they close messages
+    const closings: { [key: string]: number } = {};
+    texts.forEach((text) => {
+      const lastWords = text
+        .toLowerCase()
+        .replace(/[.!?]+$/, "") // Remove trailing punctuation
+        .split(/\s+/)
+        .slice(-2)
+        .join(" ");
+      if (lastWords.length > 0) {
+        closings[lastWords] = (closings[lastWords] || 0) + 1;
+      }
+    });
+    const closingPatterns = Object.entries(closings)
+      .filter(([_, count]) => count >= 2)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([pattern]) => pattern);
+
+    // Question frequency
+    const questionCount = texts.filter((t) => t.includes("?")).length;
+    const questionFrequency = questionCount / texts.length;
+
+    // === EMOJI ANALYSIS ===
+    const emojiRegex = /[\p{Emoji}]/gu;
+    const usesEmoji = emojiRegex.test(allText);
+    const emojiMatches = allText.match(emojiRegex) || [];
+    const emojiFreq: { [key: string]: number } = {};
+    emojiMatches.forEach((emoji) => {
+      emojiFreq[emoji] = (emojiFreq[emoji] || 0) + 1;
+    });
+    const emojiStyle = Object.entries(emojiFreq)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([emoji]) => emoji);
+
+    // === PROFANITY ANALYSIS ===
+    const profanityList = ["fuck", "shit", "damn", "hell", "ass", "bitch"];
+    const profanityWords: string[] = [];
+    profanityList.forEach((word) => {
+      if (allText.toLowerCase().includes(word)) {
+        profanityWords.push(word);
+      }
+    });
+    const usesProfanity = profanityWords.length > 0;
+
+    // === PUNCTUATION & FORMATTING ===
+    const ellipsisUsage = allText.includes("...");
+    const exclamationCount = (allText.match(/!/g) || []).length;
+    const exclamationUsage = exclamationCount / texts.length;
+
+    // Detect capitalization pattern
+    const lowercaseTexts = texts.filter(
+      (t) => t === t.toLowerCase() && t.length > 10
+    );
+    const uppercaseWords = allText.match(/[A-Z]{2,}/g) || [];
+    const capitalPattern =
+      lowercaseTexts.length > texts.length * 0.5
+        ? "lowercase"
+        : uppercaseWords.length > 5
+          ? "mixed"
+          : "standard";
+
+    // === PERSONALITY MARKERS ===
+    // Enthusiasm markers (how they show excitement)
+    const enthusiasmMarkers: string[] = [];
+    if (allText.includes("!!")) enthusiasmMarkers.push("double exclamation");
+    if (allText.includes("..."))
+      enthusiasmMarkers.push("ellipsis for suspense");
+    if (/\b(omg|wow|damn|holy|sheesh)\b/i.test(allText))
+      enthusiasmMarkers.push("exclamations");
+    if (slangTerms.includes("fire"))
+      enthusiasmMarkers.push("fire/flames language");
+    if (exclamationUsage > 1)
+      enthusiasmMarkers.push("multiple exclamation marks");
+
+    // Cautionary/hedging words
+    const cautionaryWords: string[] = [];
+    const hedges = [
+      "imo",
+      "tbh",
+      "ngl",
+      "probably",
+      "maybe",
+      "kinda",
+      "sorta",
+      "i think",
+    ];
+    hedges.forEach((hedge) => {
+      if (new RegExp(`\\b${hedge}\\b`, "i").test(allText)) {
+        cautionaryWords.push(hedge);
+      }
+    });
+
+    // Filler words
+    const fillerWords: string[] = [];
+    const fillers = [
+      "like",
+      "honestly",
+      "basically",
+      "literally",
+      "actually",
+      "really",
+    ];
+    fillers.forEach((filler) => {
+      const count = (
+        allText.toLowerCase().match(new RegExp(`\\b${filler}\\b`, "g")) || []
+      ).length;
+      if (count >= 2) {
+        fillerWords.push(filler);
+      }
+    });
+
+    // === AVOIDED PATTERNS ===
+    const avoidedPatterns: string[] = [];
+
+    // Check what they DON'T do
+    if (!slangTerms.includes("fr")) avoidedPatterns.push('does not use "fr"');
+    if (!slangTerms.includes("lowkey"))
+      avoidedPatterns.push('does not use "lowkey"');
+    if (!slangTerms.includes("yo"))
+      avoidedPatterns.push('does not start with "yo"');
+    if (!slangTerms.includes("hits different"))
+      avoidedPatterns.push('does not use "hits different"');
+    if (!slangTerms.includes("vibe/vibing"))
+      avoidedPatterns.push('does not use "vibe/vibing"');
+    if (!usesEmoji) avoidedPatterns.push("rarely or never uses emojis");
+    if (exclamationUsage < 0.3)
+      avoidedPatterns.push("minimal exclamation marks");
+    if (questionFrequency < 0.1) avoidedPatterns.push("rarely asks questions");
+
+    // === ENERGY LEVEL ===
+    const energyLevel =
+      exclamationUsage > 0.8
+        ? "high"
+        : exclamationUsage < 0.3
+          ? "low"
+          : "medium";
 
     return {
       avgLength,
+      avgSentenceLength,
+      uniqueWords,
+      favoredAdjectives,
+      slangTerms,
+      technicalTerms,
+      openingPatterns,
+      closingPatterns,
+      questionFrequency,
       usesEmoji,
+      emojiStyle,
       usesProfanity,
+      profanityWords,
+      ellipsisUsage,
+      exclamationUsage,
+      capitalPattern,
+      enthusiasmMarkers,
+      cautionaryWords,
+      fillerWords,
+      avoidedPatterns,
       energyLevel,
-      commonPhrases,
-      punctuationStyle,
     };
   }
 
   /**
-   * Select 8-10 best examples for few-shot prompting
-   * Research shows Haiku performs best with 8-10 examples
+   * Select 8-10 best examples that showcase different aspects of user's voice
+   * Prioritizes diversity in: length, tone, structure, and content type
    */
   private selectBestExamples(casts: Cast[]): Cast[] {
     if (casts.length <= 10) return casts;
 
-    // Diversity sampling: different lengths and styles
-    const sorted = [...casts].sort((a, b) => {
-      // Prefer medium-to-long casts (more informative)
-      const scoreA = a.text.length > 30 ? a.text.length : 0;
-      const scoreB = b.text.length > 30 ? b.text.length : 0;
-      return scoreB - scoreA;
-    });
-
     const selected: Cast[] = [];
-    const used = new Set<number>();
+    const remaining = [...casts];
 
-    // Pick diverse lengths
-    for (let i = 0; i < sorted.length && selected.length < 10; i++) {
-      if (used.has(i)) continue;
+    // Helper function to score diversity
+    const getDiversityScore = (cast: Cast): number => {
+      let score = 0;
 
-      const cast = sorted[i];
+      // Length diversity
       const lengthBucket = Math.floor(cast.text.length / 50);
-
-      // Check if we already have similar length
-      const hasSimilar = selected.some((s) => {
+      const hasSimilarLength = selected.some((s) => {
         const sBucket = Math.floor(s.text.length / 50);
         return Math.abs(sBucket - lengthBucket) < 1;
       });
+      if (!hasSimilarLength) score += 3;
 
-      if (!hasSimilar || selected.length < 6) {
-        selected.push(cast);
-        used.add(i);
+      // Question vs statement
+      const isQuestion = cast.text.includes("?");
+      const hasQuestion = selected.some((s) => s.text.includes("?"));
+      if (isQuestion !== hasQuestion) score += 2;
+
+      // Emoji usage
+      const hasEmoji = /[\p{Emoji}]/gu.test(cast.text);
+      const selectedHasEmoji = selected.some((s) =>
+        /[\p{Emoji}]/gu.test(s.text)
+      );
+      if (hasEmoji !== selectedHasEmoji) score += 2;
+
+      // Exclamation points
+      const exclamations = (cast.text.match(/!/g) || []).length;
+      const exclamationBucket =
+        exclamations > 2 ? "high" : exclamations > 0 ? "med" : "low";
+      const hasSimilarEnergy = selected.some((s) => {
+        const sExcl = (s.text.match(/!/g) || []).length;
+        const sBucket = sExcl > 2 ? "high" : sExcl > 0 ? "med" : "low";
+        return sBucket === exclamationBucket;
+      });
+      if (!hasSimilarEnergy) score += 2;
+
+      // Starting pattern diversity
+      const firstWord = cast.text.toLowerCase().split(/\s+/)[0];
+      const hasFirstWord = selected.some(
+        (s) => s.text.toLowerCase().split(/\s+/)[0] === firstWord
+      );
+      if (!hasFirstWord) score += 1;
+
+      // Prefer medium-to-long casts (more informative)
+      if (cast.text.length > 50) score += 1;
+
+      return score;
+    };
+
+    // Select diverse examples
+    while (selected.length < 10 && remaining.length > 0) {
+      // Score all remaining casts
+      const scored = remaining.map((cast, index) => ({
+        cast,
+        index,
+        score: getDiversityScore(cast),
+      }));
+
+      // Sort by diversity score
+      scored.sort((a, b) => b.score - a.score);
+
+      // Add the most diverse
+      if (scored.length > 0) {
+        selected.push(scored[0].cast);
+        remaining.splice(scored[0].index, 1);
       }
     }
 
-    return selected.slice(0, 10);
+    return selected;
   }
 
   /**
-   * Generate concise style hints (3-5 bullets max)
+   * Generate highly specific style hints that capture what makes this user unique
    */
   private generateStyleHints(): string {
     if (!this.voiceProfile) return "";
@@ -247,36 +554,110 @@ export class HypemanAI {
     const hints: string[] = [];
     const vp = this.voiceProfile;
 
-    // Energy
-    if (vp.energyLevel === "high") {
-      hints.push("High energy - use !, emojis, caps");
-    } else if (vp.energyLevel === "low") {
-      hints.push("Low-key, understated - minimal !, emojis");
+    // What makes them UNIQUE
+    if (vp.uniqueWords.length > 0) {
+      hints.push(
+        `VOCABULARY: Uses words like "${vp.uniqueWords.slice(0, 5).join('", "')}"`
+      );
     }
 
-    // Length
+    if (vp.favoredAdjectives.length > 0) {
+      hints.push(
+        `DESCRIPTORS: Describes things as "${vp.favoredAdjectives.join('", "')}"`
+      );
+    }
+
+    if (vp.slangTerms.length > 0) {
+      hints.push(`SLANG: Uses "${vp.slangTerms.join('", "')}"`);
+    } else {
+      hints.push(`SLANG: Doesn't use typical internet slang`);
+    }
+
+    // Opening/closing patterns
+    if (vp.openingPatterns.length > 0) {
+      hints.push(
+        `STARTS MESSAGES: "${vp.openingPatterns.slice(0, 3).join('" OR "')}"`
+      );
+    }
+
+    if (vp.closingPatterns.length > 0) {
+      hints.push(
+        `ENDS MESSAGES: "${vp.closingPatterns.slice(0, 3).join('" OR "')}"`
+      );
+    }
+
+    // Length preference
     if (vp.avgLength < 60) {
-      hints.push("Keep it SHORT and punchy");
+      hints.push(`LENGTH: Keeps it brief (under 60 chars typically)`);
     } else if (vp.avgLength > 120) {
-      hints.push("Longer, detailed responses");
+      hints.push(`LENGTH: Writes longer messages (120+ chars)`);
+    }
+
+    // Energy and enthusiasm
+    if (vp.enthusiasmMarkers.length > 0) {
+      hints.push(
+        `ENTHUSIASM: Shows excitement with ${vp.enthusiasmMarkers.slice(0, 3).join(", ")}`
+      );
+    } else if (vp.energyLevel === "low") {
+      hints.push(`ENERGY: Low-key and understated - minimal exclamation marks`);
+    }
+
+    // Punctuation habits
+    if (vp.capitalPattern === "lowercase") {
+      hints.push(`CAPS: Writes in all lowercase`);
+    } else if (vp.capitalPattern === "mixed") {
+      hints.push(`CAPS: Uses capitals for EMPHASIS`);
+    }
+
+    if (vp.ellipsisUsage) {
+      hints.push(`Uses ellipses...`);
+    }
+
+    if (vp.exclamationUsage > 0.8) {
+      hints.push(`PUNCTUATION: Heavy use of !!!`);
+    } else if (vp.exclamationUsage < 0.3) {
+      hints.push(`PUNCTUATION: Rarely uses !`);
+    }
+
+    // Emoji
+    if (vp.usesEmoji && vp.emojiStyle.length > 0) {
+      hints.push(`EMOJI: Uses ${vp.emojiStyle.slice(0, 5).join(" ")}`);
+    } else if (!vp.usesEmoji) {
+      hints.push(`EMOJI: Rarely or never uses emojis`);
+    }
+
+    // Questions
+    if (vp.questionFrequency > 0.3) {
+      hints.push(`QUESTIONS: Asks questions frequently`);
+    } else if (vp.questionFrequency < 0.1) {
+      hints.push(`QUESTIONS: Rarely asks questions`);
+    }
+
+    // Filler words
+    if (vp.fillerWords.length > 0) {
+      hints.push(`FILLERS: Uses "${vp.fillerWords.slice(0, 3).join('", "')}"`);
+    }
+
+    // Cautionary words
+    if (vp.cautionaryWords.length > 0) {
+      hints.push(
+        `HEDGING: Uses "${vp.cautionaryWords.slice(0, 3).join('", "')}"`
+      );
     }
 
     // Profanity
-    if (vp.usesProfanity) {
-      hints.push("Use profanity naturally");
+    if (vp.usesProfanity && vp.profanityWords.length > 0) {
+      hints.push(`PROFANITY: Uses ${vp.profanityWords.join(", ")}`);
+    } else {
+      hints.push(`PROFANITY: Does not use profanity`);
     }
 
-    // Punctuation
-    if (vp.punctuationStyle !== "standard") {
-      hints.push(`Style: ${vp.punctuationStyle}`);
+    // CRITICAL: What they DON'T do
+    if (vp.avoidedPatterns.length > 0) {
+      hints.push(`⚠️ NEVER: ${vp.avoidedPatterns.slice(0, 5).join("; ")}`);
     }
 
-    // Common phrases
-    if (vp.commonPhrases.length > 0) {
-      hints.push(`Sometimes use: "${vp.commonPhrases[0]}"`);
-    }
-
-    return hints.slice(0, 5).join("\n");
+    return hints.join("\n");
   }
 
   /**
@@ -356,6 +737,7 @@ export class HypemanAI {
       contextParts.length > 0 ? contextParts.join("\n") : "";
 
     const styleHints = this.generateStyleHints();
+    const antiPatterns = this.generateAntiPatterns();
 
     // Check for images (separate from other context)
     const imageUrls = this.extractImageFromEmbeds(embedContext);
@@ -369,58 +751,172 @@ export class HypemanAI {
       }
     }
 
-    const systemContent = `You are ${this.username}. Write EXACTLY like these examples:
+    // Detect if user is promoting their own content
+    const isSelfPromotion =
+      promotionAuthor.toLowerCase() === this.username.toLowerCase();
+
+    const systemContent = `You are ${this.username}. You must write EXACTLY like them - not like a generic internet user, and especially NOT like an AI.
+
+CRITICAL: Match ${this.username}'s VOICE and STYLE from the examples below, but write DIFFERENT CONTENT than the original promotion.
 
 <examples>
 ${this.topExamples.map((cast, i) => `<example${i + 1}>${cast.text}</example${i + 1}>`).join("\n")}
 </examples>
 
-<voice_rules>
+<voice_requirements>
 ${styleHints}
-</voice_rules>
+</voice_requirements>
+
+<phrases_never_used>
+${this.username} NEVER uses:
+${antiPatterns.map((p) => `- ${p}`).join("\n")}
+</phrases_never_used>
+
+<critical_rules>
+VOICE MATCHING (match these from examples):
+1. Copy STYLE: words, phrases, and speech patterns ${this.username} uses
+2. Copy STRUCTURE: how they build sentences
+3. Copy PUNCTUATION: their use of !, ?, ...
+4. Copy CAPITALIZATION: uppercase? lowercase? mixed?
+5. Copy LENGTH: examples average ${Math.round(this.voiceProfile?.avgLength || 100)} chars
+6. Copy OPENINGS: how they start messages
+7. Copy TONE/ENERGY: formal? casual? hyped?
+8. Copy SLANG: which terms they actually use
+
+CONTENT RULES (what you write about):
+9. DO NOT repeat the original promotion text
+10. DO NOT paraphrase the original promotion
+11. ADD something new: your reaction, advice, emphasis, or take
+12. NO generic internet speak unless it's in the examples
+13. NO bot language ("actually solid", "kind of X that separates Y from Z")
+14. Write as if you ARE ${this.username}, not mimicking them
+</critical_rules>
 
 <restrictions>
-- You're replying to ${promotionAuthor}'s post (not writing as them)
-- Your writing style must MATCH EXACTLY how ${this.username} writes via examples given.
-- Only use facts from provided content
+${
+  isSelfPromotion
+    ? `SELF-PROMOTION MODE:
+- You're quote-casting YOUR OWN content
+- MANDATORY: Write NEW content, not a copy of the original
+- The original promotion will be embedded (users can see it)
+- Your job: Add value on top of the original
+
+WHAT TO ADD:
+✅ General reactions: "this is important", "be careful", "yall need to see this"
+✅ Related advice: "audit your code", "do your research", "stay vigilant"  
+✅ Emphasis/expansion: why it matters, what to do about it
+✅ Your perspective: how you feel, your take on it
+
+EXAMPLE TRANSFORMATIONS:
+Original: "saw bad code, stay safe"
+❌ WRONG: "saw bad code, stay safe" (just copying)
+❌ WRONG: "just saw bad code, everyone stay safe out there" (paraphrasing)
+✅ RIGHT: "seriously audit your code before deploying" (new advice in your voice)
+✅ RIGHT: "this is why you dont skip security reviews" (new take in your voice)
+
+Original: "Just saw quite possibly the worst smart contract ever written. Stay safe out there"
+❌ WRONG: "Just saw quite possibly the worst smart contract ever written" (copying)
+❌ WRONG: "saw the worst smart contract ever, be safe" (paraphrasing) 
+✅ RIGHT: "always get your contracts audited before deployment" (advice in your voice)
+✅ RIGHT: "this is exactly why code reviews matter" (reaction in your voice)
+✅ RIGHT: "do not deploy without proper testing yall" (warning in your voice)
+
+WHAT NOT TO ADD:
+❌ Specific timelines: "been working on this for weeks"
+❌ Made-up numbers: "found 10 bugs", "$50k raised"
+❌ Fabricated stories: "client asked for this"
+❌ Made-up technical details not in original
+❌ Invented names, dates, or events
+
+Think: The original says WHAT happened. You add WHY it matters or WHAT to do.`
+    : `PROMOTING OTHERS:
+- You're replying to @${promotionAuthor}'s post
+- You're recommending someone else's content to your followers
+- React to what's actually there, add your genuine take
+- DO NOT invent facts about their content`
+}
+
+- Your writing must be DISTINCTIVE to ${this.username}, not generic
+- Only use words, phrases, and patterns that ${this.username} actually uses (see examples)
 - Never invent URLs
 - Under 280 characters
-- Match examples' tone exactly
-- Make it sound like a genuine recommendation, not an ad
-- Keep the promotional cast distinct from the original content
-- Do NOT copy phrases directly from the original cast
-- Do not under any circumstances mention that an AI is involved in the creation of the promotional cast
-- Do not under any circumstances use dashes or em dashes in anything you write
-- Do not start every cast with "yo" or "check this out". Write naturally like ${this.username}  
+- Make it sound like a genuine ${isSelfPromotion ? "self-boost" : "recommendation"} from ${this.username}, not an ad
+- Do not mention that AI is involved in creating this
+- Do not use dashes or em dashes
+- Do NOT default to generic phrases like "yo", "fr", "lowkey", "fire", "hits different" UNLESS ${this.username} actually uses them (check examples and voice patterns)
+- If ${this.username} has a specific way of opening or closing messages, use it
+
+CRITICAL - AVOID BOT LANGUAGE:
+- NO "actually [adjective]" (e.g. "actually solid", "actually good")
+- NO formulaic phrases like "the kind of X that separates Y from Z"
+- NO "coming together", "worth noting", "kudos to", "shout out"
+- NO "truly", "remarkable", "testament to", "showcases", "demonstrates"
+- NO corporate speak or marketing language
+- Write like a HUMAN who genuinely likes something, not like AI trying to sound casual
 </restrictions>`;
 
-    const textContent = `<task>Write a reply to promote this</task>
+    const textContent = `<task>Write a ${isSelfPromotion ? "quote cast promoting your own content" : "reply to promote this content"}. Write EXACTLY like ${this.username} would - not close, EXACTLY.</task>
 
 <content>
 ${promotionContent}
 </content>
 
 <author>
-Original Author: @${promotionAuthor}
+${isSelfPromotion ? "Original Author: YOU (@" + this.username + ") - you're promoting your own content" : "Original Author: @" + promotionAuthor + " - you're promoting someone else's content"}
 </author>
 
 ${additionalContext ? `<context>\n${additionalContext}\n</context>` : ""}
 ${contextUrl ? `<url>${contextUrl}</url>` : ""}
 ${imageDataArray.length > 0 ? `<image_note>${imageDataArray.length} image(s) attached. Analyze and reference them naturally in your reply if relevant.</image_note>` : ""}
 
-<requirements>
-- Reply like ${this.username} would
-- Be genuine, not salesy
-- Write like you are a friend with a genuine interest in what is being promoted
-- Stick exactly to the voice and style of the examples
-- If the example use vulgar language, you may use similar language
-- Stick to the writing style, tone, and punctuation habits of the examples, you must embody ${this.username}
-- Mention @${promotionAuthor} if natural
-${imageDataArray.length > 0 ? "- Reference the image content if it adds value to your reply" : ""}
-- 
-</requirements>
+<critical_matching_instructions>
+TWO-STEP PROCESS:
 
-<o>Only the cast text</o>`;
+STEP 1 - MATCH THE VOICE (from examples):
+Study the examples above and REPLICATE the STYLE:
+1. WORDS/PHRASES ${this.username} uses (their vocabulary)
+2. SENTENCE STRUCTURES (how they build sentences)
+3. PUNCTUATION (!, ?, ...)
+4. CAPITALIZATION (uppercase? lowercase? mixed?)
+5. LENGTH (~${Math.round(this.voiceProfile?.avgLength || 100)} characters typical)
+6. OPENING STYLE (how do they start messages?)
+7. TONE/ENERGY (formal? casual? hyped?)
+8. SLANG USAGE (which terms do they actually use?)
+
+STEP 2 - WRITE NEW CONTENT (don't copy original):
+${
+  isSelfPromotion
+    ? `FOR SELF-PROMOTION - CRITICAL:
+The original promotion is shown below. DO NOT repeat it or paraphrase it.
+Instead, ADD NEW VALUE in ${this.username}'s voice:
+
+APPROACH:
+- Original states the WHAT → You add the WHY or WHAT TO DO
+- Original: "saw bad code" → You: "audit before deploying" 
+- Original: "stay safe" → You: "do your research first"
+- Original describes a problem → You give advice about it
+- Original makes a claim → You emphasize why it matters
+
+YOUR NEW CONTENT must:
+✅ Add advice, reaction, emphasis, or your take
+✅ Use ${this.username}'s vocabulary and style from examples
+✅ Be under 280 characters
+✅ Sound like ${this.username} expanding on their point
+
+❌ DO NOT repeat the original text
+❌ DO NOT paraphrase the original text
+❌ DO NOT just rearrange the words from the original`
+    : `FOR PROMOTING OTHERS:
+- Add your genuine reaction or recommendation
+- Use ${this.username}'s voice from examples
+- DO NOT invent facts about their content`
+}
+
+REMEMBER: Match the VOICE from examples, write DIFFERENT CONTENT than the original.
+This should read like ${this.username} wrote it themselves - their STYLE, but NEW thoughts.
+</critical_matching_instructions>
+
+<o>Only the cast text. Make it unmistakably ${this.username}'s voice.</o>`;
 
     // Build the user message content with or without images
     const userContent: any[] = [];
@@ -527,11 +1023,11 @@ ${imageDataArray.length > 0 ? "- Reference the image content if it adds value to
       const result = await generateText({
         model: this.fastModel,
         messages,
-        temperature: options?.temperature || 0.92, // Sweet spot for Haiku creativity
-        frequencyPenalty: 0.65,
-        presencePenalty: 0.5,
-        maxRetries: 1, // Fast fail for speed
-        abortSignal: AbortSignal.timeout(15000), // 15s timeout
+        temperature: 0.85, // Higher to encourage creative additions beyond the original
+        frequencyPenalty: 0.3, // Moderate to discourage repeating original phrases
+        presencePenalty: 0.2, // Moderate to encourage new vocabulary
+        maxRetries: 1,
+        abortSignal: AbortSignal.timeout(15000),
       });
 
       let castText = this.extractCastFromResponse(result.text);
@@ -603,9 +1099,9 @@ ${styleHints}
       const result = await generateText({
         model: this.fastModel,
         messages,
-        temperature: options?.temperature || 0.92,
-        frequencyPenalty: 0.65,
-        presencePenalty: 0.5,
+        temperature: options?.temperature || 0.85, // Higher for creative additions
+        frequencyPenalty: 0.3, // Discourage repeating phrases
+        presencePenalty: 0.2, // Encourage new vocabulary
         maxRetries: 2,
         abortSignal: AbortSignal.timeout(20000),
       });
@@ -664,15 +1160,15 @@ ${styleHints}
           embedContext
         );
 
-        // Vary temperature: 0.88, 0.92, 0.96
-        const temperature = 0.88 + i * 0.04;
+        // Vary temperature slightly: 0.65, 0.70, 0.75
+        const temperature = 0.65 + i * 0.05;
 
         const result = await generateText({
           model: this.fastModel,
           messages,
           temperature,
-          frequencyPenalty: 0.3 + i * 0.05,
-          presencePenalty: 0.3 + i * 0.05,
+          frequencyPenalty: 0.05, // Very low - we want tight style matching
+          presencePenalty: 0.05, // Very low - we want pattern reuse
           maxRetries: 1,
           abortSignal: AbortSignal.timeout(15000),
         });
@@ -701,6 +1197,118 @@ ${styleHints}
   }
 
   /**
+   * Detect bot-like language patterns
+   */
+  private detectBotLanguage(text: string): string[] {
+    const botPatterns: string[] = [];
+    const lowerText = text.toLowerCase();
+
+    // AI filler words
+    if (
+      /\bactually\s+(solid|good|cool|nice|great|awesome|amazing|fire|dope)/i.test(
+        text
+      )
+    ) {
+      botPatterns.push('uses "actually [adjective]" pattern');
+    }
+
+    // Formulaic phrases
+    const formulaicPhrases = [
+      /the kind of .{5,30} that separates .{5,30} from/i,
+      /coming together (real |really )?nice/i,
+      /worth noting/i,
+      /have to say/i,
+      /can't help but/i,
+      /kudos to/i,
+      /shout out to/i,
+      /testament to/i,
+    ];
+
+    formulaicPhrases.forEach((pattern) => {
+      if (pattern.test(text)) {
+        botPatterns.push(
+          `uses formulaic phrase: "${text.match(pattern)?.[0]}"`
+        );
+      }
+    });
+
+    // Corporate/marketing language
+    const corporateWords = [
+      "showcases",
+      "demonstrates",
+      "revolutionary",
+      "paradigm",
+      "seamless",
+      "cutting-edge",
+      "innovative solution",
+      "comprehensive approach",
+      "user-friendly",
+      "state-of-the-art",
+    ];
+
+    corporateWords.forEach((word) => {
+      if (lowerText.includes(word)) {
+        botPatterns.push(`uses corporate language: "${word}"`);
+      }
+    });
+
+    // Overly enthusiastic AI phrases
+    const aiEnthusiasm = [
+      "truly remarkable",
+      "absolutely incredible",
+      "genuinely impressed",
+      "cannot emphasize enough",
+      "highly recommend",
+    ];
+
+    aiEnthusiasm.forEach((phrase) => {
+      if (lowerText.includes(phrase)) {
+        botPatterns.push(`uses AI enthusiasm: "${phrase}"`);
+      }
+    });
+
+    return botPatterns;
+  }
+
+  /**
+   * Generate anti-patterns - common AI phrases that this user never uses
+   */
+  private generateAntiPatterns(): string[] {
+    const antiPatterns: string[] = [];
+    const allText = this.topExamples
+      .map((c) => c.text)
+      .join(" ")
+      .toLowerCase();
+
+    // Common AI patterns to check against user's actual text
+    const commonAiPatterns = [
+      { phrase: "actually", reason: "filler word that sounds robotic" },
+      { phrase: "the kind of", reason: "formulaic structure" },
+      { phrase: "separates", reason: "comparison template language" },
+      { phrase: "coming together", reason: "generic progress phrase" },
+      { phrase: "worth noting", reason: "AI meta-commentary" },
+      { phrase: "kudos", reason: "corporate congratulations" },
+      { phrase: "shout out", reason: "unless used naturally" },
+      { phrase: "truly", reason: "emphasis filler" },
+      { phrase: "remarkable", reason: "formal praise" },
+      { phrase: "testament", reason: "overly formal" },
+      { phrase: "showcases", reason: "marketing speak" },
+      { phrase: "demonstrates", reason: "technical/formal" },
+      { phrase: "elevated", reason: "pretentious descriptor" },
+      { phrase: "seamless", reason: "corporate jargon" },
+    ];
+
+    commonAiPatterns.forEach(({ phrase, reason }) => {
+      // If user doesn't use this phrase, add it to anti-patterns
+      if (!allText.includes(phrase)) {
+        antiPatterns.push(`"${phrase}" (${reason})`);
+      }
+    });
+
+    return antiPatterns.slice(0, 8); // Top 8 most important
+  }
+
+  /**
    * Enhanced validation with voice matching
    */
   validateCast(castText: string): ValidationResult {
@@ -718,17 +1326,32 @@ ${styleHints}
       issues.push("Cast too short, minimum 10 characters");
     }
 
-    // AI markers
-    const aiMarkers = ["as an ai", "i am an ai", "i cannot", "i apologize"];
-    if (aiMarkers.some((m) => castText.toLowerCase().includes(m))) {
-      issues.push("Contains AI markers");
+    // AI markers and bot-like language
+    const botPatterns = this.detectBotLanguage(castText);
+    if (botPatterns.length > 0) {
+      issues.push(`Contains bot language: ${botPatterns[0]}`); // Report first issue found
     }
 
-    // Generic promotional language
+    // Basic AI markers
+    const basicAiMarkers = [
+      "as an ai",
+      "i am an ai",
+      "i cannot",
+      "i apologize",
+    ];
+    if (basicAiMarkers.some((m) => castText.toLowerCase().includes(m))) {
+      issues.push("Contains explicit AI markers");
+    }
+
+    // Generic promotional/corporate language
     const genericMarkers = [
       "excited to share",
       "won't want to miss",
       "game-changer",
+      "game changer",
+      "revolutionary",
+      "paradigm shift",
+      "seamless experience",
     ];
     if (genericMarkers.some((m) => castText.toLowerCase().includes(m))) {
       issues.push("Too promotional/generic");
@@ -802,6 +1425,52 @@ ${styleHints}
 
   /**
    * Generate a promotional cast for a given cast text and budget
+   * @param castText - The original cast text to promote
+   * @param budget - The budget amount for the promotion
+   * @param creatorUsername - The username of the creator to mention
+   * @returns Promise with promotional cast text
+   */
+  /**
+   * Debug method to inspect the voice profile
+   */
+  getVoiceProfileDebug(): any {
+    if (!this.voiceProfile) {
+      return { error: "Voice profile not initialized" };
+    }
+
+    return {
+      username: this.username,
+      totalCasts: this.user_casts.length,
+      exampleCount: this.topExamples.length,
+      profile: {
+        avgLength: this.voiceProfile.avgLength,
+        slangTerms: this.voiceProfile.slangTerms,
+        uniqueWords: this.voiceProfile.uniqueWords.slice(0, 10),
+        usesProfanity: this.voiceProfile.usesProfanity,
+        profanityWords: this.voiceProfile.profanityWords,
+        openingPatterns: this.voiceProfile.openingPatterns.slice(0, 5),
+        usesEmoji: this.voiceProfile.usesEmoji,
+        emojiStyle: this.voiceProfile.emojiStyle,
+        avoidedPatterns: this.voiceProfile.avoidedPatterns.slice(0, 5),
+      },
+      sampleCasts: this.topExamples.slice(0, 3).map((c) => c.text),
+    };
+  }
+
+  /**
+   * Check if voice profile is properly initialized
+   */
+  isInitialized(): boolean {
+    return (
+      this.voiceProfile !== null &&
+      this.topExamples.length > 0 &&
+      this.user_casts.length > 0
+    );
+  }
+
+  /**
+   * Generate a promotional cast for a given cast text and budget
+   * Uses the user's actual voice, not a generic character
    * @param castText - The original cast text to promote
    * @param budget - The budget amount for the promotion
    * @param creatorUsername - The username of the creator to mention
@@ -910,9 +1579,9 @@ Return only the promotional cast text, nothing else.
       const result = await generateText({
         model: this.fastModel,
         messages,
-        temperature: 0.9,
-        frequencyPenalty: 0.6,
-        presencePenalty: 0.4,
+        temperature: 0.9, // Slightly higher for promotional variety
+        frequencyPenalty: 0.3, // Moderate - still promotional character
+        presencePenalty: 0.2,
         maxRetries: 2,
         abortSignal: AbortSignal.timeout(15000),
       });
