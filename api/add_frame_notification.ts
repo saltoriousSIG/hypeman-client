@@ -14,7 +14,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       `https://api.neynar.com/v2/farcaster/frame/notifications`,
       {
         notification: {
-          title: "Thank you for adding Hypeman!",
+          title: "Welcome to Hypeman!",
           body: "Hypeman is here to hype you up on Farcaster! Stay tuned for more exciting features.",
           target_url: "https://hypeman.social",
         },
