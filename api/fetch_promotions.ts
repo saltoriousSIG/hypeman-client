@@ -95,6 +95,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
           committed_budget: promotion.committed_budget.toString(),
           promoters: Array.from(new Set(promoters)),
           intents: list,
+          current_user_intent,
           existing_generated_cast,
           display_to_promoters:
             promotion.state === 0 &&
@@ -125,6 +126,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
           created_time: promotion.created_time.toString(),
           committed_budget: promotion.committed_budget.toString(),
           unprocessed_intents: promotion.unprocessed_intents.toString(),
+          current_user_intent,
           display_to_promoters: false,
           intents: list,
           existing_generated_cast,

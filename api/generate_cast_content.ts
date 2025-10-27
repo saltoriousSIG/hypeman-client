@@ -11,7 +11,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
-  
+
   try {
     const {
       username,
@@ -26,26 +26,35 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
 
     // Check if intent is provided - only required for initial generation, not refresh
     const isRefreshOperation = !intent;
-    
+
     if (!isRefreshOperation && !intent) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: "Intent signature required before generating cast content",
-        code: "INTENT_REQUIRED"
+        code: "INTENT_REQUIRED",
       });
     }
 
     // Save intent to Redis if not already saved (only for initial generation, not refresh)
     if (!isRefreshOperation && intent) {
       try {
-        const existingIntents = await redisClient.lrange(`intent:${promotionId}`, 0, -1);
+        const existingIntents = await redisClient.lrange(
+          `intent:${promotionId}`,
+          0,
+          -1
+        );
         const intentExists = existingIntents.some((i: any) => {
-          const parsed = typeof i === 'string' ? JSON.parse(i) : i;
-          return parsed.intentHash === intent.intentHash && 
-                 parsed.fid === req.fid?.toString();
+          const parsed = typeof i === "string" ? JSON.parse(i) : i;
+          return (
+            parsed.intentHash === intent.intentHash &&
+            parsed.fid === req.fid?.toString()
+          );
         });
 
         if (!intentExists) {
-          await redisClient.lpush(`intent:${promotionId}`, JSON.stringify(intent));
+          await redisClient.lpush(
+            `intent:${promotionId}`,
+            JSON.stringify(intent)
+          );
           console.log("Intent saved to Redis:", intent.intentHash);
         }
       } catch (redisError) {
@@ -78,9 +87,9 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
     }
 
     if (!castResult.success) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: "Failed to generate cast content",
-        details: castResult.error 
+        details: castResult.error,
       });
     }
 
@@ -99,17 +108,17 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       JSON.stringify(cast_obj)
     );
 
-    console.log("Generated cast content:", { 
-      cast: castResult, 
+    console.log("Generated cast content:", {
+      cast: castResult,
       isRefreshOperation,
       intentHash: intent?.intentHash,
-      userFeedback: userFeedback ? "provided" : "none"
+      userFeedback: userFeedback ? "provided" : "none",
     });
 
-    res.status(200).json({ 
+    res.status(200).json({
       generated_cast: castResult.text,
       model: castResult.model,
-      ...(intent && { intent }) // Return intent for client reference only if provided
+      ...(intent && { intent }), // Return intent for client reference only if provided
     });
   } catch (e: any) {
     console.error("Error generating cast content:", e);

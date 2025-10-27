@@ -360,6 +360,7 @@ const CastCard: React.FC<CastCardProps> = ({
     const text = promotion.cast_data.text;
     const pfp_url = promotion.cast_data.author.pfp_url;
 
+
     return (
         <div className="space-y-3 mb-5">
 
