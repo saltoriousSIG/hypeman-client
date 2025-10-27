@@ -14,6 +14,7 @@ import {
     DrawerTitle,
 } from "@/components/ui/drawer"
 import { Button } from "@/components/ui/button"
+import useAxios from "@/hooks/useAxios"
 
 /**
  * Header component used across the application
@@ -24,6 +25,7 @@ export default function Header() {
     const { promotions } = useData()
     const pricing = useGetPostPricing()
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+    const axios = useAxios();
 
     const completedPromotions = useMemo(() => {
         return promotions?.filter((p) => {
@@ -60,7 +62,12 @@ export default function Header() {
                     {!isFrameAdded && (
                         <button
                             onClick={async () => {
-                                await handleAddFrame();
+                                try {
+                                    await handleAddFrame();
+                                    await axios.post("/api/add_frame_notification", {});
+                                } catch (e: any) {
+                                    console.error("Error adding frame:", e);
+                                }
                             }}
                             className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white/90 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-400/30 hover:border-pink-400/50 transition-all duration-500 group overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-purple-500/20 hover:scale-105">
                             <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
@@ -79,12 +86,11 @@ export default function Header() {
                     >
                         {completedPromotions.length > 0 && fUser?.fid ? (
                             <div className="w-full h-full rounded-full flex items-center justify-center">
-                                <DollarSign 
-                                    className={`w-4 h-4 text-white font-bold ${
-                                        processingPromotions.length > 0 
-                                            ? 'animate-pulse' 
-                                            : ''
-                                    }`} 
+                                <DollarSign
+                                    className={`w-4 h-4 text-white font-bold ${processingPromotions.length > 0
+                                        ? 'animate-pulse'
+                                        : ''
+                                        }`}
                                 />
                             </div>
                         ) : (

@@ -29,6 +29,7 @@ import CastListItem from "@/components/CastListItem/CastListItem"
 import { useCastQuoteCount } from "@/hooks/useCastQuoteCount"
 import { useUserCasts } from "@/hooks/useUserCasts"
 import { useData } from "@/providers/DataProvider"
+import useAxios from "@/hooks/useAxios"
 
 export default function BuyersPage() {
     const { address, fUser, isFrameAdded, handleAddFrame } = useFrameContext();
@@ -41,6 +42,8 @@ export default function BuyersPage() {
     const [showShareModal, setShowShareModal] = useState<boolean>(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
     const [drawerStep, setDrawerStep] = useState<1 | 2>(1);
+
+    const axios = useAxios();
 
     const { platformFee, refetchPromotions } = useData();
 
@@ -131,7 +134,12 @@ export default function BuyersPage() {
             await refetchPromotions();
 
             if (!isFrameAdded) {
-                await handleAddFrame();
+                try {
+                    await handleAddFrame();
+                    await axios.post("/api/add_frame_notification", {});
+                } catch (e) {
+                    console.error("Error adding frame:", e);
+                }
             }
 
             // Reset state and close drawer

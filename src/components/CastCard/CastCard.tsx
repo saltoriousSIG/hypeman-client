@@ -315,7 +315,12 @@ const CastCard: React.FC<CastCardProps> = ({
                     toast.success("Cast posted successfully!")
                     await refetchPromotions()
                     if (!isFrameAdded) {
-                        await handleAddFrame();
+                        try {
+                            await handleAddFrame();
+                            await axios.post("/api/add_frame_notification", {});
+                        } catch (e: any) {
+                            console.error("Error adding frame:", e);
+                        }
                     }
                 } else {
                     toast.error("Error posting cast")

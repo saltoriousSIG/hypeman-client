@@ -2,8 +2,6 @@ import { createContext, useEffect, useState, useContext, useCallback } from "rea
 import sdk from "@farcaster/frame-sdk";
 import { MiniAppSDK } from "@farcaster/miniapp-sdk/dist/types";
 import { useAccount, useConnect } from "wagmi";
-import { fuse } from "viem/chains";
-
 interface FrameContextValue {
     errors: Record<string, Error> | null;
     context: Awaited<MiniAppSDK['context']> | null;
