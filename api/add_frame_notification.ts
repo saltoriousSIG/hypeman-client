@@ -11,7 +11,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
   }
   try {
     const { data } = await axios.post(
-      `https://api.neynar.com/v2/miniapp/notifications/send`,
+      `https://api.neynar.com/v2/farcaster/frame/notifications`,
       {
         notification: {
           title: "Thankyou for adding Hypeman!",
