@@ -1,10 +1,13 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
 import { withHost } from "../middleware/withHost.js";
-import { generateText } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
-import { z } from 'zod';
-import { getUserStats } from '../src/lib/getUserStats.js';
-import { calculateUserScore, pricing_tiers } from '../src/lib/calculateUserScore.js';
+import { generateText } from "ai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { z } from "zod";
+import { getUserStats } from "../src/lib/getUserStats.js";
+import {
+  calculateUserScore,
+  pricing_tiers,
+} from "../src/lib/calculateUserScore.js";
 
 /**
  * Publishes a cast using Neynar API as a reply
@@ -12,14 +15,17 @@ import { calculateUserScore, pricing_tiers } from '../src/lib/calculateUserScore
  * @param parentHash - The hash of the parent cast to reply to
  * @returns Promise with publish result
  */
-async function publishCast(text: string, parentHash: string): Promise<{ success: boolean; error?: string; castHash?: string }> {
+async function publishCast(
+  text: string,
+  parentHash: string
+): Promise<{ success: boolean; error?: string; castHash?: string }> {
   const apiKey = process.env.NEYNAR_API_KEY;
   const signerUuid = process.env.HYPEMAN_SIGNER_UUID;
-  
+
   if (!apiKey) {
     return { success: false, error: "NEYNAR_API_KEY not set" };
   }
-  
+
   if (!signerUuid) {
     return { success: false, error: "HYPEMAN_SIGNER_UUID not set" };
   }
@@ -37,10 +43,10 @@ async function publishCast(text: string, parentHash: string): Promise<{ success:
         parent: parentHash,
         embeds: [
           {
-            url: "https://hypeman.social"
-          }
-        ]
-      })
+            url: "https://hypeman.social",
+          },
+        ],
+      }),
     });
 
     if (!response.ok) {
@@ -49,15 +55,15 @@ async function publishCast(text: string, parentHash: string): Promise<{ success:
     }
 
     const data = await response.json();
-    return { 
-      success: true, 
-      castHash: data.cast?.hash 
+    return {
+      success: true,
+      castHash: data.cast?.hash,
     };
   } catch (error) {
     console.error("Error publishing cast:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Unknown error" 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
@@ -79,6 +85,9 @@ For everything else:
 - Answer questions about Hypeman clearly and concisely
 - Be friendly, energetic, and supportive
 - Keep responses under 200 characters when possible
+- Do not include any thinking or reasoning or internal notes in your responses
+- Only respond with information you know to be true
+- Only respond with the output, no thinking or reasoning steps in the output
 
 Be concise, hype-driven, and confident — celebrate users, keep answers tight, and make every message feel alive.
 `;
@@ -91,23 +100,27 @@ async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-
     // Extract FID from the request body
     const fid = req.body?.data?.author?.fid;
-    
+
     console.log(`=== GENERATING RESPONSE ===`);
     console.log(`FID: ${fid}`);
     console.log(`User message: ${req.body.data.text}`);
-    
+
     const result = await generateText({
       model,
       system: SYSTEM_PROMPT,
       prompt: `User message: "${req.body.data.text}"\n\nUser's FID: ${fid}\n\nIMPORTANT: After calling the getScore tool, you MUST provide a response with the score information. Do not leave the response empty.`,
       tools: {
         getScore: {
-          description: "Get the Hypeman score and potential earnings for a Farcaster user. This calculates a composite score based on their follower count, Neynar score, and engagement metrics (likes, recasts, replies). Returns their score tier and how much USDC they can earn per promotion.",
+          description:
+            "Get the Hypeman score and potential earnings for a Farcaster user. This calculates a composite score based on their follower count, Neynar score, and engagement metrics (likes, recasts, replies). Returns their score tier and how much USDC they can earn per promotion.",
           inputSchema: z.object({
-            fid: z.number().describe("The Farcaster ID (fid) of the user to get the score for"),
+            fid: z
+              .number()
+              .describe(
+                "The Farcaster ID (fid) of the user to get the score for"
+              ),
           }),
           execute: async ({ fid }) => {
             try {
@@ -115,20 +128,39 @@ async function handler(req: VercelRequest, res: VercelResponse) {
 
               // Fetch user stats from Neynar API
               const stats = await getUserStats(fid);
-              const { score, follower_count, avgLikes, avgRecasts, avgReplies } = stats;
+              const {
+                score,
+                follower_count,
+                avgLikes,
+                avgRecasts,
+                avgReplies,
+              } = stats;
 
               // Calculate composite score and tier
-              const tier = calculateUserScore(score, follower_count, avgLikes, avgRecasts, avgReplies);
+              const tier = calculateUserScore(
+                score,
+                follower_count,
+                avgLikes,
+                avgRecasts,
+                avgReplies
+              );
 
               // Calculate earning potential (tier value is USDC per promotion)
               const earningsPerPromotion = tier;
 
               // Calculate the actual composite score for context
               const avgEngagement = avgLikes + avgRecasts + avgReplies;
-              const followerScore = Math.min(100, (follower_count / 10000) * 100);
+              const followerScore = Math.min(
+                100,
+                (follower_count / 10000) * 100
+              );
               const neynarScore = score * 100;
               const engagementScore = Math.min(100, (avgEngagement / 50) * 100);
-              const compositeScore = Math.round(followerScore * 0.4 + neynarScore * 0.35 + engagementScore * 0.25);
+              const compositeScore = Math.round(
+                followerScore * 0.4 +
+                  neynarScore * 0.35 +
+                  engagementScore * 0.25
+              );
 
               // Determine tier name
               let tierName = "Bronze";
@@ -149,18 +181,21 @@ async function handler(req: VercelRequest, res: VercelResponse) {
                   avgRecasts: Math.round(avgRecasts * 10) / 10,
                   avgReplies: Math.round(avgReplies * 10) / 10,
                   avgEngagement: Math.round(avgEngagement * 10) / 10,
-                }
+                },
               };
             } catch (error: any) {
-              console.error(`Error calculating score for FID ${fid}:`, error.message);
+              console.error(
+                `Error calculating score for FID ${fid}:`,
+                error.message
+              );
               return {
                 success: false,
-                error: `Failed to calculate score: ${error.message}`
+                error: `Failed to calculate score: ${error.message}`,
               };
             }
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
     console.log("=== RESULT ===");
@@ -171,28 +206,29 @@ async function handler(req: VercelRequest, res: VercelResponse) {
 
     // If tool was called, use tool results for the response
     let responseText = result.text;
-    
+
     // Prioritize tool results if: empty response, verbose, or saying "let me check"
     if (result.toolResults && result.toolResults.length > 0) {
-      const isEmpty = !responseText || responseText.trim() === '';
+      const isEmpty = !responseText || responseText.trim() === "";
       const isVerbose = responseText && responseText.length > 200;
-      const isSayingCheckingOrLookingUp = responseText && (
-        responseText.toLowerCase().includes('let me') || 
-        responseText.toLowerCase().includes('check your') ||
-        responseText.toLowerCase().includes('quickly check')
-      );
-      
+      const isSayingCheckingOrLookingUp =
+        responseText &&
+        (responseText.toLowerCase().includes("let me") ||
+          responseText.toLowerCase().includes("check your") ||
+          responseText.toLowerCase().includes("quickly check"));
+
       if (isEmpty || isVerbose || isSayingCheckingOrLookingUp) {
         const toolResult = result.toolResults[0];
         if (toolResult.output && (toolResult.output as any).success) {
-          const { compositeScore, tierName, earningsPerPromotion } = toolResult.output as any;
+          const { compositeScore, tierName, earningsPerPromotion } =
+            toolResult.output as any;
           responseText = `🔥 Score: ${compositeScore} (${tierName}) 💰 Earn $${earningsPerPromotion} USDC/promo!`;
         }
       }
     }
-    
+
     // Final fallback
-    if (!responseText || responseText.trim() === '') {
+    if (!responseText || responseText.trim() === "") {
       responseText = "Hey! I'm here to help with your Hypeman score!";
     }
 
@@ -200,7 +236,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Publish the response as a cast
     const publishResult = await publishCast(responseText, req.body.data.hash);
-    
+
     if (publishResult.success) {
       console.log("=== CAST PUBLISHED SUCCESSFULLY ===");
       console.log("Published Cast Hash:", publishResult.castHash);
@@ -210,13 +246,13 @@ async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Return success response
-    return res.status(200).json({ 
-      success: true, 
+    return res.status(200).json({
+      success: true,
       message: "Webhook received successfully",
       response: responseText,
       publishedCastHash: publishResult.success ? publishResult.castHash : null,
       publishError: publishResult.success ? null : publishResult.error,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
     console.error("Error processing agent webhook:", error.message);
