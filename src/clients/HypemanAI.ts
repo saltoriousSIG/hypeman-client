@@ -18,51 +18,6 @@ interface GenerationResult {
   feedback?: string;
   variationIndex?: number;
 }
-
-interface ValidationResult {
-  valid: boolean;
-  issues: string[];
-}
-
-interface VoiceProfile {
-  // Basic metrics
-  avgLength: number;
-  avgSentenceLength: number;
-
-  // Vocabulary fingerprint
-  uniqueWords: string[]; // Words used frequently by this user
-  favoredAdjectives: string[];
-  slangTerms: string[];
-  technicalTerms: string[];
-
-  // Structural patterns
-  openingPatterns: string[]; // How they start messages
-  closingPatterns: string[]; // How they end messages
-  questionFrequency: number; // % of casts that are questions
-
-  // Linguistic markers
-  usesEmoji: boolean;
-  emojiStyle: string[]; // Specific emojis they use
-  usesProfanity: boolean;
-  profanityWords: string[];
-
-  // Punctuation and formatting
-  ellipsisUsage: boolean;
-  exclamationUsage: number; // per cast average
-  capitalPattern: "standard" | "lowercase" | "mixed";
-
-  // Personality markers
-  enthusiasmMarkers: string[]; // How they show excitement
-  cautionaryWords: string[]; // "imo", "tbh", etc.
-  fillerWords: string[]; // "like", "honestly", etc.
-
-  // What they avoid
-  avoidedPatterns: string[];
-
-  // Energy
-  energyLevel: "high" | "medium" | "low";
-}
-
 interface EmbedContext {
   // For image embeds
   metadata?: {
@@ -154,10 +109,12 @@ export class HypemanAI {
   sanitizeCasts(casts: Cast[]): {
     text: string;
     embeds: Embed[];
+    author: string;
   }[] {
     return casts.map((cast) => ({
       text: cast.text.trim(),
       embeds: cast.embeds,
+      author: cast.author.username,
     }));
   }
 
@@ -231,10 +188,24 @@ export class HypemanAI {
   }
 
   async buildVoiceLearningPrompt(
+    promotionUrl: string,
     promotionContent: string,
     promotionAuthor: string,
     embedContext: EmbedContext[]
   ) {
+    const {
+      data: { casts: existing_quotes },
+    } = await axios.get(
+      `https://api.neynar.com/v2/farcaster/cast/quotes/?limit=25&identifier=${encodeURIComponent(promotionUrl)}&type=url`,
+      {
+        headers: {
+          "x-api-key": process.env.NEYNAR_API_KEY as string,
+        },
+      }
+    );
+
+    const sanitizedExistingQuotes = this.sanitizeCasts(existing_quotes);
+
     // Build additional context from all embeds
     const contextParts: string[] = [];
 
@@ -398,6 +369,13 @@ export class HypemanAI {
           ${imageDataArray.length > 0 ? `<image_note>${imageDataArray.length} image(s) attached. Analyze and reference them naturally in your reply if relevant.</image_note>` : ""}
         </additional_content_context> 
 
+        <existing_quotes>
+            These are existing quote casts about the content, to help you avoid repeating what others have said. Use these to understand what has already been expressed, but DO NOT copy them. Your quote cast must be unique and in ${this.username}'s voice.
+            Use language that is clearly different from these quotes.
+
+            ${sanitizedExistingQuotes.map((quote) => `<quote>${quote.text} by ${quote.author}</quote>`).join("\n")}
+        </existing_quotes>
+
         <instructions>
             - Study how ${this.username} writes and create a quote cast about the content, including additional_content_context, that matches their voice PERFECTLY.  
             - Add reactions or related advice, but DO NOT just summarize the content.
@@ -505,16 +483,19 @@ export class HypemanAI {
   }
 
   async generateInitialCast(
+    promotionUrl: string,
     promotionContent: string,
     promotionAuthor: string,
     embedContext: EmbedContext[],
     options?: GenerationOptions
   ): Promise<GenerationResult> {
+    console.log(promotionUrl, "promotion url ");
     try {
       // Quick warmup
       await this.performVoiceWarmup();
 
       const messages = await this.buildVoiceLearningPrompt(
+        promotionUrl,
         promotionContent,
         promotionAuthor,
         embedContext
@@ -554,6 +535,7 @@ export class HypemanAI {
    * HAIKU-OPTIMIZED: Refinement with feedback
    */
   async refineCast(
+    promotionUrl: string,
     promotionContent: string,
     promotionAuthor: string,
     embedContext: EmbedContext[],
@@ -563,6 +545,7 @@ export class HypemanAI {
   ): Promise<GenerationResult> {
     try {
       const baseMessages = await this.buildVoiceLearningPrompt(
+        promotionUrl,
         promotionContent,
         promotionAuthor,
         embedContext

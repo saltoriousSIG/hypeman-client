@@ -199,6 +199,7 @@ const CastCard: React.FC<CastCardProps> = ({
             const { data } = await axios.post("/api/generate_cast_content", {
                 username: fUser.username,
                 promotionId: promotion.id,
+                promotionUrl: promotion.cast_url,
                 promotionContent: promotionContent,
                 promotionAuthor: promotionAuthor,
                 embedContext: promotionEmmbedContext,
@@ -229,6 +230,7 @@ const CastCard: React.FC<CastCardProps> = ({
             const { data } = await axios.post("/api/generate_cast_content", {
                 username: fUser.username,
                 promotionId: promotion.id,
+                promotionUrl: promotion.cast_url,
                 promotionContent: promotionContent,
                 promotionAuthor: promotionAuthor,
                 embedContext: promotionEmmbedContext,
@@ -364,7 +366,6 @@ const CastCard: React.FC<CastCardProps> = ({
     const username = promotion.cast_data.author.username;
     const text = promotion.cast_data.text;
     const pfp_url = promotion.cast_data.author.pfp_url;
-
 
     return (
         <div className="space-y-3 mb-5">

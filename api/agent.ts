@@ -2,6 +2,7 @@ import { VercelRequest, VercelResponse } from "@vercel/node";
 import { withHost } from "../middleware/withHost.js";
 import { generateText } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
+import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import { getUserStats } from "../src/lib/getUserStats.js";
 import {
@@ -92,7 +93,7 @@ For everything else:
 Be concise, hype-driven, and confident — celebrate users, keep answers tight, and make every message feel alive.
 `;
 
-const model = anthropic("claude-3-5-haiku-20241022");
+const model = openai("gpt-5-2025-08-07");
 
 async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {

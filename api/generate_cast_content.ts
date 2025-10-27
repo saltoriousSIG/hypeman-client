@@ -16,6 +16,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
     const {
       username,
       promotionId,
+      promotionUrl,
       promotionContent,
       promotionAuthor,
       embedContext,
@@ -70,6 +71,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
     if (userFeedback && userFeedback.trim()) {
       // Use refineCast with the provided previous cast
       castResult = await hypeman_ai.refineCast(
+        promotionUrl,
         promotionContent,
         promotionAuthor,
         embedContext,
@@ -80,6 +82,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
     } else {
       // Use generateInitialCast for regular generation
       castResult = await hypeman_ai.generateInitialCast(
+        promotionUrl,
         promotionContent,
         promotionAuthor,
         embedContext

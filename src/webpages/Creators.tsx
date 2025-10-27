@@ -114,7 +114,7 @@ export default function BuyersPage() {
         try {
             // Construct cast URL - use fUser's username if cast author is not available
             const username = selectedCast.author?.username || fUser?.username || 'user';
-            const castUrl = `https://warpcast.com/${username}/${selectedCast.hash}`;
+            const castUrl = `https://farcaster.xyz/${username}/${selectedCast.hash}`;
             const createParams = {
                 cast_url: castUrl,
                 profile_mentions: selectedCast.mentioned_profiles.map((pm: any) => pm.fid),
