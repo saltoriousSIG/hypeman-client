@@ -34,6 +34,7 @@ export function useUserCasts({ fid, enabled = true }: UseUserCastsParams) {
         "/api/fetch_user_casts",
         {
           cursor: pageParam,
+          limit: 10, // Fetch only 10 casts at a time
         }
       );
       return data;
