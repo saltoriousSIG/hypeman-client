@@ -16,7 +16,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
         notification: {
           title: "Thankyou for adding Hypeman!",
           body: "Hypeman is here to hype you up on Farcaster! Stay tuned for more exciting features.",
-          target_url: "https://farcaster.xyz/miniapps/sUhQ3E3wmmMD/hypeman",
+          target_url: "https://hypeman.social",
         },
         target_fids: [req.fid],
       },
