@@ -28,6 +28,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
     );
     res.status(200).json({ success: true, data });
   } catch (e: any) {
+    console.error("Error adding frame notification:", e, e.message);
     res.status(500).json({ error: "Error adding frame notification" });
   }
 }
