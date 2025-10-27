@@ -3,7 +3,7 @@ import { RedisClient } from "../../src/clients/RedisClient.js";
 import { DIAMOND_ADDRESS } from "../../src/lib/utils.js";
 import fs from "fs";
 import path from "path";
-import { zeroHash, pad, InvalidRequestRpcError } from "viem";
+import { zeroHash, pad } from "viem";
 import setupAdminWallet from "../../src/lib/setupAdminWallet.js";
 import { trim } from "viem";
 import axios from "axios";
@@ -170,6 +170,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Wait for transaction confirmation
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
+      const notification_ids = [];
+
       // only update redis after successful tx
       for (const intent of intents_to_process) {
         const list = await redis.lrange(`intent:${intent.promotion_id}`, 0, -1);
@@ -190,12 +192,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           });
           if (index !== -1) {
             const item = list[index];
+            notification_ids.push(item.fid.toString());
             await redis.lset(`intent:${intent.promotion_id}`, index, {
               ...item,
               processed: true,
             });
           }
         }
+      }
+
+      //push notifications
+      if (notification_ids.length > 0) {
+        await axios.post(
+          `https://api.neynar.com/v2/farcaster/frame/notifications`,
+          {
+            notification: {
+              title: `Your claim is ready!`,
+              body: "Your USDC is ready to be claimed. Click to claim now!",
+              target_url: "https://hypeman.social",
+            },
+            target_fids: [...notification_ids],
+          },
+          {
+            headers: {
+              "x-api-key": process.env.NEYNAR_API_KEY as string,
+            },
+          }
+        );
       }
 
       return res.status(200).json({
