@@ -7,6 +7,7 @@ import setupAdminWallet from "../src/lib/setupAdminWallet.js";
 import { DIAMOND_ADDRESS } from "../src/lib/utils.js";
 import { HypemanAI } from "../src/clients/HypemanAI.js";
 import { withHost } from "../middleware/withHost.js";
+import axios from "axios";
 
 /**
  * Fetches cast text from Neynar API using hash
@@ -15,7 +16,7 @@ import { withHost } from "../middleware/withHost.js";
  */
 async function getCastText(hash: string): Promise<string> {
   const apiKey = process.env.NEYNAR_API_KEY;
-  
+
   if (!apiKey) {
     console.warn("NEYNAR_API_KEY not set, skipping cast text fetch");
     return "API key not configured";
@@ -26,7 +27,7 @@ async function getCastText(hash: string): Promise<string> {
       `https://api.neynar.com/v2/farcaster/cast/?identifier=${hash}&type=hash`,
       {
         headers: {
-          'x-api-key': apiKey,
+          "x-api-key": apiKey,
         },
       }
     );
@@ -50,7 +51,7 @@ async function getCastText(hash: string): Promise<string> {
  */
 async function getPromotionDetails(promotionId: string) {
   const { publicClient } = setupAdminWallet();
-  
+
   // Load the PromotionCreate ABI
   const filePath = path.join(
     process.cwd(),
@@ -76,10 +77,10 @@ async function getPromotionDetails(promotionId: string) {
     if (castUrl) {
       try {
         // Parse Warpcast URL format: https://warpcast.com/username/0xhash
-        const urlParts = castUrl.split('/');
+        const urlParts = castUrl.split("/");
         if (urlParts.length >= 4) {
           creator = urlParts[3]; // username
-          hash = urlParts[4];   // hash (0x...)
+          hash = urlParts[4]; // hash (0x...)
         }
       } catch (error) {
         console.error("Error parsing cast URL:", error);
@@ -113,14 +114,18 @@ async function getPromotionDetails(promotionId: string) {
  * @param fid - The Farcaster ID of the original creator
  * @returns Promise with publish result
  */
-async function publishCast(text: string, hash: string, fid: number): Promise<{ success: boolean; error?: string; castHash?: string }> {
+async function publishCast(
+  text: string,
+  hash: string,
+  fid: number
+): Promise<{ success: boolean; error?: string; castHash?: string }> {
   const apiKey = process.env.NEYNAR_API_KEY;
   const signerUuid = process.env.HYPEMAN_SIGNER_UUID;
-  
+
   if (!apiKey) {
     return { success: false, error: "NEYNAR_API_KEY not set" };
   }
-  
+
   if (!signerUuid) {
     return { success: false, error: "HYPEMAN_SIGNER_UUID not set" };
   }
@@ -137,16 +142,16 @@ async function publishCast(text: string, hash: string, fid: number): Promise<{ s
         text: text,
         embeds: [
           {
-            url: "https://hypeman.social"
+            url: "https://hypeman.social",
           },
           {
             cast_id: {
               fid: fid,
-              hash: hash
-            }
-          }
-        ]
-      })
+              hash: hash,
+            },
+          },
+        ],
+      }),
     });
 
     if (!response.ok) {
@@ -155,15 +160,15 @@ async function publishCast(text: string, hash: string, fid: number): Promise<{ s
     }
 
     const data = await response.json();
-    return { 
-      success: true, 
-      castHash: data.cast?.hash 
+    return {
+      success: true,
+      castHash: data.cast?.hash,
     };
   } catch (error) {
     console.error("Error publishing cast:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Unknown error" 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
@@ -195,25 +200,24 @@ function verifySignature(
 async function handler(req: VercelRequest, res: VercelResponse) {
   // Get the signature from headers
   const signature = req.headers["x-qn-signature"] as string;
-  const secret = process.env.QUICKNODE_SECURITY_TOKEN_CREATE_PROMOTION as string;
+  const secret = process.env
+    .QUICKNODE_SECURITY_TOKEN_CREATE_PROMOTION as string;
   const nonce = req.headers["x-qn-nonce"] as string;
   const timestamp = req.headers["x-qn-timestamp"] as string;
   const payload = JSON.stringify(req.body);
 
   // Temporary bypass for testing - remove this in production!
   if (!secret) {
-    console.log("WARNING: QUICKNODE_SECURITY_TOKEN not set, bypassing signature verification for testing");
+    console.log(
+      "WARNING: QUICKNODE_SECURITY_TOKEN not set, bypassing signature verification for testing"
+    );
     // Uncomment the next line to bypass signature verification during testing
-    return res.status(200).json({ message: "Signature verification bypassed for testing" });
+    return res
+      .status(200)
+      .json({ message: "Signature verification bypassed for testing" });
   }
 
-  const isValid = verifySignature(
-    secret,
-    payload,
-    nonce,
-    timestamp,
-    signature
-  );
+  const isValid = verifySignature(secret, payload, nonce, timestamp, signature);
 
   console.log("Signature valid:", isValid);
 
@@ -251,7 +255,9 @@ async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Fetch creator, hash, cast text, and totalBudget using the promotion ID
         try {
-          const promotionDetails = await getPromotionDetails(decoded.args.id.toString());
+          const promotionDetails = await getPromotionDetails(
+            decoded.args.id.toString()
+          );
 
           // Generate promotional cast using HypemanAI
           try {
@@ -259,7 +265,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
               parseInt(decoded.args.creatorFid.toString()),
               promotionDetails.creator
             );
-            
+
             const promotionalResult = await hypemanAI.generatePromotionalCast(
               promotionDetails.castText,
               promotionDetails.totalBudget,
@@ -291,12 +297,42 @@ async function handler(req: VercelRequest, res: VercelResponse) {
               } else {
                 console.log("Failed to publish cast:", publishResult.error);
               }
-
             }
+
+            // TODO: start here
+
+            const { data } = await axios.get(
+              `https://api.neynar.com/v2/farcaster/followers/reciprocal/?limit=25&sort_type=algorithmic&fid=${decoded.args.creatorFid.toString()}&limit=100`
+            );
+            const {
+              data: { users },
+            } = await axios.get(
+              `https://api.neynar.com/v2/farcaster/user/bulk/?fids=${decoded.args.creatorFid.toString()}`
+            );
+
+            const creator = users[0].username;
+
+            const to_fids = data.users.map((f: any) => f.user.fid);
+
+            await axios.post(
+              `https://api.neynar.com/v2/farcaster/frame/notifications`,
+              {
+                notification: {
+                  title: `${creator} just launched a new promotion!`,
+                  body: "Check it out and earn some rewards by promoting it!",
+                  target_url: "https://hypeman.social",
+                },
+                target_fids: [...to_fids],
+              },
+              {
+                headers: {
+                  "x-api-key": process.env.NEYNAR_API_KEY as string,
+                },
+              }
+            );
           } catch (aiError) {
             console.error("Error generating promotional cast:", aiError);
           }
-
         } catch (error) {
           console.error("Error fetching promotion details:", error);
           console.log("Falling back to event data only");
@@ -306,7 +342,9 @@ async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Return success response
-  res.status(200).json({ message: "PromotionCreated webhook received successfully" });
+  res
+    .status(200)
+    .json({ message: "PromotionCreated webhook received successfully" });
 }
 
 export default withHost(handler);
