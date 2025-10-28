@@ -1,20 +1,19 @@
 import { useState, useEffect, useMemo } from "react"
-import { BarChart3, Loader2, X } from "lucide-react"
+import { Loader2, X, ChevronRight } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 import { useFrameContext } from "@/providers/FrameProvider";
-import CastCard from "@/components/CastCard/CastCard";
+import PromotionCastPreview from "@/components/CastCard/PromotionCastPreview";
 import LoginModal from "@/components/LoginModal/LoginModal";
 import MainLayout from "@/components/Layout/MainLayout";
-import useGetPostPricing from "@/hooks/useGetPostPricing";
 import { useData } from "@/providers/DataProvider";
 
 export default function HomePage() {
     const { isAuthenticated } = useFrameContext();
+    const navigate = useNavigate();
 
     const [showLoginModal, setShowLoginModal] = useState(false)
 
     const { promoterPromotions, loading } = useData();
-
-    const pricing = useGetPostPricing();
 
     const handleShowLoginModal = (state: boolean) => {
         setShowLoginModal(state);
@@ -48,14 +47,22 @@ export default function HomePage() {
             )}
             {availablePromotions.map((cast) => {
                 return (
-                    <CastCard
-                        key={cast.id}
-                        promotion={cast}
-                        pricing={pricing}
-                        promotionContent={cast.cast_data?.text}
-                        promotionAuthor={cast.cast_data.author.username}
-                        promotionEmmbedContext={cast.cast_data?.embeds}
-                    />
+                    <div key={cast.id} className="space-y-2">
+                        <PromotionCastPreview
+                            username={cast.cast_data.author.username}
+                            text={cast.cast_data?.text || ""}
+                            pfpUrl={cast.cast_data.author.pfp_url || ""}
+                            authorFid={cast.cast_data.author.fid}
+                            castUrl={(cast as any).cast_url || ""}
+                        />
+                        <button
+                            onClick={() => navigate(`/promotion/${cast.id}`)}
+                            className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg text-sm text-white/80 border border-white/10 transition-all duration-200 hover:border-white/20"
+                        >
+                            <span>View Details</span>
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
                 )
             })}
 
