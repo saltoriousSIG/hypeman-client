@@ -22,7 +22,7 @@ export default function PromotionFrameMetadata({ promotion }: PromotionFrameMeta
     return (
         <Helmet>
             {/* Open Graph / Farcaster Frame Meta Tags */}
-            <meta property="og:title" content={promotion.name} />
+            <meta property="og:title" content={promotion.name || "Promotion"} />
             <meta property="og:description" content={promotion.description || "View this promotion on Hypeman"} />
             <meta property="og:image" content={imageUrl} />
             <meta property="og:url" content={promotionUrl} />
@@ -35,7 +35,7 @@ export default function PromotionFrameMetadata({ promotion }: PromotionFrameMeta
             <meta property="fc:frame:button:1:target" content={promotionUrl} />
 
             {/* Additional metadata */}
-            <title>{promotion.name} - Hypeman</title>
+            <title>{promotion.name || "Promotion"} - Hypeman</title>
             <meta name="description" content={promotion.description || "View this promotion on Hypeman"} />
         </Helmet>
     );

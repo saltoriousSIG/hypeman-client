@@ -65,7 +65,7 @@ export default function HomePage() {
             )}
             {availablePromotions.map((cast) => {
                 return (
-                    <div key={cast.id} className="space-y-2">
+                    <div key={cast.id} className="space-y-2 border border-white/10 rounded-lg">
                         <PromotionCastPreview
                             username={cast.cast_data.author.username}
                             text={cast.cast_data?.text || ""}
@@ -73,13 +73,16 @@ export default function HomePage() {
                             authorFid={cast.cast_data.author.fid}
                             castUrl={(cast as any).cast_url || ""}
                         />
-                        <button
-                            onClick={() => navigate(`/promotion/${cast.id}`)}
-                            className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg text-sm text-white/80 border border-white/10 transition-all duration-200 hover:border-white/20"
-                        >
-                            <span>View Details</span>
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
+                        <div className="p-2 pt-0">
+                            <button
+                                onClick={() => navigate(`/promotion/${cast.id}`)}
+                                className="w-full cursor-pointer flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95]"
+                            >
+                                <span>View Details</span>
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </div>
+
                     </div>
                 )
             })}
