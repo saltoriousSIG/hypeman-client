@@ -27,6 +27,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ showLoginModal, handleShowLogin
                     <p className="text-white/60 mb-6 leading-relaxed">
                         Connect your Farcaster account with your signer UUID to start posting and earning from promotions.
                     </p>
+                </div>
+
+                <div className="flex gap-2 pt-4 border-t border-white/20">
+                    <button
+                        onClick={handleShowLoginModal.bind(null, false)}
+                        className="flex-1 bg-[#313131] hover:bg-[#2a2a2a] text-[#ededed] h-10 rounded-full px-4 py-2 text-sm font-medium transition-colors"
+                    >
+                        Cancel
+                    </button>
                     <button
                         onClick={async () => {
                             try {
@@ -35,7 +44,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ showLoginModal, handleShowLogin
                                 throw new Error("Error signing in: " + e.message)
                             }
                         }}
-                        className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-2xl text-white font-semibold transition-all duration-300 shadow-lg shadow-purple-500/25"
+                        className="flex-1 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 h-10 rounded-full text-white font-semibold transition-all duration-300 shadow-lg shadow-purple-500/25"
                     >
                         Connect Farcaster
                     </button>

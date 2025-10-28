@@ -6,6 +6,7 @@ import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner"
 import { DataProvider } from "./providers/DataProvider.tsx";
 import { UserStatsProvider } from "./providers/UserStatsProvider.tsx";
+import { HelmetProvider } from "react-helmet-async";
 
 
 import App from "./App.tsx";
@@ -16,18 +17,20 @@ import "./index.css";
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <WagmiProvider config={config}>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <FrameSDKProvider>
-          <UserStatsProvider>
-            <DataProvider>
-              <App />
-              <Toaster />
-            </DataProvider>
-          </UserStatsProvider>
-        </FrameSDKProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
-  </WagmiProvider>
+  <HelmetProvider>
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <FrameSDKProvider>
+            <UserStatsProvider>
+              <DataProvider>
+                <App />
+                <Toaster />
+              </DataProvider>
+            </UserStatsProvider>
+          </FrameSDKProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </WagmiProvider>
+  </HelmetProvider>
 );

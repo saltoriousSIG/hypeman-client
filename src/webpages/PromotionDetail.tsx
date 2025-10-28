@@ -1,20 +1,44 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { useData } from "@/providers/DataProvider";
 import CastCard from "@/components/CastCard/CastCard";
 import MainLayout from "@/components/Layout/MainLayout";
 import useGetPostPricing from "@/hooks/useGetPostPricing";
-import { useMemo } from "react";
+import PromotionFrameMetadata from "@/components/PromotionFrameMetadata";
+import { useQuery } from "@tanstack/react-query";
+import useAxios from "@/hooks/useAxios";
+import { Promotion } from "@/types/promotion.type";
 
 export default function PromotionDetailPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { promoterPromotions, loading } = useData();
+    const axios = useAxios();
     const pricing = useGetPostPricing();
 
-    const promotion = useMemo(() => {
-        return promoterPromotions?.find((p) => p.id === id);
-    }, [promoterPromotions, id]);
+    const { data: promotion, isLoading: loading } = useQuery({
+        queryKey: ["promotion", id],
+        queryFn: async () => {
+            const { data } = await axios.get<{ promotion: Promotion & {
+                claimable: boolean;
+                display_to_promoters: boolean;
+                cast_data?: {
+                    text: string;
+                    embeds: any[];
+                    author: {
+                        username: string;
+                    };
+                };
+            }}>('/api/fetch_promotion', {
+                params: { id }
+            });
+            return data.promotion;
+        },
+        enabled: !!id,
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
+        retry: 2,
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    });
+
 
     if (loading) {
         return (
@@ -54,6 +78,8 @@ export default function PromotionDetailPage() {
 
     return (
         <MainLayout className="space-y-4">
+            <PromotionFrameMetadata promotion={promotion} />
+
             <button
                 onClick={() => navigate("/")}
                 className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
@@ -84,13 +110,15 @@ export default function PromotionDetailPage() {
                     </div>
                 </div>
 
-                <CastCard
-                    promotion={promotion}
-                    pricing={pricing}
-                    promotionContent={promotion.cast_data?.text}
-                    promotionAuthor={promotion.cast_data.author.username}
-                    promotionEmmbedContext={promotion.cast_data?.embeds}
-                />
+                {promotion.cast_data && (
+                    <CastCard
+                        promotion={promotion}
+                        pricing={pricing}
+                        promotionContent={promotion.cast_data.text}
+                        promotionAuthor={promotion.cast_data.author.username}
+                        promotionEmmbedContext={promotion.cast_data.embeds}
+                    />
+                )}
             </div>
         </MainLayout>
     );

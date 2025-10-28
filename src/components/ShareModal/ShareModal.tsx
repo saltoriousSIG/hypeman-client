@@ -155,34 +155,22 @@ const ShareModal: React.FC<ShareModalProps> = ({ showShareModal, handleShowShare
                         </Button>
                     </div> */}
 
-                    <div className="flex flex-col gap-2 pt-4 border-t border-white/20">
-                        <Button
-                            onClick={handleShareToTimeline}
-                            className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 h-11 text-white font-medium"
-                        >
-                            <Share className="w-4 h-4 mr-2" />
-                            Share to Timeline
-                        </Button>
-
-                        {/* <Button
-                            onClick={handleNotifyFollowers}
-                            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-11 text-white font-medium"
-                            disabled={selectedFollowers.length === 0}
-                        >
-                            <Bell className="w-4 h-4 mr-2" />
-                            Notify Selected Followers
-                            {selectedFollowers.length > 0 && (
-                                <Badge className="ml-2 bg-white/20 text-white border-0">{selectedFollowers.length}</Badge>
-                            )}
-                        </Button> */}
-
-                        <Button
-                            onClick={handleSkipForNow}
-                            variant="ghost"
-                            className="w-full text-white/70 hover:text-white hover:bg-white/10"
-                        >
-                            Skip for now
-                        </Button>
+                    <div className="flex flex-col gap-4 pt-4 border-t border-white/20">
+                        <div className="flex gap-2">
+                            <Button
+                                onClick={handleSkipForNow}
+                                className="flex-1 bg-[#313131] hover:bg-[#2a2a2a] text-[#ededed] h-10 rounded-full px-4 py-2 text-sm font-medium transition-colors"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleShareToTimeline}
+                                className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 h-10 rounded-full text-white font-medium transition-all"
+                            >
+                                <Share className="w-4 h-4 mr-2" />
+                                Share to Timeline
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </DialogContent>

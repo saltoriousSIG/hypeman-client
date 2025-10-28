@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { Loader2, X, ChevronRight } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import { Helmet } from "react-helmet-async"
 import { useFrameContext } from "@/providers/FrameProvider";
 import PromotionCastPreview from "@/components/CastCard/PromotionCastPreview";
 import LoginModal from "@/components/LoginModal/LoginModal";
@@ -33,6 +34,23 @@ export default function HomePage() {
 
     return (
         <MainLayout className="space-y-4">
+            <Helmet>
+                {/* Default/Generic Frame Metadata */}
+                <title>Hypeman - Find your Hypeman</title>
+                <meta name="description" content="Paid promotion on Farcaster made easy. Amplify your reach through targeted promotions." />
+
+                <meta property="og:title" content="Hypeman" />
+                <meta property="og:description" content="Paid promotion on Farcaster made easy. Amplify your reach through targeted promotions." />
+                <meta property="og:image" content="https://res.cloudinary.com/dsrjjqkjs/image/upload/v1760928637/replicate-prediction-ppnmz3g0yxrme0cssvhtx2r54w_alqowu.jpg" />
+                <meta property="og:url" content="https://hypeman.social" />
+
+                <meta property="fc:frame" content="vNext" />
+                <meta property="fc:frame:image" content="https://res.cloudinary.com/dsrjjqkjs/image/upload/v1760928637/replicate-prediction-ppnmz3g0yxrme0cssvhtx2r54w_alqowu.jpg" />
+                <meta property="fc:frame:button:1" content="Browse Promotions" />
+                <meta property="fc:frame:button:1:action" content="link" />
+                <meta property="fc:frame:button:1:target" content="https://hypeman.social" />
+            </Helmet>
+
             {loading && (
                 <div className="text-center py-12">
                     <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
