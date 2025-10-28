@@ -3,7 +3,6 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import CastCard from "@/components/CastCard/CastCard";
 import MainLayout from "@/components/Layout/MainLayout";
 import useGetPostPricing from "@/hooks/useGetPostPricing";
-import PromotionFrameMetadata from "@/components/PromotionFrameMetadata";
 import { useQuery } from "@tanstack/react-query";
 import useAxios from "@/hooks/useAxios";
 import { Promotion } from "@/types/promotion.type";
@@ -38,6 +37,8 @@ export default function PromotionDetailPage() {
         retry: 2,
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     });
+
+    console.log('PROMOTION', promotion);
 
 
     if (loading) {
@@ -78,7 +79,6 @@ export default function PromotionDetailPage() {
 
     return (
         <MainLayout className="space-y-4">
-            <PromotionFrameMetadata promotion={promotion} />
 
             <button
                 onClick={() => navigate("/")}

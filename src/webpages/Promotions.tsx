@@ -1,12 +1,5 @@
-import { Card, CardContent } from "@/components/ui/card"
 import {
-    Eye,
-    DollarSign,
-    Users,
-    TrendingUp,
     AlertTriangle,
-    CheckCircle,
-    XCircle
 } from "lucide-react"
 import { useState } from "react"
 import MainLayout from "@/components/Layout/MainLayout"
@@ -14,26 +7,12 @@ import { PromotionManageProvider } from "@/providers/PromotionManageProvider"
 import PromotionManageStats from "@/components/PromotionManageStats/PromotionManageStats"
 import PromotionManage from "@/components/PromotionManage/PromotionManage"
 
-
 export default function CreatorManagePage() {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null)
-    const [actionFeedback, setActionFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
     return (
         <PromotionManageProvider>
             <MainLayout className="space-y-6">
-                {actionFeedback && (
-                    <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-3 text-sm">
-                        {actionFeedback.type === "success" ? (
-                            <CheckCircle className="w-4 h-4 text-green-400" />
-                        ) : (
-                            <AlertTriangle className="w-4 h-4 text-red-400" />
-                        )}
-                        <span className={actionFeedback.type === "success" ? "text-green-400" : "text-red-400"}>
-                            {actionFeedback.message}
-                        </span>
-                    </div>
-                )}
 
                 {showDeleteConfirm && (
                     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
