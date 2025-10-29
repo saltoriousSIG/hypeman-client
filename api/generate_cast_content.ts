@@ -64,7 +64,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       }
     }
 
-    const hypeman_ai = await HypemanAI.getInstance(req.fid as number, username);
+    const hypeman_ai = await HypemanAI.getInstance(17714, "igoryuzo.eth");
 
     // Generate cast content - use refineCast if user feedback is provided, otherwise generateInitialCast
     let castResult;
@@ -106,10 +106,10 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       ...(intent && { intent }), // Include intent in cast object for reference only if provided
     };
 
-    await redisClient.set(
-      `user_cast:${req.fid}:${promotionId}`,
-      JSON.stringify(cast_obj)
-    );
+    // await redisClient.set(
+    //   `user_cast:${req.fid}:${promotionId}`,
+    //   JSON.stringify(cast_obj)
+    // );
 
     console.log("Generated cast content:", {
       cast: castResult,

@@ -30,12 +30,15 @@ import { useCastQuoteCount } from "@/hooks/useCastQuoteCount"
 import { useUserCasts } from "@/hooks/useUserCasts"
 import { useData } from "@/providers/DataProvider"
 import useAxios from "@/hooks/useAxios"
+import { DynamicPricing } from "@/components/DynamicPricing/DynamicPricing"
+import { useQuery } from "@tanstack/react-query"
 
 export default function BuyersPage() {
     const { address, fUser, isFrameAdded, handleAddFrame } = useFrameContext();
 
     const [selectedCast, setSelectedCast] = useState<Cast | null>(null);
-    const [budget, setBudget] = useState<number>(10);
+    const [budget, setBudget] = useState<number>(0);
+    const [basePrice, setBasePrice] = useState<number>(0);
     const [neynarScore, setNeynarScore] = useState<number>(0.5);
     const [proUser, setProUser] = useState<boolean>(false);
     const [isApproved, setIsApproved] = useState<boolean>(false);
@@ -73,6 +76,20 @@ export default function BuyersPage() {
     const approve = useContract(ExecutionType.WRITABLE, "ERC20", "approve", USDC_ADDRESS);
     const create_promotion = useContract(ExecutionType.WRITABLE, "Create", "createPromotion");
 
+
+    const { data: tierRates } = useQuery({
+        queryKey: ["tier_rates"],
+        queryFn: async () => {
+            const { data } = await axios.get("/api/fetch_fee_tier_rates");
+            return data
+        },
+        enabled: true,
+        staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+        gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+        retry: 2, // Retry failed requests twice
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    })
+
     // Check if budget is approved
     useEffect(() => {
         if (!platformFee) return;
@@ -107,6 +124,7 @@ export default function BuyersPage() {
     // Handle create promotion
     const handleCreatePromotion = useCallback(async () => {
         if (!fUser || !selectedCast) return;
+
         if (budget < pricing_tiers.tier1) {
             return toast.error(`Minimum budget is ${pricing_tiers.tier1} USDC`);
         }
@@ -126,6 +144,7 @@ export default function BuyersPage() {
                 is_open_promotion: true,
                 neynar_score: neynarScore,
                 pro_user: proUser,
+                base_rate: parseUnits(basePrice.toString(), 6),
             };
 
             await create_promotion([createParams]);
@@ -154,7 +173,7 @@ export default function BuyersPage() {
             console.error(e, e.message);
             toast.error("Failed to create promotion");
         }
-    }, [fUser, selectedCast, budget, neynarScore, proUser, create_promotion, address]);
+    }, [fUser, selectedCast, budget, neynarScore, proUser, create_promotion, address, basePrice]);
 
     // Handle selecting a cast to promote
     const handleSelectCast = (cast: Cast) => {
@@ -286,11 +305,11 @@ export default function BuyersPage() {
                         </DrawerDescription>
                     </DrawerHeader>
 
-                    <div className="px-4 pb-4 space-y-6">
+                    <div className="px-4 pb-0 space-y-4">
                         {/* Selected cast preview */}
-                        {selectedCast && (
-                            <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                                <p className="text-white/80 text-sm leading-relaxed mb-2 line-clamp-2">
+                        {selectedCast && drawerStep === 1 && (
+                            <div className="bg-white/5 rounded-lg p-2 border border-white/10">
+                                <p className="text-white/80 text-xs leading-relaxed mb-2 line-clamp-2">
                                     {selectedCast.text}
                                 </p>
                                 <div className="flex items-center gap-2 text-xs text-white/60">
@@ -363,62 +382,17 @@ export default function BuyersPage() {
 
                         {/* Step 2: Budget Section */}
                         {drawerStep === 2 && (
-                            <div className="space-y-6">
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <Label htmlFor="drawer-budget" className="text-white/80 text-sm">
-                                            Total Budget (USDC)
-                                        </Label>
-                                        <div className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                                            {budget} USDC
-                                        </div>
-                                    </div>
-
-                                    <Slider
-                                        id="drawer-budget"
-                                        min={3}
-                                        max={30}
-                                        step={1}
-                                        value={[budget]}
-                                        onValueChange={(value) => setBudget(value[0])}
-                                        className="w-full"
-                                    />
-
-                                    <div className="flex justify-between text-xs text-white/40">
-                                        <span>3 USDC</span>
-                                        <span>30 USDC</span>
-                                    </div>
-
-                                    <div className="flex justify-between text-xs text-white/40">
-                                        <span></span>
-                                        <span>Total: {total.toFixed(2)} USDC</span>
-                                    </div>
-
-                                    {budget < pricing_tiers.tier1 && (
-                                        <p className="text-amber-400 text-xs flex items-center gap-1">
-                                            ⚠️ Minimum recommended: {pricing_tiers.tier1} USDC
-                                        </p>
-                                    )}
-                                    {budget >= pricing_tiers.tier1 && (
-                                        <p className="text-xs text-green-400">
-                                            ✓ ~{Math.floor(budget / 1.5)} posts available
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Summary of audience settings */}
-                                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                                    <p className="text-white/80 text-xs font-semibold mb-2">Audience Settings</p>
-                                    <div className="space-y-1 text-xs text-white/60">
-                                        <p>Minimum Neynar Score: <span className="text-purple-400 font-medium">{neynarScore.toFixed(2)}</span></p>
-                                        <p>Pro Users Only: <span className="text-purple-400 font-medium">{proUser ? "Yes" : "No"}</span></p>
-                                    </div>
-                                </div>
-                            </div>
+                            <DynamicPricing
+                                neynarScore={neynarScore}
+                                proUser={proUser}
+                                tierRates={tierRates || {}}
+                                setTotalBudget={(budget: number) => setBudget(budget)}
+                                setBasePrice={(price: number) => setBasePrice(price)}
+                            />
                         )}
                     </div>
 
-                    <DrawerFooter className="pt-4">
+                    <DrawerFooter className="pt-2">
                         {drawerStep === 1 ? (
                             <>
                                 <Button
@@ -440,7 +414,7 @@ export default function BuyersPage() {
                                     disabled={budget < pricing_tiers.tier1}
                                     className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-white font-medium active:scale-[0.98] transition-all border-0"
                                 >
-                                    Approve {budget} USDC
+                                    Approve {budget.toFixed(2)} USDC
                                 </Button>
                                 <Button
                                     onClick={() => setDrawerStep(1)}

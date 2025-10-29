@@ -6,8 +6,9 @@ import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import { getUserStats } from "../src/lib/getUserStats.js";
 import {
-  calculateUserScore,
+  calculateUserTier,
   pricing_tiers,
+  Tiers,
 } from "../src/lib/calculateUserScore.js";
 
 /**
@@ -138,7 +139,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
               } = stats;
 
               // Calculate composite score and tier
-              const tier = calculateUserScore(
+              const tier = calculateUserTier(
                 score,
                 follower_count,
                 avgLikes,
@@ -165,8 +166,8 @@ async function handler(req: VercelRequest, res: VercelResponse) {
 
               // Determine tier name
               let tierName = "Bronze";
-              if (tier === pricing_tiers.tier1) tierName = "Gold";
-              else if (tier === pricing_tiers.tier2) tierName = "Silver";
+              if (tier === Tiers.TIER_3) tierName = "Gold";
+              else if (tier === Tiers.TIER_2) tierName = "Silver";
 
               return {
                 success: true,

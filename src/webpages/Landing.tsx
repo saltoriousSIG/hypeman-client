@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from "react"
-import { BarChart3, Loader2, X } from "lucide-react"
+import { Loader2, X } from "lucide-react"
 import { useFrameContext } from "@/providers/FrameProvider";
 import CastCard from "@/components/CastCard/CastCard";
 import LoginModal from "@/components/LoginModal/LoginModal";
 import MainLayout from "@/components/Layout/MainLayout";
-import useGetPostPricing from "@/hooks/useGetPostPricing";
 import { useData } from "@/providers/DataProvider";
 
 export default function HomePage() {
@@ -14,7 +13,6 @@ export default function HomePage() {
 
     const { promoterPromotions, loading } = useData();
 
-    const pricing = useGetPostPricing();
 
     const handleShowLoginModal = (state: boolean) => {
         setShowLoginModal(state);
@@ -51,7 +49,6 @@ export default function HomePage() {
                     <CastCard
                         key={cast.id}
                         promotion={cast}
-                        pricing={pricing}
                         promotionContent={cast.cast_data?.text}
                         promotionAuthor={cast.cast_data.author.username}
                         promotionEmmbedContext={cast.cast_data?.embeds}

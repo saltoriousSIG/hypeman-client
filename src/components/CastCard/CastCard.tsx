@@ -13,10 +13,11 @@ import { useData } from "@/providers/DataProvider";
 import { toast } from "sonner";
 import { useIntentProcessingStatus } from "@/hooks/useIntentProcessingStatus";
 import { useUserStats, UserStats } from "@/providers/UserStatsProvider";
+import { formatUnits } from "viem";
+import useGetPostPricing from "@/hooks/useGetPostPricing";
 
 interface CastCardProps {
     promotion: any
-    pricing: number
     promotionContent: string
     promotionAuthor: string
     promotionEmmbedContext?: any[]
@@ -27,7 +28,6 @@ const CastCard: React.FC<CastCardProps> = ({
     promotionContent,
     promotionAuthor,
     promotionEmmbedContext,
-    pricing,
 }) => {
     const [isPosting, setIsPosting] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
@@ -45,6 +45,8 @@ const CastCard: React.FC<CastCardProps> = ({
     const [refreshFeedback, setRefreshFeedback] = useState("");
     const [hasClaimed, setHasClaimed] = useState(false);
     const [isClaiming, setIsClaiming] = useState(false);
+
+    const pricing = useGetPostPricing(promotion.base_rate);
 
     const { connectedUserData } = useUserStats() as { connectedUserData: UserStats };
 
@@ -129,7 +131,7 @@ const CastCard: React.FC<CastCardProps> = ({
                 setIsGeneratingIntent(true);
                 intentPromiseRef.current = axios.post("/api/generate_intent_signature", {
                     promotion_id: promotion.id,
-                    wallet: address
+                    wallet: address,
                 })
                     .then((res) => {
                         // Transform the response to match expected structure
@@ -362,6 +364,18 @@ const CastCard: React.FC<CastCardProps> = ({
         load();
     }, [promotion.id, address, get_promoter_details]);
 
+    const generareCastTest = async () => {
+        const { data } = await axios.post("/api/generate_cast_content", {
+            username: fUser?.username,
+            promotionId: promotion.id,
+            promotionUrl: promotion.cast_url,
+            promotionContent: promotionContent,
+            promotionAuthor: promotionAuthor,
+            embedContext: promotionEmmbedContext,
+            intent: promotion.current_user_intent
+        });
+    }
+
 
     const username = promotion.cast_data.author.username;
     const text = promotion.cast_data.text;
@@ -400,7 +414,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                     <span>Cast</span>
                                 </button>
                             </div>
-
+                            <Button onClick={generareCastTest}>Generate cast test</Button>
                         </div>
 
                         <div className="flex items-start gap-3">

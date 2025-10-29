@@ -5,6 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export const default_base_rate = "0.25";
+
 export const DIAMOND_ADDRESS: `0x${string}` =
   "0x23776630f8491829b3bd832689C37B07A614e71D";
 
@@ -37,4 +39,3 @@ export const extractHashFromFCUrl = (uri: string) => {
   const hash = urlObj.pathname.split("/").pop();
   return hash;
 };
-
