@@ -32,6 +32,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   let html = fs.readFileSync(htmlPath, "utf-8");
 
+  console.log(html);
+
   // Inject the frame meta tag
   const metaTag = `<meta name="fc:frame" content='${JSON.stringify(frameConfig)}'>`;
   html = html.replace("</head>", `${metaTag}\n</head>`);
