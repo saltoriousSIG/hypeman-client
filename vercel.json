@@ -12,7 +12,7 @@
     },
     {
       "source": "/creators",
-      "destination": "/index.html"
+      "destination": "/api/creators"
     },
     {
       "source": "/manage",
