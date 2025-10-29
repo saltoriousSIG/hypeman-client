@@ -17,7 +17,7 @@ function fcFrameMeta(): Plugin {
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), fcFrameMeta()],
   server: {
     allowedHosts: true,
   },
