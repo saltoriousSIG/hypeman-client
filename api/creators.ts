@@ -4,6 +4,40 @@ import fs from "fs";
 import path from "path";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const cwd = process.cwd();
+
+  console.log("=== DEBUG INFO ===");
+  console.log("CWD:", cwd);
+  console.log("CWD contents:", fs.readdirSync(cwd));
+  console.log("dist/ exists?", fs.existsSync(path.join(cwd, "dist")));
+
+  if (fs.existsSync(path.join(cwd, "dist"))) {
+    console.log("dist/ contents:", fs.readdirSync(path.join(cwd, "dist")));
+  }
+
+  console.log(
+    "Root index.html exists?",
+    fs.existsSync(path.join(cwd, "index.html"))
+  );
+  console.log(
+    "dist/index.html exists?",
+    fs.existsSync(path.join(cwd, "dist", "index.html"))
+  );
+
+  if (fs.existsSync(path.join(cwd, "index.html"))) {
+    const rootHtml = fs.readFileSync(path.join(cwd, "index.html"), "utf-8");
+    console.log("Root index.html preview:", rootHtml.substring(0, 500));
+  }
+
+  if (fs.existsSync(path.join(cwd, "dist", "index.html"))) {
+    const distHtml = fs.readFileSync(
+      path.join(cwd, "dist", "index.html"),
+      "utf-8"
+    );
+    console.log("dist/index.html preview:", distHtml.substring(0, 500));
+  }
+
+  console.log("===================");
   const frameConfig = {
     version: "next",
     imageUrl:
