@@ -1,22 +1,12 @@
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
-import path from "path";
 import { config } from "./src/config";
+import path from "path";
 
-function fcFrameMeta(): Plugin {
-  return {
-    name: "inject-fc-miniapp-meta",
-    transformIndexHtml(html: string) {
-      const embedJson = JSON.stringify(config.embed);
-      const metaTag = `<meta name="fc:miniapp" content='${embedJson}'>`;
-      return html.replace("</head>", `${metaTag}\n</head>`);
-    },
-  };
-}
-
+// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), fcFrameMeta()],
+  plugins: [react(), tailwindcss()],
   server: {
     allowedHosts: true,
   },
