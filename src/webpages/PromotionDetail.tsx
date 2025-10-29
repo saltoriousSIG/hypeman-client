@@ -6,6 +6,7 @@ import useGetPostPricing from "@/hooks/useGetPostPricing";
 import { useQuery } from "@tanstack/react-query";
 import useAxios from "@/hooks/useAxios";
 import { Promotion } from "@/types/promotion.type";
+import { formatUnits } from "viem";
 
 export default function PromotionDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -16,17 +17,19 @@ export default function PromotionDetailPage() {
     const { data: promotion, isLoading: loading } = useQuery({
         queryKey: ["promotion", id],
         queryFn: async () => {
-            const { data } = await axios.get<{ promotion: Promotion & {
-                claimable: boolean;
-                display_to_promoters: boolean;
-                cast_data?: {
-                    text: string;
-                    embeds: any[];
-                    author: {
-                        username: string;
+            const { data } = await axios.get<{
+                promotion: Promotion & {
+                    claimable: boolean;
+                    display_to_promoters: boolean;
+                    cast_data?: {
+                        text: string;
+                        embeds: any[];
+                        author: {
+                            username: string;
+                        };
                     };
-                };
-            }}>('/api/fetch_promotion', {
+                }
+            }>('/api/fetch_promotion', {
                 params: { id }
             });
             return data.promotion;
@@ -98,13 +101,13 @@ export default function PromotionDetailPage() {
                         <div>
                             <span className="text-white/50 text-sm">Budget Remaining</span>
                             <p className="text-white font-semibold">
-                                ${(Number(promotion.remaining_budget) / 1e18).toFixed(2)}
+                                ${formatUnits(promotion.remaining_budget, 6)}
                             </p>
                         </div>
                         <div>
                             <span className="text-white/50 text-sm">Total Budget</span>
                             <p className="text-white font-semibold">
-                                ${(Number(promotion.total_budget) / 1e18).toFixed(2)}
+                                ${formatUnits(promotion.total_budget, 6)}
                             </p>
                         </div>
                     </div>
