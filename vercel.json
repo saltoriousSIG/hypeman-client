@@ -12,11 +12,11 @@
     },
     {
       "source": "/creators",
-      "destination": "/api/creators"
+      "destination": "/api/metadata/creators"
     },
     {
       "source": "/manage",
-      "destination": "/index.html"
+      "destination": "/api/metadata/manage"
     }
   ],
   "crons": [
