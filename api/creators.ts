@@ -41,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const frameConfig = {
     version: "next",
     imageUrl:
-      "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1760928636/replicate-prediction-t60cxw0m31rmc0csxfbbam7xgr_vlc51o.jpg",
+      "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1760928636/replicate-prediction-p4j99sygpsrm80csxfarber1s4_qgict1.jpg",
     button: {
       title: "View Post",
       action: {
