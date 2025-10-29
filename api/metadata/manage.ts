@@ -41,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const frameConfig = {
     version: "next",
     imageUrl:
-      "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1729498306/HYOEZC09_output_0_1_nwbhlj.png",
+      "https://supervictorious-laurel-idyllically.ngrok-free.dev/api/frame_image/saltorious.eth?pfp=https%3A%2F%2Fimagedelivery.net%2FBXluQx4ige9GuW0Ia56BHw%2F78b78620-e1f7-4631-6f5a-04720f113700%2Foriginal",
     button: {
       title: "View Post",
       action: {
