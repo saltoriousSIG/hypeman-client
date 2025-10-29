@@ -20,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Check both locations
   const possiblePaths = [
-    path.join(process.cwd(), "index.html"), // Production
+    path.join(process.cwd(), "dist", "index.html"), // Production
   ];
 
   let htmlPath = possiblePaths.find((p) => fs.existsSync(p));
