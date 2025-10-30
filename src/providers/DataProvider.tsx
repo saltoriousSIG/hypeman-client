@@ -107,6 +107,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     });
 
+
     useEffect(() => {
         if (!refetch) return;
 
@@ -123,7 +124,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }, [refetch, promotions]);
 
     const loading = isLoading || isPlatformFeeLoading;
-    console.log(promotions);
 
     return (
         <DataContext.Provider value={{

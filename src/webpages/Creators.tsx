@@ -42,6 +42,7 @@ export default function BuyersPage() {
     const [showShareModal, setShowShareModal] = useState<boolean>(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
     const [drawerStep, setDrawerStep] = useState<1 | 2>(1);
+    const [newPromotionId, setNewPromotionId] = useState<string | null>(null);
 
     const axios = useAxios();
 
@@ -128,7 +129,8 @@ export default function BuyersPage() {
                 pro_user: proUser,
             };
 
-            await create_promotion([createParams]);
+            const promotion_id = await create_promotion([createParams]);
+            setNewPromotionId(promotion_id.toString())
             toast.success("Promotion created successfully!");
             handleShowShareModal(true);
             await refetchPromotions();
@@ -473,7 +475,8 @@ export default function BuyersPage() {
 
             <ShareModal
                 promotion_title=""
-                promotion_descripton={selectedCast?.text || ""}
+                promotion_id={newPromotionId || ""}
+                promotion_description={selectedCast?.text || ""}
                 showShareModal={showShareModal}
                 handleShowShareModal={handleShowShareModal}
             />

@@ -1,7 +1,6 @@
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
-import { config } from "./src/config";
 import path from "path";
 
 // https://vitejs.dev/config/

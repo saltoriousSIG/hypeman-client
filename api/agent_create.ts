@@ -115,6 +115,7 @@ async function getPromotionDetails(promotionId: string) {
  * @returns Promise with publish result
  */
 async function publishCast(
+  id: string,
   text: string,
   hash: string,
   fid: number
@@ -142,7 +143,7 @@ async function publishCast(
         text: text,
         embeds: [
           {
-            url: "https://hypeman.social",
+            url: `https://hypeman.social/promotions/${id.toString()}`,
           },
           {
             cast_id: {
@@ -285,6 +286,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
 
               // Publish the promotional cast using Neynar API
               const publishResult = await publishCast(
+                decoded.args.id.toString(),
                 promotionalResult.text || "",
                 promotionDetails.hash || "",
                 parseInt(decoded.args.creatorFid.toString())
@@ -320,7 +322,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
                 notification: {
                   title: `${creator} just launched a new promotion!`,
                   body: "Check it out and earn some rewards by promoting it!",
-                  target_url: "https://hypeman.social",
+                  target_url: `https://hypeman.social/promotions/${decoded.args.id.toString()}`,
                 },
                 target_fids: [...to_fids],
               },
