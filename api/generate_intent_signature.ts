@@ -69,7 +69,6 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       ? BigInt(body.expiry)
       : BigInt(Math.floor(Date.now() / 1000 + 3600));
 
-    console.log(expiry, "expiry");
 
     const signature_nonce = await redis.get(`signature_nonce`);
 
@@ -80,7 +79,6 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
     }
 
     const hash = toHex(randomBytes(32));
-    console.log(hash);
 
     // Construct the intent object matching Solidity struct
     const intent: Intent = {

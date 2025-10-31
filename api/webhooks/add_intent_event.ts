@@ -1,57 +1,18 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
-import { createHmac, timingSafeEqual } from "crypto";
 import { decodeEventLog } from "viem";
 import fs from "fs";
 import path from "path";
-import { RedisClient } from "../src/clients/RedisClient.js";
-import setupAdminWallet from "../src/lib/setupAdminWallet.js";
-import { DIAMOND_ADDRESS } from "../src/lib/utils.js";
+import { RedisClient } from "../../src/clients/RedisClient.js";
+import setupAdminWallet from "../../src/lib/setupAdminWallet.js";
+import { DIAMOND_ADDRESS } from "../../src/lib/utils.js";
 import { zeroHash } from "viem";
+import { streamMiddleware } from "../../middleware/streamMiddleware.js";
+import { withHost } from "../../middleware/withHost.js";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
-function verifySignature(
-  secretKey: string,
-  payload: string,
-  nonce: string,
-  timestamp: string,
-  givenSignature: string
-) {
-  // First concatenate as strings
-  const signatureData = nonce + timestamp + payload;
-
-  // Convert to bytes
-  const signatureBytes = Buffer.from(signatureData);
-
-  // Create HMAC with secret key converted to bytes
-  const hmac = createHmac("sha256", Buffer.from(secretKey));
-  hmac.update(signatureBytes);
-  const computedSignature = hmac.digest("hex");
-
-  return timingSafeEqual(
-    Buffer.from(computedSignature, "hex"),
-    Buffer.from(givenSignature, "hex")
-  );
-}
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Get the signature from headers
-  const signature = req.headers["x-qn-signature"] as string;
-  const secret = process.env.QUICKNODE_SECURITY_TOKEN as string;
-  const isValid = verifySignature(
-    secret,
-    JSON.stringify(req.body),
-    req.headers["x-qn-nonce"] as string,
-    req.headers["x-qn-timestamp"] as string,
-    signature
-  );
-
-  if (!isValid) {
-    return res.status(401).json({ message: "Invalid signature" });
-  }
-
+async function handler(req: VercelRequest, res: VercelResponse) {
   const { publicClient } = setupAdminWallet();
-
   const filePath = path.join(
     process.cwd(),
     "/src/abis",
@@ -69,6 +30,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const dataAbiFileContents = fs.readFileSync(dataAbiFilePath, "utf8");
   const data_abi = JSON.parse(dataAbiFileContents);
 
+  const pipeline = redis.pipeline();
+
   if (req.body.length > 0) {
     console.log(
       "EVENT FIRED vvv =============================================================================================== vvv"
@@ -84,6 +47,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         topics: log.topics,
       });
 
+      const promotion: any = await publicClient.readContract({
+        address: DIAMOND_ADDRESS,
+        abi: data_abi,
+        functionName: "getPromotion",
+        args: [decoded.args.promotionId],
+      });
+
+      pipeline.hset(`promotion:${promotion.id}`, {
+        ...promotion
+      })
+
       if (decoded && decoded.eventName === "IntentSubmitted") {
         const promoter_details: any = await publicClient.readContract({
           address: DIAMOND_ADDRESS as `0x${string}`,
@@ -97,16 +71,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           0,
           -1
         );
-
         const index = list.findIndex(
           (i: any) =>
             i.intentHash === decoded.args.intentHash &&
             decoded.args.promotionId.toString() === i.promotion_id &&
             i.fid === decoded.args.fid.toString()
         );
-        console.log(index, "INTENT INDEX IN REDIS");
-        console.log(decoded.args, "DECODED ARGS");
-        // Only add to redis if fid is not 0 (meaning the promoter is registered)
         if (promoter_details.fid !== 0n) {
           if (index === -1) {
             const intent_to_add: Record<string, any> = {
@@ -123,9 +93,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               intent_to_add.cast_hash = promoter_details.cast_hash;
               intent_to_add.processed = true;
             }
-            await redis.lpush(
+            pipeline.lpush(
               `intent:${decoded.args.promotionId.toString()}`,
-              JSON.stringify(intent_to_add)
+              redis.encrypt(JSON.stringify(intent_to_add))
             );
           } else {
             const intent_to_add: Record<string, any> = {
@@ -142,16 +112,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               intent_to_add.cast_hash = promoter_details.cast_hash;
               intent_to_add.processed = true;
             }
-            await redis.lset(
+            pipeline.lset(
               `intent:${decoded.args.promotionId.toString()}`,
               index,
-              JSON.stringify(intent_to_add)
+              redis.encrypt(JSON.stringify(intent_to_add))
             );
           }
         }
       }
     }
+    await pipeline.exec();
   }
   // Verify signature
   res.status(200).json({ message: "Webhook received successfully" });
 }
+
+export default withHost(streamMiddleware(handler));

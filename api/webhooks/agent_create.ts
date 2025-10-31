@@ -1,13 +1,14 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
-import { createHmac, timingSafeEqual } from "crypto";
 import { decodeEventLog } from "viem";
 import fs from "fs";
 import path from "path";
-import setupAdminWallet from "../src/lib/setupAdminWallet.js";
-import { DIAMOND_ADDRESS } from "../src/lib/utils.js";
-import { HypemanAI } from "../src/clients/HypemanAI.js";
-import { withHost } from "../middleware/withHost.js";
+import setupAdminWallet from "../../src/lib/setupAdminWallet.js";
+import { DIAMOND_ADDRESS } from "../../src/lib/utils.js";
+import { HypemanAI } from "../../src/clients/HypemanAI.js";
+import { withHost } from "../../middleware/withHost.js";
+import { verifySignature } from "../../src/lib/verifyWebhookSignature.js";
 import axios from "axios";
+import { streamMiddleware } from "../../middleware/streamMiddleware.js";
 
 /**
  * Fetches cast text from Neynar API using hash
@@ -174,58 +175,7 @@ async function publishCast(
   }
 }
 
-function verifySignature(
-  secretKey: string,
-  payload: string,
-  nonce: string,
-  timestamp: string,
-  givenSignature: string
-) {
-  // First concatenate as strings
-  const signatureData = nonce + timestamp + payload;
-
-  // Convert to bytes
-  const signatureBytes = Buffer.from(signatureData);
-
-  // Create HMAC with secret key converted to bytes
-  const hmac = createHmac("sha256", Buffer.from(secretKey));
-  hmac.update(signatureBytes);
-  const computedSignature = hmac.digest("hex");
-
-  return timingSafeEqual(
-    Buffer.from(computedSignature, "hex"),
-    Buffer.from(givenSignature, "hex")
-  );
-}
-
 async function handler(req: VercelRequest, res: VercelResponse) {
-  // Get the signature from headers
-  const signature = req.headers["x-qn-signature"] as string;
-  const secret = process.env
-    .QUICKNODE_SECURITY_TOKEN_CREATE_PROMOTION as string;
-  const nonce = req.headers["x-qn-nonce"] as string;
-  const timestamp = req.headers["x-qn-timestamp"] as string;
-  const payload = JSON.stringify(req.body);
-
-  // Temporary bypass for testing - remove this in production!
-  if (!secret) {
-    console.log(
-      "WARNING: QUICKNODE_SECURITY_TOKEN not set, bypassing signature verification for testing"
-    );
-    // Uncomment the next line to bypass signature verification during testing
-    return res
-      .status(200)
-      .json({ message: "Signature verification bypassed for testing" });
-  }
-
-  const isValid = verifySignature(secret, payload, nonce, timestamp, signature);
-
-  console.log("Signature valid:", isValid);
-
-  if (!isValid) {
-    return res.status(401).json({ message: "Invalid signature" });
-  }
-
   // Load the PromotionCreate ABI
   const filePath = path.join(
     process.cwd(),
@@ -259,6 +209,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
           const promotionDetails = await getPromotionDetails(
             decoded.args.id.toString()
           );
+
 
           // Generate promotional cast using HypemanAI
           try {
@@ -301,8 +252,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
               }
             }
 
-            // TODO: start here
-
+            // send notifications to reciprocal followers
             const { data } = await axios.get(
               `https://api.neynar.com/v2/farcaster/followers/reciprocal/?limit=25&sort_type=algorithmic&fid=${decoded.args.creatorFid.toString()}&limit=100`
             );
@@ -349,4 +299,5 @@ async function handler(req: VercelRequest, res: VercelResponse) {
     .json({ message: "PromotionCreated webhook received successfully" });
 }
 
-export default withHost(handler);
+export default withHost(streamMiddleware(handler));
+

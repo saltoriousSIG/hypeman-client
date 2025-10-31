@@ -5,3 +5,7 @@ export type ExtendedVercelRequest = VercelRequest & {
   userData: any;
   address: string;
 };
+
+export type QuickNodeEventLogRequest = VercelRequest & {
+
+}

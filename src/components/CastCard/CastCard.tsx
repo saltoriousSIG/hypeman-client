@@ -182,10 +182,6 @@ const CastCard: React.FC<CastCardProps> = ({
                 try {
                     // Submit intent to blockchain for new intents
                     console.log("💳 Submitting intent to blockchain:");
-                    // await axios.post("/api/add_intent", {
-                    //     promotion_id: promotion.id,
-                    //     intent: currentIntent.intent
-                    // });
                     await submit_intent([currentIntent.intent, currentIntent.signature]);
                     toast.success("Intent submitted successfully!");
                     console.log("✅ Intent submitted to blockchain and saved to backend");
