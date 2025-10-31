@@ -123,6 +123,11 @@
             "internalType": "bool",
             "name": "pro_user",
             "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "base_rate",
+            "type": "uint256"
           }
         ],
         "internalType": "struct LibHypeman.Promotion[]",
@@ -365,6 +370,11 @@
             "internalType": "bool",
             "name": "pro_user",
             "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "base_rate",
+            "type": "uint256"
           }
         ],
         "internalType": "struct LibHypeman.Promotion[]",
@@ -567,6 +577,11 @@
             "internalType": "bool",
             "name": "pro_user",
             "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "base_rate",
+            "type": "uint256"
           }
         ],
         "internalType": "struct LibHypeman.Promotion[]",
@@ -687,6 +702,11 @@
             "internalType": "bool",
             "name": "pro_user",
             "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "base_rate",
+            "type": "uint256"
           }
         ],
         "internalType": "struct LibHypeman.Promotion",

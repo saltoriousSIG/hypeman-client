@@ -2,7 +2,6 @@ import { useState, useMemo } from "react"
 import { BarChart3, Plus, DollarSign } from "lucide-react"
 import { useFrameContext } from "@/providers/FrameProvider"
 import { useData } from "@/providers/DataProvider"
-import useGetPostPricing from "@/hooks/useGetPostPricing"
 import CastCard from "@/components/CastCard/CastCard"
 import {
     Drawer,
@@ -23,7 +22,6 @@ import useAxios from "@/hooks/useAxios"
 export default function Header() {
     const { fUser, isFrameAdded, handleAddFrame } = useFrameContext()
     const { promotions } = useData()
-    const pricing = useGetPostPricing()
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
     const axios = useAxios();
 
@@ -119,7 +117,6 @@ export default function Header() {
                                 <CastCard
                                     key={cast.id}
                                     promotion={cast}
-                                    pricing={pricing}
                                     promotionContent={cast.cast_data?.text || ""}
                                     promotionAuthor={cast.cast_data?.author?.username || ""}
                                     promotionEmmbedContext={cast.cast_data?.embeds || []}

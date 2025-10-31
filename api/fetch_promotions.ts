@@ -3,12 +3,12 @@ import { VercelResponse } from "@vercel/node";
 import setupAdminWallet from "../src/lib/setupAdminWallet.js";
 import { withHost } from "../middleware/withHost.js";
 import { validateSignature } from "../middleware/validateSignature.js";
-import { DIAMOND_ADDRESS } from "../src/lib/utils.js";
+import { default_base_rate, DIAMOND_ADDRESS } from "../src/lib/utils.js";
 import fs from "fs";
-import path from "path";
+import path, { parse } from "path";
 import axios from "axios";
 import { RedisClient } from "../src/clients/RedisClient.js";
-import { zeroHash } from "viem";
+import { parseUnits, zeroHash } from "viem";
 import { getUserStats } from "../src/lib/getUserStats.js";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
@@ -97,6 +97,9 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
           intents: list,
           current_user_intent,
           existing_generated_cast,
+          base_rate:
+            promotion.base_rate?.toString() ||
+            parseUnits(default_base_rate, 6).toString(),
           display_to_promoters:
             promotion.state === 0 &&
             BigInt(promotion.remaining_budget) > 0n &&
@@ -123,6 +126,9 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
           amount_paid_out: promotion.amount_paid_out.toString(),
           promoters: Array.from(new Set(promoters)),
           remaining_budget: promotion.remaining_budget.toString(),
+          base_rate:
+            promotion.base_rate?.toString() ||
+            parseUnits(default_base_rate, 6).toString(),
           created_time: promotion.created_time.toString(),
           committed_budget: promotion.committed_budget.toString(),
           unprocessed_intents: promotion.unprocessed_intents.toString(),
