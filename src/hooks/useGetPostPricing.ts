@@ -20,16 +20,17 @@ const useGetPostPricing = (base_rate: number) => {
       avgRecasts,
       avgReplies
     );
+    console.log(tier)
 
     switch (tier) {
       case Tiers.TIER_1:
-        return base_rate * pricing_tiers.tier1;
+        return (base_rate * pricing_tiers.tier1).toFixed(2);
       case Tiers.TIER_2:
-        return base_rate * pricing_tiers.tier2;
+        return (base_rate * pricing_tiers.tier2).toFixed(2);
       case Tiers.TIER_3:
-        return base_rate * pricing_tiers.tier3;
+        return (base_rate * pricing_tiers.tier3).toFixed(2);
       default:
-        return base_rate * pricing_tiers.tier1;
+        return (base_rate * pricing_tiers.tier1).toFixed(2);
     }
   }, [connectedUserData]);
 

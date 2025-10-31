@@ -3,13 +3,14 @@ import { VercelResponse } from "@vercel/node";
 import setupAdminWallet from "../src/lib/setupAdminWallet.js";
 import { withHost } from "../middleware/withHost.js";
 import { validateSignature } from "../middleware/validateSignature.js";
-import { DIAMOND_ADDRESS } from "../src/lib/utils.js";
+import { default_base_rate, DIAMOND_ADDRESS } from "../src/lib/utils.js";
 import fs from "fs";
 import path from "path";
 import axios from "axios";
 import { RedisClient } from "../src/clients/RedisClient.js";
 import { zeroHash } from "viem";
 import { getUserStats } from "../src/lib/getUserStats.js";
+import { parseUnits } from "viem";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
@@ -21,7 +22,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
 
   try {
     const { id } = req.query;
-    
+
     if (!id || typeof id !== "string") {
       res.status(400).json({ error: "Promotion ID is required" });
       return;
@@ -81,6 +82,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
         }
       );
 
+      console.log(promotion);
       const promotionData = {
         ...promotion,
         id: promotion.id.toString(),
@@ -106,6 +108,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
             promoterData.state > BigInt(0) &&
             promoterData.cast_hash !== zeroHash) ||
           !!current_user_intent?.cast_hash,
+        base_rate: parseUnits(default_base_rate, 6).toString(),
         cast_data: {
           text: cast.text,
           embeds: cast.embeds,
@@ -127,6 +130,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
         committed_budget: promotion.committed_budget.toString(),
         unprocessed_intents: promotion.unprocessed_intents.toString(),
         current_user_intent,
+        base_rate: parseUnits(default_base_rate, 6).toString(),
         display_to_promoters: false,
         intents: list,
         existing_generated_cast,
@@ -143,4 +147,3 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
 }
 
 export default withHost(validateSignature(handler));
-

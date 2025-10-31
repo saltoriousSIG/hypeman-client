@@ -1,13 +1,16 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
-import { createHmac, timingSafeEqual } from "crypto";
-import { decodeEventLog } from "viem";
+import { decodeEventLog, formatUnits } from "viem";
 import fs from "fs";
 import path from "path";
-import setupAdminWallet from "../src/lib/setupAdminWallet.js";
-import { DIAMOND_ADDRESS } from "../src/lib/utils.js";
-import { HypemanAI } from "../src/clients/HypemanAI.js";
-import { withHost } from "../middleware/withHost.js";
+import setupAdminWallet from "../../src/lib/setupAdminWallet.js";
+import { DIAMOND_ADDRESS } from "../../src/lib/utils.js";
+import { HypemanAI } from "../../src/clients/HypemanAI.js";
+import { withHost } from "../../middleware/withHost.js";
 import axios from "axios";
+import { streamMiddleware } from "../../middleware/streamMiddleware.js";
+import { RedisClient } from "../../src/clients/RedisClient.js";
+
+const redis = new RedisClient(process.env.REDIS_URL as string);
 
 /**
  * Fetches cast text from Neynar API using hash
@@ -100,6 +103,7 @@ async function getPromotionDetails(promotionId: string) {
       hash,
       castText,
       totalBudget: promotionDetails.total_budget.toString(),
+      promotion: promotionDetails,
     };
   } catch (error) {
     console.error("Error fetching promotion details:", error);
@@ -174,58 +178,7 @@ async function publishCast(
   }
 }
 
-function verifySignature(
-  secretKey: string,
-  payload: string,
-  nonce: string,
-  timestamp: string,
-  givenSignature: string
-) {
-  // First concatenate as strings
-  const signatureData = nonce + timestamp + payload;
-
-  // Convert to bytes
-  const signatureBytes = Buffer.from(signatureData);
-
-  // Create HMAC with secret key converted to bytes
-  const hmac = createHmac("sha256", Buffer.from(secretKey));
-  hmac.update(signatureBytes);
-  const computedSignature = hmac.digest("hex");
-
-  return timingSafeEqual(
-    Buffer.from(computedSignature, "hex"),
-    Buffer.from(givenSignature, "hex")
-  );
-}
-
 async function handler(req: VercelRequest, res: VercelResponse) {
-  // Get the signature from headers
-  const signature = req.headers["x-qn-signature"] as string;
-  const secret = process.env
-    .QUICKNODE_SECURITY_TOKEN_CREATE_PROMOTION as string;
-  const nonce = req.headers["x-qn-nonce"] as string;
-  const timestamp = req.headers["x-qn-timestamp"] as string;
-  const payload = JSON.stringify(req.body);
-
-  // Temporary bypass for testing - remove this in production!
-  if (!secret) {
-    console.log(
-      "WARNING: QUICKNODE_SECURITY_TOKEN not set, bypassing signature verification for testing"
-    );
-    // Uncomment the next line to bypass signature verification during testing
-    return res
-      .status(200)
-      .json({ message: "Signature verification bypassed for testing" });
-  }
-
-  const isValid = verifySignature(secret, payload, nonce, timestamp, signature);
-
-  console.log("Signature valid:", isValid);
-
-  if (!isValid) {
-    return res.status(401).json({ message: "Invalid signature" });
-  }
-
   // Load the PromotionCreate ABI
   const filePath = path.join(
     process.cwd(),
@@ -234,6 +187,8 @@ async function handler(req: VercelRequest, res: VercelResponse) {
   );
   const fileContents = fs.readFileSync(filePath, "utf8");
   const data = JSON.parse(fileContents);
+
+  const pipeline = redis.pipeline();
 
   if (req.body.length > 0) {
     console.log(
@@ -301,8 +256,51 @@ async function handler(req: VercelRequest, res: VercelResponse) {
               }
             }
 
-            // TODO: start here
+            // update redis
+            const {
+              data: { cast },
+            } = await axios.get(
+              `https://api.neynar.com/v2/farcaster/cast/?type=url&identifier=${encodeURIComponent(promotionDetails.promotion.cast_url)}`,
+              {
+                headers: {
+                  "x-api-key": process.env.NEYNAR_API_KEY as string,
+                },
+              }
+            );
 
+            pipeline
+              .set(
+                `promotion:cast:${promotionDetails.promotion.id.toString()}`,
+                redis.encrypt(JSON.stringify(cast))
+              )
+              .hset(`promotion:${promotionDetails.promotion.id.toString()}`, {
+                ...promotionDetails.promotion,
+              })
+              .zadd(
+                `promotion_budget`,
+                parseFloat(
+                  formatUnits(promotionDetails.promotion.remaining_budget, 6)
+                ),
+                promotionDetails.promotion.id.toString()
+              )
+              //TODO: update this to the right thing after contract has beed upgraded
+              .zadd(
+                `promotion_base_rate`,
+                parseFloat("0.25"),
+                promotionDetails.promotion.id.toString()
+              )
+              .sadd(
+                `promotion_state:${promotionDetails.promotion.state.toString()}`,
+                promotionDetails.promotion.id.toString()
+              )
+              .sadd(
+                `promotion_is_pro:${promotionDetails.promotion.pro_user}`,
+                promotionDetails.promotion.id.toString()
+              );
+
+            await pipeline.exec();
+
+            // Fetch the followers of the creator and send them a notification about the new promotion
             const { data } = await axios.get(
               `https://api.neynar.com/v2/farcaster/followers/reciprocal/?limit=25&sort_type=algorithmic&fid=${decoded.args.creatorFid.toString()}&limit=100`
             );
@@ -349,4 +347,4 @@ async function handler(req: VercelRequest, res: VercelResponse) {
     .json({ message: "PromotionCreated webhook received successfully" });
 }
 
-export default withHost(handler);
+export default withHost(streamMiddleware(handler));

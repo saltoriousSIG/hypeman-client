@@ -30,7 +30,7 @@ export const calculateUserTier = (
     neynarScore * 0.35 + // 35% neynar score
     engagementScore * 0.25; // 25% engagement
 
-  if (compositeScore >= 70) return Tiers.TIER_1;
+  if (compositeScore >= 70) return Tiers.TIER_3;
   else if (compositeScore >= 40) return Tiers.TIER_2;
-  else return Tiers.TIER_3;
+  else return Tiers.TIER_1;
 };
