@@ -6,7 +6,7 @@ const useAxios = () => {
   const { address, fUser } = useFrameContext();
 
   return useMemo(() => {
-    if (!fUser || !address) return axios;
+    if (!fUser || !address) return;
 
     const instance = axios.create();
 

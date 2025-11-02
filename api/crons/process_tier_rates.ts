@@ -4,13 +4,10 @@ import { DIAMOND_ADDRESS } from "../../src/lib/utils.js";
 import setupAdminWallet from "../../src/lib/setupAdminWallet.js";
 import fs from "fs";
 import path from "path";
+import { getUserStats } from "../../src/lib/getUserStats.js";
+import { calculateUserTier } from "../../src/lib/calculateUserScore.js";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
-const tierNameMapping: Record<string, string> = {
-  "1000000": "tier1",
-  "2000000": "tier2",
-  "3000000": "tier3",
-};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -40,15 +37,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     for (let i = 0; i < Number(next_promotion_id); i++) {
       const list = await redis.lrange(`intent:${i}`, 0, -1);
       for (const item of list) {
-        const feeTierFrequency = feeTierFrequencyMap.get(item.fee) || 0;
-        feeTierFrequencyMap.set(item.fee, feeTierFrequency + 1);
+        const cachedTier = await redis.get(`user_tier:${item.fid}`);
+        if (!cachedTier) {
+          const userData = await getUserStats(item.fid);
+          const tier = calculateUserTier(
+            userData.score,
+            userData.follower_count,
+            userData.avgLikes,
+            userData.avgRecasts,
+            userData.avgReplies
+          );
+          await redis.set(`user_tier:${item.fid}`, tier, 60 * 60 * 24 * 7); // Cache for 24 hours
+          feeTierFrequencyMap.set(
+            tier,
+            (feeTierFrequencyMap.get(tier) || 0) + 1,
+          );
+        } else {
+          feeTierFrequencyMap.set(
+            cachedTier,
+            (feeTierFrequencyMap.get(cachedTier) || 0) + 1
+          );
+        }
       }
     }
 
     let frequencySum = 0;
 
-    for (const [feeTier, frequency] of feeTierFrequencyMap.entries()) {
-      frequencySum += frequency;
+    for (const tiers of feeTierFrequencyMap.entries()) {
+      frequencySum += tiers[1];
     }
 
     const tierRates: {
@@ -57,11 +73,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         rate: number;
       };
     } = {};
-
+    
     for (const [feeTier, frequency] of feeTierFrequencyMap.entries()) {
-      tierRates[tierNameMapping[feeTier]] = {
+      const rate = frequency / frequencySum;
+      tierRates[feeTier] = {
         count: frequency,
-        rate: frequencySum === 0 ? 0 : frequency / frequencySum,
+        rate,
       };
     }
 

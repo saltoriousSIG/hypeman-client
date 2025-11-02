@@ -72,7 +72,10 @@ export class RedisClient {
   }
 
   // === STRING OPERATIONS ===
-  async set(key: string, value: any): Promise<"OK"> {
+  async set(key: string, value: any, expiryInSeconds?: number): Promise<"OK"> {
+    if (expiryInSeconds) {
+      return await this.redis.set(key, this.encrypt(value), "EX", expiryInSeconds);
+    }
     return await this.redis.set(key, this.encrypt(value));
   }
 

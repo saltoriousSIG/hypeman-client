@@ -1,15 +1,13 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
-import { withHost } from "../middleware/withHost.js";
+import { withHost } from "../../middleware/withHost.js";
 import { generateText } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
-import { getUserStats } from "../src/lib/getUserStats.js";
+import { getUserStats } from "../../src/lib/getUserStats.js";
 import {
   calculateUserTier,
-  pricing_tiers,
   Tiers,
-} from "../src/lib/calculateUserScore.js";
+} from "../../src/lib/calculateUserScore.js";
 
 /**
  * Publishes a cast using Neynar API as a reply
@@ -97,10 +95,8 @@ Be concise, hype-driven, and confident — celebrate users, keep answers tight, 
 const model = openai("gpt-5-2025-08-07");
 
 async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
 
+  console.log(req.headers)
   try {
     // Extract FID from the request body
     const fid = req.body?.data?.author?.fid;

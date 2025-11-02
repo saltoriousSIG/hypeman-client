@@ -48,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ],
     });
 
-    let intents_to_process = [];
+    let intents_to_process: any = [];
 
     for (let i = 0; i < Number(next_promotion_id); i++) {
       const redis_list = await redis.lrange(`intent:${i}`, 0, -1);

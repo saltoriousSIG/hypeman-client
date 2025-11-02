@@ -3,11 +3,10 @@ import ReactDOM from "react-dom/client";
 import { WagmiProvider } from "wagmi";
 import { FrameSDKProvider } from "./providers/FrameProvider.tsx";
 import { BrowserRouter } from "react-router-dom";
-import { Toaster } from "@/components/ui/sonner"
+import { Toaster } from "@/components/ui/sonner";
 import { DataProvider } from "./providers/DataProvider.tsx";
 import { UserStatsProvider } from "./providers/UserStatsProvider.tsx";
 import { HelmetProvider } from "react-helmet-async";
-
 
 import App from "./App.tsx";
 import { config } from "./wagmi.ts";
@@ -22,12 +21,12 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <FrameSDKProvider>
-            <UserStatsProvider>
-              <DataProvider>
+            <DataProvider>
+              <UserStatsProvider>
                 <App />
                 <Toaster />
-              </DataProvider>
-            </UserStatsProvider>
+              </UserStatsProvider>
+            </DataProvider>
           </FrameSDKProvider>
         </BrowserRouter>
       </QueryClientProvider>

@@ -13,7 +13,7 @@ export default function HomePage() {
 
     const [showLoginModal, setShowLoginModal] = useState(false)
 
-    const { promoterPromotions, loading } = useData();
+    const { promotions, loading } = useData();
 
     const handleShowLoginModal = (state: boolean) => {
         setShowLoginModal(state);
@@ -27,9 +27,8 @@ export default function HomePage() {
         }
     }, [isAuthenticated]);
 
-    const availablePromotions = useMemo(() => {
-        return promoterPromotions || [];
-    }, [promoterPromotions]);
+  console.log(promotions);
+
 
     return (
         <MainLayout className="space-y-4">
@@ -46,7 +45,7 @@ export default function HomePage() {
                     </p>
                 </div>
             )}
-            {availablePromotions.map((cast) => {
+            {promotions?.map((cast) => {
                 return (
                     <div key={cast.id} className="space-y-2 border border-white/10 rounded-lg">
                         <PromotionCastPreview
@@ -70,7 +69,7 @@ export default function HomePage() {
                 )
             })}
 
-            {availablePromotions.length === 0 && !loading && (
+            {promotions?.length === 0 && !loading && (
                 <div className="text-center py-12">
                     <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
                         <X className="w-8 h-8 text-white" />
