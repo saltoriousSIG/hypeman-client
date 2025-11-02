@@ -10,9 +10,7 @@ import MaintenancePage from "@/components/Maintenance/Maintenance";
 
 export default function HomePage() {
     const { isAuthenticated } = useFrameContext();
-
     const [showLoginModal, setShowLoginModal] = useState(false)
-
     const { promoterPromotions, loading } = useData();
 
     const pricing = useGetPostPricing();
