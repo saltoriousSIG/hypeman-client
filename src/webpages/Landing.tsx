@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from "react"
-import { BarChart3, Loader2, X } from "lucide-react"
+import { Loader2, X } from "lucide-react"
 import { useFrameContext } from "@/providers/FrameProvider";
 import CastCard from "@/components/CastCard/CastCard";
 import LoginModal from "@/components/LoginModal/LoginModal";
 import MainLayout from "@/components/Layout/MainLayout";
 import useGetPostPricing from "@/hooks/useGetPostPricing";
 import { useData } from "@/providers/DataProvider";
+import MaintenancePage from "@/components/Maintenance/Maintenance";
 
 export default function HomePage() {
     const { isAuthenticated } = useFrameContext();
@@ -31,6 +32,10 @@ export default function HomePage() {
     const availablePromotions = useMemo(() => {
         return promoterPromotions || [];
     }, [promoterPromotions]);
+
+    if (import.meta.env.VITE_MAINTENANCE_MODE === "true") {
+        return <MaintenancePage />;
+    }
 
     return (
         <MainLayout className="space-y-4">
