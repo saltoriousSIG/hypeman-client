@@ -3,6 +3,7 @@ import {
   readContract,
   writeContract,
   waitForTransactionReceipt,
+  simulateContract,
 } from "@wagmi/core";
 import { config } from "@/wagmi";
 import { DIAMOND_ADDRESS } from "@/lib/utils";
@@ -25,7 +26,7 @@ type ExecutionResult<
   R = any,
 > = T extends ExecutionType.READABLE
   ? (args: Array<any>) => Promise<R>
-  : (args: Array<any>) => Promise<`0x${string}`>;
+  : (args: Array<any>) => Promise<{ hash: `0x${string}`; receipt: any; result: string }>;
 
 const useContract = <T extends ExecutionType, R = any>(
   type: T,
@@ -37,22 +38,16 @@ const useContract = <T extends ExecutionType, R = any>(
     switch (facet) {
       case "Claim":
         return PromotionClaim;
-        break;
       case "Create":
         return PromotionCreate;
-        break;
       case "Data":
         return PromotionData;
-        break;
       case "Manage":
         return PromotionManage;
-        break;
       case "Intents":
         return PromotionIntents;
-        break;
       case "ERC20":
         return ERC20;
-        break;
       default:
         return ERC20;
     }
@@ -72,6 +67,13 @@ const useContract = <T extends ExecutionType, R = any>(
             });
             break;
           case ExecutionType.WRITABLE:
+            const { result }: { result: bigint } = await simulateContract(config as any, {
+              abi,
+              address: facet === "ERC20" ? contractAddress : DIAMOND_ADDRESS,
+              functionName,
+              args,
+            });
+
             const hash = await writeContract(config as any, {
               abi,
               address: facet === "ERC20" ? contractAddress : DIAMOND_ADDRESS,
@@ -81,7 +83,8 @@ const useContract = <T extends ExecutionType, R = any>(
             const receipt = await waitForTransactionReceipt(config as any, {
               hash,
             });
-            res = { hash, receipt };
+            console.log(result);
+            res = { hash, receipt, result: result.toString() };
             break;
         }
         return res as any;

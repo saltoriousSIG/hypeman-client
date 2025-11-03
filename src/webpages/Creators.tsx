@@ -51,7 +51,10 @@ export default function BuyersPage() {
 
   const { platformFee, refetchPromotions } = useData();
 
-  const handleShowShareModal = (state: boolean) => setShowShareModal(state);
+  const handleShowShareModal = (state: boolean, id?: string) => {
+    setNewPromotionId(id || null);
+    setShowShareModal(state)
+  };
 
   // Fetch user casts with React Query infinite query
   const {
@@ -174,9 +177,8 @@ export default function BuyersPage() {
       };
 
       const promotion_id = await create_promotion([createParams]);
-      setNewPromotionId(promotion_id.toString());
       toast.success("Promotion created successfully!");
-      handleShowShareModal(true);
+      handleShowShareModal(true, promotion_id.result);
       await refetchPromotions();
 
       if (!isFrameAdded) {
