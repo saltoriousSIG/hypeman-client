@@ -487,6 +487,13 @@ const CastCard: React.FC<CastCardProps> = ({
                       Your Quote Cast
                     </span>
                   </div>
+                  {!generatedCast ||
+                    (!rerolledCast && (
+                      <span className="text-sm text-red-300 font-mediut">
+                        Something happened when we tried to generate your cast.
+                        Click Update to get a new one!
+                      </span>
+                    ))}
                   <p className="text-sm leading-relaxed text-white/90">
                     {rerolledCast || generatedCast}
                   </p>
