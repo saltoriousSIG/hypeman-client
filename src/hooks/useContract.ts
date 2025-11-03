@@ -84,7 +84,7 @@ const useContract = <T extends ExecutionType, R = any>(
               hash,
             });
             console.log(result);
-            res = { hash, receipt, result: result.toString() };
+            res = { hash, receipt, result: result?.toString() };
             break;
         }
         return res as any;
