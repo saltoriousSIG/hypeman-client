@@ -81,7 +81,7 @@ export class HypemanAI {
 
   constructor(fid: number, username: string) {
     // Haiku-optimized model
-    this.fastModel = anthropic("claude-haiku-4-5-20251001");
+    this.fastModel = anthropic("claude-sonnet-4-5-20250929");
     this.userFid = fid;
     this.username = username;
     this.initPromise = this.init(fid);
@@ -552,6 +552,7 @@ export class HypemanAI {
         generationType: "initial",
       };
     } catch (error) {
+      console.log(error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
