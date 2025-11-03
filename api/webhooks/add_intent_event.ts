@@ -51,7 +51,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
       if (decoded && decoded.eventName === "IntentSubmitted") {
         const promotion: any = await publicClient.readContract({
           address: DIAMOND_ADDRESS as `0x${string}`,
-          abi: data,
+          abi: data_abi,
           functionName: "getPromotion",
           args: [decoded.args.promotionId.toString()],
         });
