@@ -10,6 +10,7 @@ export function neynarMiddleware(handler: any) {
   return async (req: VercelRequest, res: VercelResponse) => {
     try {
       const key = req.headers["x-convoy-idempotency-key"] as string;
+      console.log(key, "requerst key type");
       if (!key) {
         return res.status(401).json({ message: "Missing idempotency key" });
       }
