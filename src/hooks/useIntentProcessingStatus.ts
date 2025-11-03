@@ -26,7 +26,6 @@ export function useIntentProcessingStatus({
     "Data", 
     "getIsIntentProcessed"
   );
-
   return useQuery({
     queryKey: ["intentProcessingStatus", promotionId, intentHash],
     queryFn: async () => {

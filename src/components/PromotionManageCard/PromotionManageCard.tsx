@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { Card, CardContent } from "../ui/card";
-import { XCircle, DollarSign, Users, Eye, TrendingUp, Plus } from "lucide-react";
+import { XCircle, DollarSign, Users, Eye, TrendingUp } from "lucide-react";
 import { EndPromotionModal } from "../EndPromotionModal/EndPromotionModal";
 import { AddBudgetModal } from "../AddBudgetModal/AddBudgetModal";
+import { Button } from "../ui/button";
+import sdk from "@farcaster/frame-sdk";
 
 interface PromotionManageCardProps {
     promotion: any
@@ -48,6 +50,14 @@ const PromotionManageCard: React.FC<PromotionManageCardProps> = ({ promotion, ac
     };
 
     const status = getStatus(promotion.state);
+
+    const handleShare = async () => {
+        if (!promotion.id) return
+        await sdk.actions.composeCast({
+            text: `Check out this promotion on Hypeman!`,
+            embeds: [`https://hypeman.social/promotion/${promotion.id}`]
+        });
+    }
 
     return (
         <>
@@ -175,15 +185,24 @@ const PromotionManageCard: React.FC<PromotionManageCardProps> = ({ promotion, ac
                         </div>
 
                         {activeTab === "active" && promotion.cast_url && (
-                            <a
-                                href={promotion.cast_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-full text-white text-sm font-semibold transition-all duration-300"
-                            >
-                                View Cast
-                            </a>
+                            <div className="flex items-center justify-center gap-2">
+                                <Button
+                                    onClick={handleShare}
+                                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-full text-white text-sm font-semibold transition-all duration-300"
+                                >
+                                    Share
+                                </Button>
+                                <a
+                                    href={promotion.cast_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-full text-white text-sm font-semibold transition-all duration-300"
+                                >
+                                    View Cast
+                                </a>
+                            </div>
                         )}
+
                     </div>
                 </CardContent>
             </Card>

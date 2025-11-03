@@ -66,8 +66,21 @@ export class RedisClient {
       return encryptedData;
     }
   }
+
+  pipeline() {
+    return this.redis.pipeline();
+  }
+
   // === STRING OPERATIONS ===
-  async set(key: string, value: any): Promise<"OK"> {
+  async set(key: string, value: any, expiryInSeconds?: number): Promise<"OK"> {
+    if (expiryInSeconds) {
+      return await this.redis.set(
+        key,
+        this.encrypt(value),
+        "EX",
+        expiryInSeconds
+      );
+    }
     return await this.redis.set(key, this.encrypt(value));
   }
 
@@ -131,67 +144,14 @@ export class RedisClient {
     return await this.redis.llen(key);
   }
 
-  // === SET OPERATIONS ===
-  async sadd(key: string, ...members: any[]): Promise<number> {
-    const encrypted = members.map((m) => this.encrypt(m));
-    return await this.redis.sadd(key, ...encrypted);
-  }
-
   async smembers(key: string): Promise<any[]> {
-    const results = await this.redis.smembers(key);
-    return results.map((item: any) => this.decrypt(item));
-  }
-
-  async sismember(key: string, member: any): Promise<number> {
-    return await this.redis.sismember(key, this.encrypt(member));
-  }
-
-  async srem(key: string, ...members: any[]): Promise<number> {
-    const encrypted = members.map((m) => this.encrypt(m));
-    return await this.redis.srem(key, ...encrypted);
+    return await this.redis.smembers(key);
   }
 
   // === HASH OPERATIONS ===
-  async hset(key: string, ...args: any[]): Promise<number>;
-  async hset(key: string, obj: Record<string, any>): Promise<number>;
-  async hset(key: string, ...args: any[]): Promise<number> {
-    if (args.length === 1 && typeof args[0] === "object" && args[0] !== null) {
-      // Object format: hset(key, {field: value})
-      const encrypted: Record<string, string> = {};
-      for (const [field, value] of Object.entries(args[0])) {
-        encrypted[field] = this.encrypt(value);
-      }
-      return await this.redis.hset(key, encrypted);
-    } else {
-      // Field-value pairs: hset(key, field1, value1, field2, value2)
-      const encrypted: any[] = [];
-      for (let i = 0; i < args.length; i += 2) {
-        encrypted.push(args[i]); // field
-        encrypted.push(this.encrypt(args[i + 1])); // value
-      }
-      return await this.redis.hset(key, ...encrypted);
-    }
-  }
-
-  async hget(key: string, field: string): Promise<any> {
-    const result = await this.redis.hget(key, field);
-    return this.decrypt(result);
-  }
-
-  async hgetall(key: string): Promise<Record<string, any> | null> {
-    const result = await this.redis.hgetall(key);
-    if (!result) return result;
-
-    const decrypted: Record<string, any> = {};
-    for (const [field, value] of Object.entries(result)) {
-      decrypted[field] = this.decrypt(value as any);
-    }
-    return decrypted;
-  }
-
-  async hmget(key: string, ...fields: string[]): Promise<any[]> {
-    const results = await this.redis.hmget(key, ...fields);
-    return results.map((item: any) => this.decrypt(item));
+  //
+  async hgetall(key: string): Promise<Record<string, any>> {
+    return await this.redis.hgetall(key);
   }
 
   // === UTILITY METHODS ===

@@ -9,10 +9,10 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: "Method not allowed" });
   }
   try {
-    const { cursor } = req.body;
+    const { cursor, limit = 10 } = req.body;
 
     // Build URL with optional cursor
-    let url = `https://api.neynar.com/v2/farcaster/feed/user/casts/?limit=25&include_replies=false&fid=${req.fid}`;
+    let url = `https://api.neynar.com/v2/farcaster/feed/user/casts/?limit=${limit}&include_replies=false&fid=${req.fid}`;
     if (cursor) {
       url += `&cursor=${cursor}`;
     }

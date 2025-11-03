@@ -43,6 +43,61 @@
       },
       {
         "indexed": false,
+        "internalType": "bytes32",
+        "name": "castHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "feePaid",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "processed",
+        "type": "bool"
+      }
+    ],
+    "name": "IntentProcessed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "promotionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "wallet",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "fid",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "intentHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
         "internalType": "uint256",
         "name": "fee",
         "type": "uint256"

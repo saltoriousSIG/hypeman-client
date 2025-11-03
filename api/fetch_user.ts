@@ -19,6 +19,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
     );
     return res.status(200).json({ user: data.users[0] });
   } catch (e: any) {
+    console.log(e, e.message);
     res.status(500).json({ error: "Error processing cast" });
   }
 }

@@ -3,6 +3,9 @@ import { anthropic } from "@ai-sdk/anthropic";
 import axios from "axios";
 import { Cast, Embed } from "@neynar/nodejs-sdk/build/api";
 import { z } from "zod";
+import { RedisClient } from "./RedisClient.js";
+
+const redis = new RedisClient(process.env.REDIS_URL as string);
 
 interface GenerationOptions {
   temperature?: number;
@@ -245,6 +248,14 @@ export class HypemanAI {
       }
     }
 
+    const trending_sentiment_summary = await redis.get("trending:summary");
+    console.log(trending_sentiment_summary, "trending sentiment summary");
+    console.log(additionalContext, "additional context");
+    console.log(this.userBio);
+    console.log(this.username);
+    console.log(this.topCasts);
+    console.log(this.userReplies);
+
     const systemContent = `
         <character>
             You are ${this.username} on Farcaster, and you came across some interesting content that you want to quote cast, and let your followers know to interact with.
@@ -293,6 +304,9 @@ export class HypemanAI {
             - Use the additional context, url, and images to help you understand the content better, and reference them naturally in your quote cast if relevant.
             - The quote cast MUST be under 280 characters.
             - Write like a HUMAN who genuinely likes something, not like AI trying to sound casual
+            - Pay attention to the average length of ${this.username}'s casts and aim for similar length.
+            - ${this.username} IS allowed to quote cast their own content.
+            - If ${this.username} is referenced in the promotional content, you may include that naturally in the quote cast.
         </instructions>
 
         <restrictions>
@@ -310,7 +324,7 @@ export class HypemanAI {
             - Never invent URLs
             - Do not use dashes or em dashes
             - Do NOT default to generic phrases like "yo", "fr", "lowkey", "fire", "hits different" UNLESS ${this.username} actually uses them (check examples and voice patterns)
-            IMPORTANT NEVER EVER EVER SAY HITS DIFFERENT OR ANY VARIATION OF THAT PHRASE
+            - IMPORTANT!!!!!! NEVER USE GEN Z SLANG LIKE "NGL", "IS WILD", "LOOKING CLEAN", "IS A VIBE", "HITTING DIFFERENT", "THATS THE VIBE", "CLEAN AF" "ACTUALLY" UNLESS ${this.username} ACTUALLY USES THEM (check examples and voice patterns)
         </restrictions>
 
         <bad_examples>
@@ -349,6 +363,28 @@ export class HypemanAI {
             </reason>
           </example_4>
         <bad_examples>
+
+        <existing_quotes>
+            These are existing quote casts about the content, to help you avoid repeating what others have said. Use these to understand what has already been expressed, but DO NOT copy them. Your quote cast must be unique and in ${this.username}'s voice.
+            Use language that is clearly different from these quotes.
+
+            ${sanitizedExistingQuotes.map((quote) => `<quote>${quote.text} by ${quote.author}</quote>`).join("\n")}
+        </existing_quotes>
+
+
+        <farcaster_trending_summary> 
+          Below is a summary of all of the trending posts on Farcaster in the last 24 hours, along with the overall sentiment of the community about these trends. 
+
+          <summary
+           ${trending_sentiment_summary}
+          </summary>
+
+          <summary_instructions>
+            - Use this information to help you understand the current Farcaster community vibe and what type of content is resonating right now.
+            - Only include this information if it helps you write a better quote cast in ${this.username}'s voice. 
+            - Do NOT use this information if it does not make your cast better, if it doesn't fit naturally, or if it doesn't make sense to include it.
+          </summary_instructions>
+        </farcaster_trending_summary>
 `;
 
     const textContent = `
@@ -369,13 +405,7 @@ export class HypemanAI {
           ${imageDataArray.length > 0 ? `<image_note>${imageDataArray.length} image(s) attached. Analyze and reference them naturally in your reply if relevant.</image_note>` : ""}
         </additional_content_context> 
 
-        <existing_quotes>
-            These are existing quote casts about the content, to help you avoid repeating what others have said. Use these to understand what has already been expressed, but DO NOT copy them. Your quote cast must be unique and in ${this.username}'s voice.
-            Use language that is clearly different from these quotes.
-
-            ${sanitizedExistingQuotes.map((quote) => `<quote>${quote.text} by ${quote.author}</quote>`).join("\n")}
-        </existing_quotes>
-
+  
         <instructions>
             - Study how ${this.username} writes and create a quote cast about the content, including additional_content_context, that matches their voice PERFECTLY.  
             - Add reactions or related advice, but DO NOT just summarize the content.
@@ -385,13 +415,12 @@ export class HypemanAI {
             - Add your genuine reaction or recommendation
             - Search the internet for and relevant information about the content, or additional context if necessary
             - This should read like ${this.username} wrote it themselves. Not "similar to" - IDENTICAL voice.
-            - The user IS allowed to quote cast their own content.
             - Keep the quote cast focused on the content provided.
+            - If ${this.username} is referenced in the promotional content, you may include that naturally in the quote cast.
         </instructions>
         
         <restrictions>
             - Never begin a cast with "Check out" or "Check this out", or "Yo", or "fr", or "lowkey", or "fire", or anything generic like that, unless ${this.username} actually uses those phrases
-            - IMPORTANT!!!!! Never say anything like "moves different" or "hits different", or "this is the vibe", or anything cringy like that
             - DO NOT just copy the original
             - DO NOT invent specific facts (timelines, numbers, backstories)
             - DO NOT invent facts about their content
@@ -399,7 +428,6 @@ export class HypemanAI {
             - Do not use em dashes or dashes
             - Do not confuse the training cast data with the promotional content - they are separate. 
             - Do not add any erroneous information you are unsure about.
-            IMPORTANT NEVER EVER EVER SAY HITS DIFFERENT OR ANY VARIATION OF THAT PHRASE
         </restrictions>
 
         <output>Only the cast text. Make it unmistakably ${this.username}'s voice.</output>`;
@@ -504,9 +532,9 @@ export class HypemanAI {
       const result = await generateText({
         model: this.fastModel,
         messages,
-        temperature: 0.95, // Very low - prioritize exact pattern matching
-        frequencyPenalty: 0.05, // Very low - we WANT to reuse patterns from examples
-        presencePenalty: 0.05, // Very low - we WANT to match the user's style exactly
+        temperature: 0.95,
+        frequencyPenalty: 0.65, // moderate - avoid repetition
+        presencePenalty: 0.65, // moderate - encourage new topics
         maxRetries: 1,
         abortSignal: AbortSignal.timeout(15000),
       });

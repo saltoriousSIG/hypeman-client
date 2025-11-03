@@ -198,6 +198,11 @@
             "internalType": "bool",
             "name": "pro_user",
             "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "base_rate",
+            "type": "uint256"
           }
         ],
         "internalType": "struct IPromotionCreate.CreatePromotionArgs",
@@ -206,7 +211,13 @@
       }
     ],
     "name": "createPromotion",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -296,6 +307,11 @@
             "internalType": "bool",
             "name": "pro_user",
             "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "base_rate",
+            "type": "uint256"
           }
         ],
         "internalType": "struct LibHypeman.Promotion",

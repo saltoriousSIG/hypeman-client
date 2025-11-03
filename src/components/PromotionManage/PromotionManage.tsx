@@ -7,7 +7,6 @@ interface PromotionManageProps { }
 
 const PromotionManage: React.FC<PromotionManageProps> = () => {
     const [activeTab, setActiveTab] = useState<"active" | "completed">("active");
-
     const { activePromotions, completedPromotions, activePromotionsCount, completedPromotionsCount } = usePromotionManage();
     const getCurrentPromotions = () => {
         switch (activeTab) {
@@ -44,7 +43,7 @@ const PromotionManage: React.FC<PromotionManageProps> = () => {
 
             <div className="space-y-4">
                 {getCurrentPromotions().map((promotion: any) => (
-                    <PromotionManageCard promotion={promotion} activeTab={activeTab} />
+                    <PromotionManageCard key={promotion.id} promotion={promotion} activeTab={activeTab} />
                 ))}
             </div>
 

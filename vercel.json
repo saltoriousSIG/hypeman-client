@@ -4,7 +4,6 @@
   "devCommand": "vite --port $PORT",
   "installCommand": "npm install",
   "framework": null,
-
   "rewrites": [
     {
       "source": "/",
@@ -12,17 +11,29 @@
     },
     {
       "source": "/creators",
-      "destination": "/index.html"
+      "destination": "/api/metadata/creators"
     },
     {
       "source": "/manage",
-      "destination": "/index.html"
+      "destination": "/api/metadata/manage"
+    },
+    {
+      "source": "/promotion/:id",
+      "destination": "/api/metadata/promotion/:id"
     }
   ],
   "crons": [
     {
       "path": "/api/crons/verify_intents",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/crons/process_tier_rates",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/crons/generate_trend_summary",
+      "schedule": "0 0 * * *"
     }
   ],
   "functions": {
