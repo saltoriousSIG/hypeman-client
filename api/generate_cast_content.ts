@@ -64,7 +64,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       }
     }
 
-    const hypeman_ai = await HypemanAI.getInstance(17714, "igoryuzo.eth");
+    const hypeman_ai = await HypemanAI.getInstance(req.fid as number, username);
 
     // Generate cast content - use refineCast if user feedback is provided, otherwise generateInitialCast
     let castResult;
