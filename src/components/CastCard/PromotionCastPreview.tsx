@@ -88,14 +88,14 @@ export default function PromotionCastPreview({
                   <img
                     key={index}
                     src={embed.url}
-                    className="rounded-lg  h-fit flex-1  flex-shrink-0 max-w-[250px]"
+                    className="rounded-lg  h-auto flex-1  flex-shrink-0 max-w-[250px]"
                   />
                 );
               }
               if (embed.metadata?.content_type?.startsWith("text/html")) {
                 return (
                   <div
-                    className="w-full h-fit flex flex-col items-center justify-center space-y-2  flex-shrink-0 max-w-[250px]"
+                    className="w-full h-auto flex flex-col items-center justify-center space-y-2  flex-shrink-0 max-w-[250px]"
                     key={index}
                   >
                     <Button
