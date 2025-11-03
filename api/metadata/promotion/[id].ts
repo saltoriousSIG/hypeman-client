@@ -40,7 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const frameConfig = {
     version: "next",
-    imageUrl: `https://supervictorious-laurel-idyllically.ngrok-free.dev/api/frame_image/${username}?pfp=${encodeURIComponent(pfp_url)}`,
+    imageUrl: `https://hypeman.social/api/frame_image/${username}?pfp=${encodeURIComponent(pfp_url)}`,
     button: {
       title: "View Post",
       action: {
