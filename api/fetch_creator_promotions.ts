@@ -58,9 +58,9 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
           unprocessed_intents: promotion.unprocessed_intents.toString(),
           base_rate: promotion.base_rate.toString(),
           cast_data: {
-            text: cast.text,
-            embeds: cast.embeds,
-            author: cast.author,
+            text: cast?.text,
+            embeds: cast?.embeds,
+            author: cast?.author,
           },
         };
       })
@@ -68,6 +68,8 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
 
     return res.status(200).json({ creatorPromotions: formattedPromotions });
   } catch (e: any) {
+    console.log("Error fetching creator promotions:", e);
+    console.log(e.message)
     return res.status(500).json({ error: "Error fetching creator promotions" });
   }
 }
