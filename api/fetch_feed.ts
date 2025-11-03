@@ -106,6 +106,9 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
           });
 
         const list = await redis.lrange(`intent:${promotion.id}`, 0, -1);
+        if (promotion.id === "98") {
+          console.log(list);
+        }
         const current_user_intent = list.find((intent: any) => {
           return intent?.fid === req.fid?.toString();
         });

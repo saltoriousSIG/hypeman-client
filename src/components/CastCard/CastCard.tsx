@@ -30,8 +30,8 @@ const CastCard: React.FC<CastCardProps> = ({
   promotionContent,
   promotionAuthor,
   promotionEmmbedContext,
-  refetchPromotion
-}) => { 
+  refetchPromotion,
+}) => {
   const [isPosting, setIsPosting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [generatedCast, setGeneratedCast] = useState<string | null>(null);
@@ -90,7 +90,8 @@ const CastCard: React.FC<CastCardProps> = ({
   useEffect(() => {
     if (promotion.intents && address) {
       const existingIntent = promotion.intents.find(
-        (i: any) => i?.wallet && i?.wallet?.toLowerCase() === address.toLowerCase()
+        (i: any) =>
+          i?.wallet && i?.wallet?.toLowerCase() === address.toLowerCase()
       );
       if (existingIntent) {
         setIntent(existingIntent);
@@ -478,40 +479,33 @@ const CastCard: React.FC<CastCardProps> = ({
             ) : (
               // Step 2: Show content and slide-to-post
               <>
-                {/* AI Generated Content Section */}
-                {(!generatedCast || isLoading) && !promotion.claimable ? (
-                  <div className="space-y-2 h-full">
-                    <Skeleton count={3} className="!bg-white/10" />
+                <div
+                  className={`bg-black border-t border-l border-r ${promotion.claimable && "hidden"} border-purple-500/20 p-4 pb-0 ${showRefreshFeedback ? "rounded-t-xl rounded-b-none mb-0" : "rounded-t-xl mb-0"}`}
+                >
+                  <div className="flex justify-between items-center gap-2 mb-2">
+                    <span className="text-sm font-medium text-purple-400">
+                      Your Quote Cast
+                    </span>
                   </div>
-                ) : (
-                  <div
-                    className={`bg-black border-t border-l border-r ${promotion.claimable && "hidden"} border-purple-500/20 p-4 pb-0 ${showRefreshFeedback ? "rounded-t-xl rounded-b-none mb-0" : "rounded-t-xl mb-0"}`}
-                  >
-                    <div className="flex justify-between items-center gap-2 mb-2">
-                      <span className="text-sm font-medium text-purple-400">
-                        Your Quote Cast
-                      </span>
-                    </div>
-                    <p className="text-sm leading-relaxed text-white/90">
-                      {rerolledCast || generatedCast}
-                    </p>
+                  <p className="text-sm leading-relaxed text-white/90">
+                    {rerolledCast || generatedCast}
+                  </p>
 
-                    {/* Refresh Feedback Section - now part of the purple container */}
-                    {showRefreshFeedback && (
-                      <div className="mt-4 pt-4 border-t border-purple-500/20">
-                        <label className="block text-sm font-medium text-white/80 mb-2">
-                          How would you like to improve this cast? (optional)
-                        </label>
-                        <textarea
-                          value={refreshFeedback}
-                          onChange={(e) => setRefreshFeedback(e.target.value)}
-                          className="w-full bg-black/20 rounded-xl p-3 border border-white/10 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[80px] text-white placeholder-white/50"
-                          placeholder="e.g., make it more professional, add more excitement, use fewer emojis, make it shorter..."
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
+                  {/* Refresh Feedback Section - now part of the purple container */}
+                  {showRefreshFeedback && (
+                    <div className="mt-4 pt-4 border-t border-purple-500/20">
+                      <label className="block text-sm font-medium text-white/80 mb-2">
+                        How would you like to improve this cast? (optional)
+                      </label>
+                      <textarea
+                        value={refreshFeedback}
+                        onChange={(e) => setRefreshFeedback(e.target.value)}
+                        className="w-full bg-black/20 rounded-xl p-3 border border-white/10 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[80px] text-white placeholder-white/50"
+                        placeholder="e.g., make it more professional, add more excitement, use fewer emojis, make it shorter..."
+                      />
+                    </div>
+                  )}
+                </div>
 
                 {isPosting ? (
                   <div className="flex items-center justify-center gap-3 py-4">
