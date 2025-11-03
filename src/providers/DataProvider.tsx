@@ -118,7 +118,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     queryKey: ["claims", axios],
     queryFn: async () => {
       if (!axios) return [];
-      const { data } = await axios.get(`api/fetch_claims`);
+      const { data } = await axios.get(`https://hypeman.social/api/fetch_claims`);
       console.log(data);
       return data.promotions
     },
