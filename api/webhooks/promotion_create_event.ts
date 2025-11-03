@@ -82,7 +82,9 @@ async function handler(req: VercelRequest, res: VercelResponse) {
               promotion.id.toString()
             )
             //TODO: update this to the right thing after contract has beed upgraded
-            .zadd(`promotion_base_rate`, parseFloat("0.25"), promotion.id.toString())
+            .zadd(`promotion_base_rate`, 
+              promotion.base_rate > 0n ?  parseFloat(formatUnits(promotion.base_rate.toString(),6)) : parseFloat("0.25"),
+              promotion.id.toString())
             .sadd(`promotion_state:${promotion.state.toString()}`, promotion.id.toString())
             .sadd(`promotion_is_pro:${promotion.pro_user}`, promotion.id.toString())
 

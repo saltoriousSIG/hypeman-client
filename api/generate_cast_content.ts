@@ -106,10 +106,10 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       ...(intent && { intent }), // Include intent in cast object for reference only if provided
     };
 
-    // await redisClient.set(
-    //   `user_cast:${req.fid}:${promotionId}`,
-    //   JSON.stringify(cast_obj)
-    // );
+    await redisClient.set(
+      `user_cast:${req.fid}:${promotionId}`,
+      JSON.stringify(cast_obj)
+    );
 
     console.log("Generated cast content:", {
       cast: castResult,

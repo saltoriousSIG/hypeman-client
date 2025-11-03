@@ -67,14 +67,19 @@ export class RedisClient {
     }
   }
 
-  pipeline () {
+  pipeline() {
     return this.redis.pipeline();
   }
 
   // === STRING OPERATIONS ===
   async set(key: string, value: any, expiryInSeconds?: number): Promise<"OK"> {
     if (expiryInSeconds) {
-      return await this.redis.set(key, this.encrypt(value), "EX", expiryInSeconds);
+      return await this.redis.set(
+        key,
+        this.encrypt(value),
+        "EX",
+        expiryInSeconds
+      );
     }
     return await this.redis.set(key, this.encrypt(value));
   }
@@ -137,6 +142,16 @@ export class RedisClient {
 
   async llen(key: string): Promise<number> {
     return await this.redis.llen(key);
+  }
+
+  async smembers(key: string): Promise<any[]> {
+    return await this.redis.smembers(key);
+  }
+
+  // === HASH OPERATIONS ===
+  //
+  async hgetall(key: string): Promise<Record<string, any>> {
+    return await this.redis.hgetall(key);
   }
 
   // === UTILITY METHODS ===

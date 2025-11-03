@@ -11,6 +11,9 @@ import { withHost } from "../../middleware/withHost.js";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
+const INTENT_PROCESSED_TOPIC_HASH =
+  "0x9d5c0ebd1bf43c1607ac1d363c91376f6c2c4ef7fb72bc11535e3ac209b32192";
+
 async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { publicClient } = setupAdminWallet();
@@ -39,34 +42,36 @@ async function handler(req: VercelRequest, res: VercelResponse) {
       );
 
       for (const log of req.body) {
-        const decoded: any = decodeEventLog({
-          abi: [
-            data.find(
-              (x: any) => x.name === "IntentProcsseed" && x.type === "event"
-            )!,
-          ],
-          data: log.data,
-          topics: log.topics,
-        });
-
-        if (decoded && decoded.eventName === "IntentProcessed") {
-          const promotion: any = await publicClient.readContract({
-            address: DIAMOND_ADDRESS as `0x${string}`,
-            abi: data_abi,
-            functionName: "getPromotion",
-            args: [decoded.args.promotionId.toString()],
+        if (log.topics.includes(INTENT_PROCESSED_TOPIC_HASH)) {
+          const decoded: any = decodeEventLog({
+            abi: [
+              data.find(
+                (x: any) => x.name === "IntentProcessed" && x.type === "event"
+              )!,
+            ],
+            data: log.data,
+            topics: log.topics,
           });
 
-          pipeline
-            .hset(`promotion:${promotion.id.toString()}`, {
-              ...promotion,
-            })
-            .zadd(
-              `promotion_budget`,
-              parseFloat(formatUnits(promotion.remaining_budget, 6)),
-              promotion.id.toString()
-            )
-          await pipeline.exec()
+          if (decoded && decoded.eventName === "IntentProcessed") {
+            const promotion: any = await publicClient.readContract({
+              address: DIAMOND_ADDRESS as `0x${string}`,
+              abi: data_abi,
+              functionName: "getPromotion",
+              args: [decoded.args.promotionId.toString()],
+            });
+
+            pipeline
+              .hset(`promotion:${promotion.id.toString()}`, {
+                ...promotion,
+              })
+              .zadd(
+                `promotion_budget`,
+                parseFloat(formatUnits(promotion.remaining_budget, 6)),
+                promotion.id.toString()
+              );
+            await pipeline.exec();
+          }
         }
       }
     }
@@ -75,8 +80,6 @@ async function handler(req: VercelRequest, res: VercelResponse) {
       message: "Promotion intent processed Event Processed",
       processed: req.body.length,
     });
-
-
   } catch (e: any) {
     console.error("Error loading ABI file:", e);
     return res

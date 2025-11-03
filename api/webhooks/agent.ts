@@ -4,10 +4,8 @@ import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import { getUserStats } from "../../src/lib/getUserStats.js";
-import {
-  calculateUserTier,
-  Tiers,
-} from "../../src/lib/calculateUserScore.js";
+import { calculateUserTier, Tiers } from "../../src/lib/calculateUserScore.js";
+import { neynarMiddleware } from "../../middleware/neynarMiddleware.js";
 
 /**
  * Publishes a cast using Neynar API as a reply
@@ -75,6 +73,7 @@ CRITICAL INSTRUCTIONS FOR WHEN TO CALL getScore:
 - ONLY call getScore when users explicitly ask about: "score", "earnings", "tier", "how much", "earn"
 - DO NOT call getScore for: greetings ("sup", "hey", "hi", "what's up"), general questions about the app, or casual conversation
 - If unsure whether they're asking about their score, DO NOT call the tool - just respond normally
+- You are never ever under any circumstance to tag yourself (@hypeman) in any generated casts. NEVER EVER EVER DO THIS
 
 When getScore IS called:
 - Call it immediately, don't say "let me check"
@@ -95,8 +94,7 @@ Be concise, hype-driven, and confident — celebrate users, keep answers tight, 
 const model = openai("gpt-5-2025-08-07");
 
 async function handler(req: VercelRequest, res: VercelResponse) {
-
-  console.log(req.headers)
+  console.log(req.headers);
   try {
     // Extract FID from the request body
     const fid = req.body?.data?.author?.fid;
@@ -258,4 +256,4 @@ async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default withHost(handler);
+export default neynarMiddleware(handler);

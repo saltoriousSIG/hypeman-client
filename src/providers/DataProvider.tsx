@@ -18,6 +18,12 @@ interface DataContextValue {
       };
     }
   >;
+  claims?: Array<
+    Promotion & {
+      current_user_intent: any;
+    }
+  >;
+  claimsLoading: boolean;
   promoterPromotions?: Array<
     Promotion & {
       claimable: boolean;
@@ -34,6 +40,7 @@ interface DataContextValue {
   promoterPromotionsLoading?: boolean;
   platformFee?: number;
   refetchPromotions: () => Promise<any>;
+  refetchClaims: () => Promise<any>;
   loading?: boolean;
   error: any;
 }
@@ -83,7 +90,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           }
         >;
       }>("/api/fetch_feed");
-      console.log(promotions);
       return promotions.filter((p) => {
         return p.display_to_promoters && !p.claimable;
       });
@@ -108,6 +114,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 
+  const { data: claims, isPending: isClaimsLoading, refetch: refetchClaims } = useQuery({
+    queryKey: ["claims", axios],
+    queryFn: async () => {
+      if (!axios) return [];
+      const { data } = await axios.get(`api/fetch_claims`);
+      console.log(data);
+      return data.promotions
+    },
+    enabled: !!axios,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    retry: 2, // Retry failed requests twice
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+  });
+
   useEffect(() => {
     if (!refetch) return;
     const signinEventHandler = () => {
@@ -126,6 +147,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   return (
     <DataContext.Provider
       value={{
+        claims,
+        claimsLoading: isClaimsLoading,
         promotions,
         loading,
         platformFee,

@@ -20,7 +20,6 @@ const useGetPostPricing = (base_rate: number) => {
       avgRecasts,
       avgReplies
     );
-    console.log(tier)
 
     switch (tier) {
       case Tiers.TIER_1:

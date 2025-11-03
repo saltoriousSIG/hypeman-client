@@ -11,6 +11,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
   try {
     const {
       username,
+      promotionUrl,
       promotionId,
       previousCast,
       promotionContent,
@@ -22,6 +23,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
     const hypeman_ai = await HypemanAI.getInstance(req.fid as number, username);
 
     const cast = await hypeman_ai.refineCast(
+      promotionUrl,
       promotionContent,
       promotionAuthor,
       embedContext,

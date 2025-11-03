@@ -8,6 +8,7 @@ import { DIAMOND_ADDRESS } from "../../src/lib/utils.js";
 import { formatUnits } from "viem";
 import { streamMiddleware } from "../../middleware/streamMiddleware.js";
 import { withHost } from "../../middleware/withHost.js";
+import axios from "axios";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
@@ -57,7 +58,6 @@ async function handler(req: VercelRequest, res: VercelResponse) {
             args: [decoded.args.promotionId.toString()],
           });
 
-
           pipeline
             .hset(`promotion:${promotion.id.toString()}`, {
               ...promotion,
@@ -68,8 +68,52 @@ async function handler(req: VercelRequest, res: VercelResponse) {
               promotion.id.toString()
             )
             .srem(`promotion_state:0`, promotion.id.toString())
-            .sadd(`promotion_state:${promotion.state.toString()}`, promotion.id.toString())
-          await pipeline.exec()
+            .sadd(
+              `promotion_state:${promotion.state.toString()}`,
+              promotion.id.toString()
+            );
+          await pipeline.exec();
+
+          // update tracked user deletions
+          const activeIds = await redis.smembers(`promotion_state:0`);
+
+          const new_pipeline = redis.pipeline();
+          for (const id of activeIds) {
+            new_pipeline.hgetall(`promotion:${id}`);
+          }
+          const results: any = await new_pipeline.exec();
+          const promotion_mapping = new Map();
+
+          for (const [error, promotion] of results) {
+            if (error) {
+              console.error("Error fetching promotion:", error);
+              continue;
+            }
+            promotion_mapping.set(promotion.id, promotion);
+          }
+          const creatorIds = new Set<number>();
+          for (const id of activeIds) {
+            const promo = promotion_mapping.get(id);
+            creatorIds.add(Number(promo.creator_fid));
+          }
+          await axios.put(
+            "https://api.neynar.com/v2/farcaster/webhook/",
+            {
+              name: process.env.NEYNAR_CHECK_DELETE_CAST_WEBHOOK_NAME,
+              url: process.env.NEYNAR_CHECK_DELETE_CAST_WEBHOOK_URL,
+              webhook_id: process.env.NEYNAR_CHECK_DELETE_CAST_WEBHOOK_ID,
+              subscription: {
+                "cast.deleted": {
+                  author_fids: Array.from(creatorIds),
+                },
+              },
+            },
+            {
+              headers: {
+                "x-api-key": process.env.NEYNAR_API_KEY as string,
+              },
+            }
+          );
         }
       }
     }

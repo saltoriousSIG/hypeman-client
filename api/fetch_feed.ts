@@ -27,11 +27,9 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       "/src/abis",
       "PromotionData.json"
     );
-
-    console.log(req.fid);
-
     const dataAbiFileContents = fs.readFileSync(dataAbiFilePath, "utf8");
     const data_abi = JSON.parse(dataAbiFileContents);
+
 
     // STEP 1: Create composite scores for ALL promotions
     await client.zunionstore(
@@ -79,6 +77,8 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       }
     }
 
+    console.log(activeIds);
+
     promotions
       .sort((a: any, b: any) => b.score - a.score)
       .map((promotion: any) => ({
@@ -112,16 +112,18 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
         const existing_generated_cast = await redis.get(
           `user_cast:${req?.fid}:${promotion.id}`
         );
-        console.log(promotion.id, BigInt(promotion.remaining_budget), "REMAINING BUDGET");
-
+        if (promotion.id === "68") {
+          console.log(current_user_intent, "CURRENT USER INTENT");
+          console.log(promoterDetails, "PROMOTER DETAILS");
+          console.log(promotion.id, "PROMOTION ID");
+        }
         return {
           ...promotion,
           display_to_promoters:
-            promotion.state === "0" &&
-            BigInt(promotion.remaining_budget) > 0n,
+            promotion.state === "0" && BigInt(promotion.remaining_budget) > 0n,
           claimable:
             (promoterDetails.result &&
-              promoterDetails.results?.fid > BigInt(0) &&
+              promoterDetails.result?.fid > BigInt(0) &&
               promoterDetails.result.state > BigInt(0) &&
               promoterDetails.result.cast_hash !== zeroHash) ||
             !!current_user_intent?.cast_hash,

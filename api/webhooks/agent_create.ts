@@ -5,7 +5,6 @@ import path from "path";
 import setupAdminWallet from "../../src/lib/setupAdminWallet.js";
 import { DIAMOND_ADDRESS } from "../../src/lib/utils.js";
 import { HypemanAI } from "../../src/clients/HypemanAI.js";
-import { withHost } from "../../middleware/withHost.js";
 import axios from "axios";
 import { streamMiddleware } from "../../middleware/streamMiddleware.js";
 import { RedisClient } from "../../src/clients/RedisClient.js";
@@ -190,161 +189,224 @@ async function handler(req: VercelRequest, res: VercelResponse) {
 
   const pipeline = redis.pipeline();
 
-  if (req.body.length > 0) {
-    console.log(
-      "PROMOTION CREATED EVENT FIRED vvv =============================================================================================== vvv"
-    );
-    for (const log of req.body) {
-      const decoded: any = decodeEventLog({
-        abi: [
-          data.find(
-            (x: any) => x.name === "PromotionCreated" && x.type === "event"
-          )!,
-        ],
-        data: log.data,
-        topics: log.topics,
-      });
+  try {
+    if (req.body.length > 0) {
+      console.log(
+        "PROMOTION CREATED EVENT FIRED vvv =============================================================================================== vvv"
+      );
+      for (const log of req.body) {
+        const decoded: any = decodeEventLog({
+          abi: [
+            data.find(
+              (x: any) => x.name === "PromotionCreated" && x.type === "event"
+            )!,
+          ],
+          data: log.data,
+          topics: log.topics,
+        });
 
-      if (decoded && decoded.eventName === "PromotionCreated") {
-        console.log("=== PROMOTION CREATED EVENT DECODED ===");
-        console.log("Promotion ID:", decoded.args.id.toString());
+        if (decoded && decoded.eventName === "PromotionCreated") {
+          console.log("=== PROMOTION CREATED EVENT DECODED ===");
+          console.log("Promotion ID:", decoded.args.id.toString());
 
-        // Fetch creator, hash, cast text, and totalBudget using the promotion ID
-        try {
-          const promotionDetails = await getPromotionDetails(
-            decoded.args.id.toString()
-          );
-
-          // Generate promotional cast using HypemanAI
+          // Fetch creator, hash, cast text, and totalBudget using the promotion ID
           try {
-            const hypemanAI = await HypemanAI.getInstance(
-              parseInt(decoded.args.creatorFid.toString()),
-              promotionDetails.creator
+            const promotionDetails = await getPromotionDetails(
+              decoded.args.id.toString()
             );
 
-            const promotionalResult = await hypemanAI.generatePromotionalCast(
-              promotionDetails.castText,
-              promotionDetails.totalBudget,
-              promotionDetails.creator
-            );
-
-            console.log("=== DEBUG INFO ===");
-            console.log("Creator username:", promotionDetails.creator);
-            console.log("Budget:", promotionDetails.totalBudget);
-            console.log("Cast text:", promotionDetails.castText);
-            console.log("==================");
-
-            if (promotionalResult.success) {
-              console.log("=== PROMOTIONAL CAST GENERATED ===");
-              console.log("Promotional Text:", promotionalResult.text);
-              console.log("==================================");
-
-              // Publish the promotional cast using Neynar API
-              const publishResult = await publishCast(
-                decoded.args.id.toString(),
-                promotionalResult.text || "",
-                promotionDetails.hash || "",
-                parseInt(decoded.args.creatorFid.toString())
+            // Generate promotional cast using HypemanAI
+            try {
+              const hypemanAI = await HypemanAI.getInstance(
+                parseInt(decoded.args.creatorFid.toString()),
+                promotionDetails.creator
               );
 
-              if (publishResult.success) {
-                console.log("=== CAST PUBLISHED SUCCESSFULLY ===");
-                console.log("Published Cast Hash:", publishResult.castHash);
-                console.log("==================================");
-              } else {
-                console.log("Failed to publish cast:", publishResult.error);
+              const promotionalResult = await hypemanAI.generatePromotionalCast(
+                promotionDetails.castText,
+                promotionDetails.totalBudget,
+                promotionDetails.creator
+              );
+
+              console.log("=== DEBUG INFO ===");
+              console.log("Creator username:", promotionDetails.creator);
+              console.log("Budget:", promotionDetails.totalBudget);
+              console.log("Cast text:", promotionDetails.castText);
+              console.log("==================");
+
+              //if (promotionalResult.success) {
+              //  console.log("=== PROMOTIONAL CAST GENERATED ===");
+              //  console.log("Promotional Text:", promotionalResult.text);
+              //  console.log("==================================");
+
+              //  // Publish the promotional cast using Neynar API
+              //  const publishResult = await publishCast(
+              //    decoded.args.id.toString(),
+              //    promotionalResult.text || "",
+              //    promotionDetails.hash || "",
+              //    parseInt(decoded.args.creatorFid.toString())
+              //  );
+
+              //  if (publishResult.success) {
+              //    console.log("=== CAST PUBLISHED SUCCESSFULLY ===");
+              //    console.log("Published Cast Hash:", publishResult.castHash);
+              //    console.log("==================================");
+              //  } else {
+              //    console.log("Failed to publish cast:", publishResult.error);
+              //  }
+              //}
+
+              // update redis
+              const {
+                data: { cast },
+              } = await axios.get(
+                `https://api.neynar.com/v2/farcaster/cast/?type=url&identifier=${encodeURIComponent(promotionDetails.promotion.cast_url)}`,
+                {
+                  headers: {
+                    "x-api-key": process.env.NEYNAR_API_KEY as string,
+                  },
+                }
+              );
+
+              pipeline
+                .set(
+                  `promotion:cast:${promotionDetails.promotion.id.toString()}`,
+                  redis.encrypt(JSON.stringify(cast))
+                )
+                .hset(`promotion:${promotionDetails.promotion.id.toString()}`, {
+                  ...promotionDetails.promotion,
+                })
+                .zadd(
+                  `promotion_budget`,
+                  parseFloat(
+                    formatUnits(promotionDetails.promotion.remaining_budget, 6)
+                  ),
+                  promotionDetails.promotion.id.toString()
+                )
+                //TODO: update this to the right thing after contract has beed upgraded
+                .zadd(
+                  `promotion_base_rate`,
+                  promotionDetails.promotion.base_rate > 0n
+                    ? parseFloat(
+                        formatUnits(
+                          promotionDetails.promotion.base_rate.toString(),
+                          6
+                        )
+                      )
+                    : 0.25,
+                  promotionDetails.promotion.id.toString()
+                )
+                .sadd(
+                  `promotion_state:${promotionDetails.promotion.state.toString()}`,
+                  promotionDetails.promotion.id.toString()
+                )
+                .sadd(
+                  `promotion_is_pro:${promotionDetails.promotion.pro_user}`,
+                  promotionDetails.promotion.id.toString()
+                );
+
+              await pipeline.exec();
+
+              // Fetch the followers of the creator and send them a notification about the new promotion
+              const { data } = await axios.get(
+                `https://api.neynar.com/v2/farcaster/followers/reciprocal/?sort_type=algorithmic&fid=${decoded.args.creatorFid.toString()}&limit=100`,
+                {
+                  headers: {
+                    "x-api-key": process.env.NEYNAR_API_KEY as string,
+                  },
+                }
+              );
+              const {
+                data: { users },
+              } = await axios.get(
+                `https://api.neynar.com/v2/farcaster/user/bulk/?fids=${decoded.args.creatorFid.toString()}`,
+                {
+                  headers: {
+                    "x-api-key": process.env.NEYNAR_API_KEY as string,
+                  },
+                }
+              );
+
+              const creator = users[0].username;
+
+              const to_fids = data.users.map((f: any) => f.user.fid);
+
+              //await axios.post(
+              //  `https://api.neynar.com/v2/farcaster/frame/notifications`,
+              //  {
+              //    notification: {
+              //      title: `New Promotion!`,
+              //      body: `New Promotion from @${creator}! earn rewards by promoting it!`,
+              //      target_url: `https://hypeman.social/promotions/${decoded.args.id.toString()}`,
+              //    },
+              //    target_fids: [...to_fids],
+              //  },
+              //  {
+              //    headers: {
+              //      "x-api-key": process.env.NEYNAR_API_KEY as string,
+              //    },
+              //  }
+              //);
+
+
+              const new_pipeline = redis.pipeline();
+
+              const _activeIds = await redis.smembers("promotion_state:0");
+              for (const id of _activeIds) {
+                new_pipeline.hgetall(`promotion:${id}`);
               }
+              const _results: any = await new_pipeline.exec();
+              const creatorIds = new Set<number>();
+              for (const [error, promotion] of _results) {
+                console.log(error, promotion);
+                if (error) {
+                  continue;
+                }
+                creatorIds.add(parseInt(promotion.creator_fid));
+              }
+
+              console.log("Updating deleted cast webhook for creators:", creatorIds);
+               
+
+              await axios.put(
+                "https://api.neynar.com/v2/farcaster/webhook/",
+                {
+                  name: process.env.NEYNAR_CHECK_DELETE_CAST_WEBHOOK_NAME,
+                  url: process.env.NEYNAR_CHECK_DELETE_CAST_WEBHOOK_URL,
+                  webhook_id: process.env.NEYNAR_CHECK_DELETE_CAST_WEBHOOK_ID,
+                  subscription: {
+                    "cast.deleted": {
+                      author_fids: Array.from(creatorIds),
+                    },
+                  },
+                },
+                {
+                  headers: {
+                    "x-api-key": process.env.NEYNAR_API_KEY as string,
+                  },
+                }
+              );
+            } catch (aiError) {
+              console.log(aiError.response?.data.errors || aiError.message);
+              //console.error("Error generating promotional cast:", aiError);
             }
-
-            // update redis
-            const {
-              data: { cast },
-            } = await axios.get(
-              `https://api.neynar.com/v2/farcaster/cast/?type=url&identifier=${encodeURIComponent(promotionDetails.promotion.cast_url)}`,
-              {
-                headers: {
-                  "x-api-key": process.env.NEYNAR_API_KEY as string,
-                },
-              }
-            );
-
-            pipeline
-              .set(
-                `promotion:cast:${promotionDetails.promotion.id.toString()}`,
-                redis.encrypt(JSON.stringify(cast))
-              )
-              .hset(`promotion:${promotionDetails.promotion.id.toString()}`, {
-                ...promotionDetails.promotion,
-              })
-              .zadd(
-                `promotion_budget`,
-                parseFloat(
-                  formatUnits(promotionDetails.promotion.remaining_budget, 6)
-                ),
-                promotionDetails.promotion.id.toString()
-              )
-              //TODO: update this to the right thing after contract has beed upgraded
-              .zadd(
-                `promotion_base_rate`,
-                parseFloat("0.25"),
-                promotionDetails.promotion.id.toString()
-              )
-              .sadd(
-                `promotion_state:${promotionDetails.promotion.state.toString()}`,
-                promotionDetails.promotion.id.toString()
-              )
-              .sadd(
-                `promotion_is_pro:${promotionDetails.promotion.pro_user}`,
-                promotionDetails.promotion.id.toString()
-              );
-
-            await pipeline.exec();
-
-            // Fetch the followers of the creator and send them a notification about the new promotion
-            const { data } = await axios.get(
-              `https://api.neynar.com/v2/farcaster/followers/reciprocal/?limit=25&sort_type=algorithmic&fid=${decoded.args.creatorFid.toString()}&limit=100`
-            );
-            const {
-              data: { users },
-            } = await axios.get(
-              `https://api.neynar.com/v2/farcaster/user/bulk/?fids=${decoded.args.creatorFid.toString()}`
-            );
-
-            const creator = users[0].username;
-
-            const to_fids = data.users.map((f: any) => f.user.fid);
-
-            await axios.post(
-              `https://api.neynar.com/v2/farcaster/frame/notifications`,
-              {
-                notification: {
-                  title: `${creator} just launched a new promotion!`,
-                  body: "Check it out and earn some rewards by promoting it!",
-                  target_url: `https://hypeman.social/promotions/${decoded.args.id.toString()}`,
-                },
-                target_fids: [...to_fids],
-              },
-              {
-                headers: {
-                  "x-api-key": process.env.NEYNAR_API_KEY as string,
-                },
-              }
-            );
-          } catch (aiError) {
-            console.error("Error generating promotional cast:", aiError);
+          } catch (error) {
+            console.error("Error fetching promotion details:", error);
+            console.log("Falling back to event data only");
           }
-        } catch (error) {
-          console.error("Error fetching promotion details:", error);
-          console.log("Falling back to event data only");
         }
       }
     }
-  }
 
-  // Return success response
-  res
-    .status(200)
-    .json({ message: "PromotionCreated webhook received successfully" });
+    // Return success response
+    res
+      .status(200)
+      .json({ message: "PromotionCreated webhook received successfully" });
+  } catch (e: any) {
+    return res
+      .status(500)
+      .json({ error: "Internal Server Error", details: e.message });
+  }
 }
 
-export default withHost(streamMiddleware(handler));
+export default streamMiddleware(handler);

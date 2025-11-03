@@ -170,7 +170,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Wait for transaction confirmation
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
-      const notification_ids = [];
+      const notification_ids: any = [];
 
       // only update redis after successful tx
       for (const intent of intents_to_process) {

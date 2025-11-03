@@ -1,9 +1,7 @@
 import sharp from "sharp";
 import { VercelRequest, VercelResponse } from "@vercel/node";
 import path from "path";
-import fs from "fs";
 import { createCanvas, registerFont } from "canvas";
-import { profile } from "console";
 
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

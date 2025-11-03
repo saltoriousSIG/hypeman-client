@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Loader2, X, ChevronRight } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useFrameContext } from "@/providers/FrameProvider";
@@ -27,12 +27,8 @@ export default function HomePage() {
         }
     }, [isAuthenticated]);
 
-  console.log(promotions);
-
-
     return (
         <MainLayout className="space-y-4">
-
             {loading && (
                 <div className="text-center py-12">
                     <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
@@ -47,13 +43,14 @@ export default function HomePage() {
             )}
             {promotions?.map((cast) => {
                 return (
-                    <div key={cast.id} className="space-y-2 border border-white/10 rounded-lg">
+                    <div key={cast.id} className="space-y-2 border border-white/10 rounded-lg mb-5">
                         <PromotionCastPreview
                             username={cast.cast_data.author.username}
                             text={cast.cast_data?.text || ""}
                             pfpUrl={cast.cast_data.author.pfp_url || ""}
                             authorFid={cast.cast_data.author.fid}
                             castUrl={(cast as any).cast_url || ""}
+                            embeds={cast.cast_data?.embeds || []}
                         />
                         <div className="p-2 pt-0">
                             <button
@@ -68,7 +65,6 @@ export default function HomePage() {
                     </div>
                 )
             })}
-
             {promotions?.length === 0 && !loading && (
                 <div className="text-center py-12">
                     <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -80,7 +76,6 @@ export default function HomePage() {
                     </p>
                 </div>
             )}
-
             <LoginModal showLoginModal={showLoginModal} handleShowLoginModal={handleShowLoginModal} />
         </MainLayout>
     )

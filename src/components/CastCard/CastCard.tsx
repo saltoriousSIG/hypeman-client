@@ -22,6 +22,7 @@ interface CastCardProps {
   promotionContent: string;
   promotionAuthor: string;
   promotionEmmbedContext?: any[];
+  refetchPromotion: () => Promise<any>;
 }
 
 const CastCard: React.FC<CastCardProps> = ({
@@ -29,7 +30,8 @@ const CastCard: React.FC<CastCardProps> = ({
   promotionContent,
   promotionAuthor,
   promotionEmmbedContext,
-}) => {
+  refetchPromotion
+}) => { 
   const [isPosting, setIsPosting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [generatedCast, setGeneratedCast] = useState<string | null>(null);
@@ -47,7 +49,9 @@ const CastCard: React.FC<CastCardProps> = ({
   const [hasClaimed, setHasClaimed] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
 
-  const pricing = useGetPostPricing(parseFloat(formatUnits(promotion.base_rate, 6)));
+  const pricing = useGetPostPricing(
+    parseFloat(formatUnits(promotion.base_rate, 6))
+  );
 
   const { connectedUserData } = useUserStats() as {
     connectedUserData: UserStats;
@@ -86,11 +90,11 @@ const CastCard: React.FC<CastCardProps> = ({
   useEffect(() => {
     if (promotion.intents && address) {
       const existingIntent = promotion.intents.find(
-        (i: any) => i.wallet && i.wallet.toLowerCase() === address.toLowerCase()
+        (i: any) => i?.wallet && i?.wallet?.toLowerCase() === address.toLowerCase()
       );
       if (existingIntent) {
         setIntent(existingIntent);
-        setGeneratedCast(promotion.existing_generated_cast.generated_cast);
+        setGeneratedCast(promotion.existing_generated_cast?.generated_cast);
         setIsContentRevealed(true);
       }
     }
@@ -98,10 +102,12 @@ const CastCard: React.FC<CastCardProps> = ({
 
   const handleReroll = async () => {
     if (!fUser) return;
+    if (!axios) return;
     if (intent?.cast_hash) return;
     try {
       setIsLoading(true);
       const { data } = await axios.post("/api/reroll_promotion_cast", {
+        promotionUrl: promotion.cast_url,
         username: fUser.username,
         promotionId: promotion.id,
         previousCast: rerolledCast || generatedCast,
@@ -110,7 +116,7 @@ const CastCard: React.FC<CastCardProps> = ({
         embedContext: promotionEmmbedContext,
         userFeedback: rerollNotes,
       });
-      setRerolledCast(data.cast.generated_cast);
+      setRerolledCast(data.cast?.generated_cast);
       setShowRerollInput(false);
     } catch (e: any) {
       throw new Error(e.message);
@@ -126,6 +132,7 @@ const CastCard: React.FC<CastCardProps> = ({
 
   const handleRevealContent = async () => {
     if (!fUser || !address) return;
+    if (!axios) return;
 
     if (promotion.pro_user && !isPro) {
       return toast.error("This promotion is only available to Pro users.");
@@ -228,7 +235,7 @@ const CastCard: React.FC<CastCardProps> = ({
         embedContext: promotionEmmbedContext,
         intent: isRawIntent ? currentIntent : currentIntent.intent, // Pass appropriate intent structure
       });
-      setGeneratedCast(data.generated_cast);
+      setGeneratedCast(data?.generated_cast);
       // Update intent state with the returned intent (in case it was updated)
       if (data.intent) {
         setIntent(data.intent);
@@ -245,6 +252,7 @@ const CastCard: React.FC<CastCardProps> = ({
   };
 
   const handleRefreshCast = async (userFeedback?: string) => {
+    if (!axios) return;
     if (!fUser) return;
 
     try {
@@ -262,7 +270,7 @@ const CastCard: React.FC<CastCardProps> = ({
         // No intent required for refresh
       });
       toast.success("Cast content refreshed successfully!");
-      setGeneratedCast(data.generated_cast);
+      setGeneratedCast(data?.generated_cast);
     } catch (e: any) {
       console.error("Error refreshing cast content:", e);
       toast.error("Error refreshing cast content");
@@ -289,6 +297,7 @@ const CastCard: React.FC<CastCardProps> = ({
 
   const handlePostCast = useCallback(
     async (e?: React.MouseEvent, intent_passed?: any) => {
+      if (!axios) return;
       try {
         if (!rerolledCast && !generatedCast) return;
         e?.stopPropagation();
@@ -315,6 +324,7 @@ const CastCard: React.FC<CastCardProps> = ({
           });
           toast.success("Cast posted successfully!");
           await refetchPromotions();
+          await refetchPromotion();
           if (!isFrameAdded) {
             try {
               await handleAddFrame();
@@ -330,7 +340,7 @@ const CastCard: React.FC<CastCardProps> = ({
         toast.error(`Error posting cast: ${e.message}`);
       }
     },
-    [rerolledCast, generatedCast, promotion.cast_url, intent]
+    [rerolledCast, generatedCast, promotion.cast_url, intent, axios]
   );
 
   const handlePost = useCallback(async () => {
@@ -360,21 +370,10 @@ const CastCard: React.FC<CastCardProps> = ({
     load();
   }, [promotion.id, address, get_promoter_details]);
 
-  const generareCastTest = async () => {
-    const { data } = await axios.post("/api/generate_cast_content", {
-      username: fUser?.username,
-      promotionId: promotion.id,
-      promotionUrl: promotion.cast_url,
-      promotionContent: promotionContent,
-      promotionAuthor: promotionAuthor,
-      embedContext: promotionEmmbedContext,
-      intent: promotion.current_user_intent,
-    });
-  };
-
   const username = promotion.cast_data.author.username;
   const text = promotion.cast_data.text;
   const pfp_url = promotion.cast_data.author.pfp_url;
+  const embeds = promotion.cast_data.embeds;
 
   return (
     <div className="space-y-3 mb-5">
@@ -384,6 +383,7 @@ const CastCard: React.FC<CastCardProps> = ({
         pfpUrl={pfp_url}
         authorFid={promotion.cast_data.author.fid}
         castUrl={promotion.cast_url}
+        embeds={embeds}
       />
 
       <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/10 overflow-hidden">
@@ -543,6 +543,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                   toast.success("Claim submitted!");
                                   setHasClaimed(true); // Update local state immediately
                                   await refetchPromotions();
+                                  await refetchPromotion();
                                 } catch (error) {
                                   console.error("Error claiming:", error);
                                   toast.error(
@@ -565,7 +566,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                   Your claim is being processed...
                                 </>
                               ) : (
-                                `Claim $${pricing}`
+                                `Claim $${formatUnits(intent.fee, 6)}`
                               )}
                             </button>
                           </div>

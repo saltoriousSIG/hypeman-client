@@ -39,11 +39,11 @@ export function EndPromotionModal({ isOpen, onClose, promotion }: EndPromotionMo
                             </div>
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-white/60">Budget Spent</span>
-                                <span className="font-medium text-white">${formatUnits(promotion.amount_paid_out, 6)}</span>
+                                <span className="font-medium text-white">${parseFloat(formatUnits(promotion.amount_paid_out, 6)).toFixed(2)}</span>
                             </div>
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-white/60">Remaining Budget</span>
-                                <span className="font-medium text-emerald-400">${formatUnits(promotion.remaining_budget, 6)}</span>
+                                <span className="font-medium text-emerald-400">${parseFloat(formatUnits(promotion.remaining_budget, 6)).toFixed(2)}</span>
                             </div>
                         </div>
                     </div>

@@ -40,7 +40,7 @@ export function DynamicPricing({
         return tier1Avg + tier2Avg + tier3Avg
     }, [tierRates, tier1Rate, tier2Rate, tier3Rate])
 
-    const totalBudget = desiredReach * weightedAverageRate * 1.10;
+    const totalBudget = desiredReach * weightedAverageRate;
 
     useEffect(() => {
         setBasePrice(baseCastRate);
@@ -121,7 +121,7 @@ export function DynamicPricing({
                 <div className="flex items-baseline justify-between">
                     <span className="text-[18px] text-white/70">Total</span>
                     <span className="text-xl font-bold text-white">
-                        {totalBudget.toFixed(2)} <span className="text-xs text-purple-400">USDC</span>
+                        {(totalBudget * 1.10).toFixed(2)} <span className="text-xs text-purple-400">USDC</span>
                     </span>
                 </div>
                 <p className="text-[9px] text-white/50 text-right mt-0.5">
