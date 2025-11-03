@@ -365,9 +365,10 @@ export class HypemanAI {
         <bad_examples>
 
         <existing_quotes>
-            These are existing quote casts about the content, to help you avoid repeating what others have said. Use these to understand what has already been expressed, but DO NOT copy them. Your quote cast must be unique and in ${this.username}'s voice.
+            These are quote casts that have already been made for this promotion. 
             Use language that is clearly different from these quotes.
-
+            DO NOT copy or mimic these quotes. 
+            You must write in ${this.username}'s unique voice, NOT like these quotes:
             ${sanitizedExistingQuotes.map((quote) => `<quote>${quote.text} by ${quote.author}</quote>`).join("\n")}
         </existing_quotes>
 
