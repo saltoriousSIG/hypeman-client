@@ -5,13 +5,13 @@
     "iconUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1760928394/cropped_circle_image_lpxbc2.png",
     "homeUrl": "https://hypeman.social",
     "imageUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1760928637/replicate-prediction-ppnmz3g0yxrme0cssvhtx2r54w_alqowu.jpg",
-    "splashImageUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1760928637/replicate-prediction-ppnmz3g0yxrme0cssvhtx2r54w_alqowu.jpg",
+    "splashImageUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1760928394/cropped_circle_image_lpxbc2.png",
     "splashBackgroundColor": "#000000",
     "webhookUrl": "https://api.neynar.com/f/app/3f88b4b3-7a91-4cb5-baa7-b8a1cb89a94c/event",
     "subtitle": "Find your Hypeman",
     "description": "Paid promotion on Farcaster made easy. Amplify your reach through targeted promotions.",
     "primaryCategory": "utility",
-    "heroImageUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1760928637/replicate-prediction-ppnmz3g0yxrme0cssvhtx2r54w_alqowu.jpg"
+    "heroImageUrl": "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1760928394/cropped_circle_image_lpxbc2.png"
   },
   "accountAssociation": {
     "header": "eyJmaWQiOjQ4MzcxMywidHlwZSI6ImF1dGgiLCJrZXkiOiIweDQ2M0IxRThFNzhCMjgwMjdiNDIzRWE2ZjAwNjk1ZjAxYTg0RUZlNzIifQ",
