@@ -4,6 +4,7 @@ import axios from "axios";
 import { Cast, Embed } from "@neynar/nodejs-sdk/build/api";
 import { z } from "zod";
 import { RedisClient } from "./RedisClient.js";
+import sharp from "sharp";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
@@ -81,7 +82,7 @@ export class HypemanAI {
 
   constructor(fid: number, username: string) {
     // Haiku-optimized model
-    this.fastModel = anthropic("claude-sonnet-4-5-20250929");
+    this.fastModel = anthropic("claude-haiku-4-5-20251001");
     this.userFid = fid;
     this.username = username;
     this.initPromise = this.init(fid);
@@ -189,6 +190,48 @@ export class HypemanAI {
 
     return imageUrls;
   }
+  private async compressImageIfNeeded(
+    base64Image: string,
+    maxSizeBytes: number = 5242880 // Exact 5MB limit
+  ): Promise<string> {
+    try {
+      const buffer = Buffer.from(base64Image, "base64");
+
+      // Check if already under limit
+      if (buffer.length <= maxSizeBytes) {
+        return base64Image;
+      }
+
+      console.log(
+        `Compressing image from ${(buffer.length / 1024 / 1024).toFixed(2)}MB`
+      );
+
+      // Resize progressively until under limit
+      let quality = 85;
+      let compressed = buffer;
+
+      while (compressed.length > maxSizeBytes && quality > 20) {
+        compressed = await sharp(buffer)
+          .resize(2000, 2000, {
+            // max 2000px on longest edge
+            fit: "inside",
+            withoutEnlargement: true,
+          })
+          .jpeg({ quality })
+          .toBuffer();
+
+        quality -= 10;
+      }
+
+      console.log(
+        `Compressed to ${(compressed.length / 1024 / 1024).toFixed(2)}MB`
+      );
+      return compressed.toString("base64");
+    } catch (error) {
+      console.error("Compression failed:", error);
+      return base64Image; // Return original if compression fails
+    }
+  }
 
   async buildVoiceLearningPrompt(
     promotionUrl: string,
@@ -244,7 +287,8 @@ export class HypemanAI {
     for (const imageUrl of imageUrls) {
       const imageData = await this.fetchImageAsBase64(imageUrl);
       if (imageData) {
-        imageDataArray.push(imageData);
+        const compressedImage = await this.compressImageIfNeeded(imageData);
+        imageDataArray.push(compressedImage);
       }
     }
 
