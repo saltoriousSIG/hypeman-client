@@ -301,6 +301,7 @@ export class HypemanAI {
     console.log(this.username);
     console.log(this.topCasts);
     console.log(this.userReplies);
+
     const systemContent = `You are ${this.username} on Farcaster. You're writing a quote cast to share interesting content with your followers.
 
 <your_voice>
@@ -334,13 +335,27 @@ Do NOT use similar phrases, openings, or patterns. Write something fresh.
 }
 
 <task>
-Write a quote cast (under 280 characters) about the content you'll receive. 
+You are @${this.username}. You're quote casting content written by @${promotionAuthor}.
+
+${
+  this.username === promotionAuthor
+    ? `
+NOTE: You are quote casting YOUR OWN content. You can reference it as your own.
+`
+    : `
+CRITICAL: @${promotionAuthor} wrote this content, NOT YOU. You are reacting to THEIR post.
+- Do NOT speak as if you did what they did
+- Do NOT retell their story in first person
+- React, comment on, or add to what THEY shared
+- You are the outside observer/supporter, not the original author
+`
+}
 
 Your quote cast must:
-- Match your voice EXACTLY - same tone, punctuation, capitalization, typical length, and natural phrasing
+- Be under 280 characters
+- Match your voice EXACTLY - same tone, punctuation, capitalization, typical length
 - Sound like you genuinely found something worth sharing
 - Add your authentic reaction or insight, not just a summary
-- Reference the author @${promotionAuthor} naturally if appropriate
 </task>
 
 <rules>
@@ -354,7 +369,7 @@ Your quote cast must:
 ✗ Don't use corporate/marketing language or formulaic phrases
 ✗ Don't invent facts, URLs, or details not in the content
 ✗ Don't use em dashes (—)
-✗ Don't just copy the original content
+✗ Don't just copy or paraphrase the original content in first person${this.username !== promotionAuthor ? `\n✗ Don't speak as if YOU did what @${promotionAuthor} did - you're commenting on THEIR experience` : ""}
 </rules>
 
 ${
@@ -373,13 +388,11 @@ Only reference this if it naturally fits your voice and the content.
 Output only the quote cast text - nothing else.`;
 
     const textContent = `
-<content>
-${promotionContent}
-</content>
+<original_content>
+This content was written by @${promotionAuthor}${this.username !== promotionAuthor ? " (NOT you)" : " (this is YOUR content)"}:
 
-<author>
-@${promotionAuthor}
-</author>
+${promotionContent}
+</original_content>
 
 ${
   additionalContext || contextUrl || imageDataArray.length > 0
@@ -391,7 +404,17 @@ ${additionalContext ? `${additionalContext}\n` : ""}${contextUrl ? `URL: ${conte
     : ""
 }
 
-Write a quote cast about this content in ${this.username}'s voice. Make it sound like ${this.username} actually wrote it - not "similar to" their voice, but IDENTICAL.`;
+${
+  this.username === promotionAuthor
+    ? `
+Write a quote cast promoting your own content above. You can reference it as your own work.
+`
+    : `
+Write a quote cast reacting to @${promotionAuthor}'s content above. Remember: THEY wrote this, not you. You're commenting on what THEY shared.
+`
+}
+
+Make it sound like ${this.username} actually wrote it - not "similar to" their voice, but IDENTICAL.`;
 
     // Build the user message content with or without images
     const userContent: any[] = [];

@@ -127,6 +127,9 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
         break;
     }
 
+    console.log(tier);
+    console.log(fee, "fee");
+
     // Generate expiry (default: 1 hour from now) if not provided
     const expiry = body.expiry
       ? BigInt(body.expiry)
