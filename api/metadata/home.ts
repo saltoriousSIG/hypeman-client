@@ -20,6 +20,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const htmlPath = path.join(process.cwd(), "dist", "index.html"); // Production
 
+  console.log(htmlPath)
+
   if (!htmlPath) {
     return res.status(500).send("index.html not found");
   }
@@ -29,6 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Inject the frame meta tag
   const metaTag = `<meta name="fc:frame" content='${JSON.stringify(frameConfig)}'>`;
   html = html.replace("</head>", `${metaTag}\n</head>`);
+  console.log(metaTag)
 
   res.setHeader("Content-Type", "text/html");
   res.status(200).send(html);
