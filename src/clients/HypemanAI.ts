@@ -76,12 +76,12 @@ interface VoicePattern {
   };
   emojiPatterns: {
     emojis: string[];
-    frequency: 'never' | 'rarely' | 'sometimes' | 'often';
-    placement: 'start' | 'end' | 'middle' | 'mixed';
+    frequency: "never" | "rarely" | "sometimes" | "often";
+    placement: "start" | "end" | "middle" | "mixed";
   };
   sentenceLength: {
     average: number;
-    style: 'short' | 'mixed' | 'long';
+    style: "short" | "mixed" | "long";
   };
   vocabulary: {
     slangTerms: string[];
@@ -89,16 +89,16 @@ interface VoicePattern {
     fillerWords: string[];
     intensifiers: string[];
   };
-  capitalization: 'standard' | 'all-lowercase' | 'random' | 'emphasis';
-  tweetStyle: 'single-line' | 'multi-line' | 'thread-like';
+  capitalization: "standard" | "all-lowercase" | "random" | "emphasis";
+  tweetStyle: "single-line" | "multi-line" | "thread-like";
 }
 
 class VoiceAnalyzer {
   private topCasts: Array<{ text: string; embeds: Embed[] }>;
   private userReplies: Array<{ text: string; embeds: Embed[] }>;
-  
+
   constructor(
-    topCasts: Array<{ text: string; embeds: Embed[] }>, 
+    topCasts: Array<{ text: string; embeds: Embed[] }>,
     userReplies: Array<{ text: string; embeds: Embed[] }>
   ) {
     this.topCasts = topCasts;
@@ -106,27 +106,36 @@ class VoiceAnalyzer {
   }
 
   analyzeVoicePatterns(): VoicePattern {
-    const allPosts = [...this.topCasts, ...this.userReplies].map(c => c.text);
-    
+    // For quote casts, weight replies more heavily since they're reactions
+    const allPosts = [...this.topCasts, ...this.userReplies].map((c) => c.text);
+    const replyTexts = this.userReplies.map((c) => c.text);
+
+    // Use replies for reaction patterns, all posts for general style
     return {
-      sentenceStructures: this.extractSentenceStructures(allPosts),
-      openingPatterns: this.extractOpeningPatterns(allPosts),
+      sentenceStructures: this.extractSentenceStructures(
+        replyTexts.length > 0 ? replyTexts : allPosts
+      ),
+      openingPatterns: this.extractOpeningPatterns(
+        replyTexts.length > 0 ? replyTexts : allPosts
+      ),
       reactionWords: this.extractReactionWords(allPosts),
       punctuationStyle: this.analyzePunctuation(allPosts),
       emojiPatterns: this.analyzeEmojis(allPosts),
-      sentenceLength: this.analyzeSentenceLength(allPosts),
+      sentenceLength: this.analyzeSentenceLength(
+        replyTexts.length > 0 ? replyTexts : allPosts
+      ),
       vocabulary: this.extractVocabulary(allPosts),
       capitalization: this.analyzeCapitalization(allPosts),
-      tweetStyle: this.analyzeTweetStyle(allPosts)
+      tweetStyle: this.analyzeTweetStyle(allPosts),
     };
   }
 
   private extractSentenceStructures(posts: string[]): string[] {
     const structures = new Set<string>();
-    
-    posts.forEach(post => {
-      const sentences = post.split(/[.!?]+/).filter(s => s.trim());
-      sentences.forEach(sentence => {
+
+    posts.forEach((post) => {
+      const sentences = post.split(/[.!?]+/).filter((s) => s.trim());
+      sentences.forEach((sentence) => {
         const trimmed = sentence.trim();
         if (trimmed.length > 10 && trimmed.length < 100) {
           const structure = this.generalizeStructure(trimmed);
@@ -138,7 +147,7 @@ class VoiceAnalyzer {
     return Array.from(structures).slice(0, 5);
   }
 
-  private generalizeStructure(sentence: string): string {
+  private generalizeStructure(sentence: string): string | null{
     const patterns = [
       { regex: /^this is \w+/i, pattern: "this is [REACTION]" },
       { regex: /^finally\s/i, pattern: "finally [OBSERVATION]" },
@@ -150,7 +159,7 @@ class VoiceAnalyzer {
       { regex: /^imagine if/i, pattern: "imagine if [SCENARIO]" },
       { regex: /^wait,?\s/i, pattern: "wait, [REALIZATION]" },
       { regex: /^okay but/i, pattern: "okay but [COUNTER]" },
-      { regex: /^so basically/i, pattern: "so basically [SUMMARY]" }
+      { regex: /^so basically/i, pattern: "so basically [SUMMARY]" },
     ];
 
     for (const { regex, pattern } of patterns) {
@@ -162,15 +171,15 @@ class VoiceAnalyzer {
 
   private extractOpeningPatterns(posts: string[]): string[] {
     const openings = new Map<string, number>();
-    
-    posts.forEach(post => {
+
+    posts.forEach((post) => {
       // Get first 2-4 words as opening pattern
       const words = post.split(/\s+/);
       if (words.length > 0) {
         // Try different lengths
-        const twoWord = words.slice(0, 2).join(' ').toLowerCase();
-        const threeWord = words.slice(0, 3).join(' ').toLowerCase();
-        
+        const twoWord = words.slice(0, 2).join(" ").toLowerCase();
+        const threeWord = words.slice(0, 3).join(" ").toLowerCase();
+
         if (twoWord.length < 20) {
           openings.set(twoWord, (openings.get(twoWord) || 0) + 1);
         }
@@ -189,61 +198,72 @@ class VoiceAnalyzer {
 
   private extractReactionWords(posts: string[]): string[] {
     const reactions = new Set<string>();
-    const reactionRegex = /\b(wild|cool|dope|sick|fire|based|crazy|insane|huge|massive|solid|clean|fresh|nice|awesome|great|amazing|interesting|fascinating|bullish|bearish|vibes?|slaps?|bangs?|hits?|goated|peak|mid|bussin|facts|real|legit|valid)\b/gi;
-    
-    posts.forEach(post => {
+    const reactionRegex =
+      /\b(wild|cool|dope|sick|fire|based|crazy|insane|huge|massive|solid|clean|fresh|nice|awesome|great|amazing|interesting|fascinating|bullish|bearish|vibes?|slaps?|bangs?|hits?|goated|peak|mid|bussin|facts|real|legit|valid)\b/gi;
+
+    posts.forEach((post) => {
       const matches = post.match(reactionRegex);
       if (matches) {
-        matches.forEach(match => reactions.add(match.toLowerCase()));
+        matches.forEach((match) => reactions.add(match.toLowerCase()));
       }
     });
 
     return Array.from(reactions);
   }
 
-  private analyzePunctuation(posts: string[]): VoicePattern['punctuationStyle'] {
-    let periods = 0, ellipsis = 0, exclamation = 0, questions = 0, multiple = 0;
-    
-    posts.forEach(post => {
+  private analyzePunctuation(
+    posts: string[]
+  ): VoicePattern["punctuationStyle"] {
+    let periods = 0,
+      ellipsis = 0,
+      exclamation = 0,
+      questions = 0,
+      multiple = 0;
+
+    posts.forEach((post) => {
       if (post.match(/\.\s/)) periods++;
       if (post.match(/\.{2,}/)) ellipsis++;
-      if (post.includes('!')) exclamation++;
-      if (post.includes('?')) questions++;
+      if (post.includes("!")) exclamation++;
+      if (post.includes("?")) questions++;
       if (post.match(/[!?]{2,}/)) multiple++;
     });
 
     const total = Math.max(posts.length, 1);
-    
+
     return {
       usesPeriods: periods > total * 0.3,
       usesEllipsis: ellipsis > total * 0.15,
       usesExclamation: exclamation > total * 0.2,
       usesQuestionMarks: questions > total * 0.15,
-      multipleMarks: multiple > total * 0.1
+      multipleMarks: multiple > total * 0.1,
     };
   }
 
-  private analyzeEmojis(posts: string[]): VoicePattern['emojiPatterns'] {
-    const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]/gu;
+  private analyzeEmojis(posts: string[]): VoicePattern["emojiPatterns"] {
+    const emojiRegex =
+      /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]/gu;
     const emojis = new Map<string, number>();
     let totalWithEmoji = 0;
     let placements = { start: 0, end: 0, middle: 0 };
-    
-    posts.forEach(post => {
+
+    posts.forEach((post) => {
       const matches = post.match(emojiRegex);
       if (matches) {
         totalWithEmoji++;
-        matches.forEach(emoji => {
+        matches.forEach((emoji) => {
           emojis.set(emoji, (emojis.get(emoji) || 0) + 1);
         });
-        
+
         // Check placement
         const firstEmoji = post.search(emojiRegex);
         const lastEmoji = post.lastIndexOf(matches[matches.length - 1]);
-        
+
         if (firstEmoji === 0) {
           placements.start++;
-        } else if (lastEmoji === post.length - matches[matches.length - 1].length) {
+        } else if (
+          lastEmoji ===
+          post.length - matches[matches.length - 1].length
+        ) {
           placements.end++;
         } else if (firstEmoji > 0) {
           placements.middle++;
@@ -252,15 +272,30 @@ class VoiceAnalyzer {
     });
 
     const ratio = posts.length > 0 ? totalWithEmoji / posts.length : 0;
-    const frequency = ratio === 0 ? 'never' : 
-                     ratio < 0.2 ? 'rarely' : 
-                     ratio < 0.5 ? 'sometimes' : 'often';
-    
-    const maxPlacement = Math.max(placements.start, placements.end, placements.middle);
-    const placement = maxPlacement === 0 ? 'mixed' :
-                     maxPlacement === placements.end ? 'end' :
-                     maxPlacement === placements.start ? 'start' :
-                     maxPlacement === placements.middle ? 'middle' : 'mixed';
+    const frequency =
+      ratio === 0
+        ? "never"
+        : ratio < 0.2
+          ? "rarely"
+          : ratio < 0.5
+            ? "sometimes"
+            : "often";
+
+    const maxPlacement = Math.max(
+      placements.start,
+      placements.end,
+      placements.middle
+    );
+    const placement =
+      maxPlacement === 0
+        ? "mixed"
+        : maxPlacement === placements.end
+          ? "end"
+          : maxPlacement === placements.start
+            ? "start"
+            : maxPlacement === placements.middle
+              ? "middle"
+              : "mixed";
 
     return {
       emojis: Array.from(emojis.entries())
@@ -268,62 +303,75 @@ class VoiceAnalyzer {
         .slice(0, 5)
         .map(([emoji]) => emoji),
       frequency,
-      placement
+      placement,
     };
   }
 
-  private analyzeSentenceLength(posts: string[]): VoicePattern['sentenceLength'] {
+  private analyzeSentenceLength(
+    posts: string[]
+  ): VoicePattern["sentenceLength"] {
     const lengths: number[] = [];
-    
-    posts.forEach(post => {
-      const words = post.split(/\s+/).filter(w => w.length > 0).length;
+
+    posts.forEach((post) => {
+      const words = post.split(/\s+/).filter((w) => w.length > 0).length;
       lengths.push(words);
     });
 
-    const average = lengths.length > 0 
-      ? lengths.reduce((a, b) => a + b, 0) / lengths.length 
-      : 20;
-    
-    const style = average < 20 ? 'short' : average < 40 ? 'mixed' : 'long';
+    const average =
+      lengths.length > 0
+        ? lengths.reduce((a, b) => a + b, 0) / lengths.length
+        : 20;
+
+    const style = average < 20 ? "short" : average < 40 ? "mixed" : "long";
 
     return { average: Math.round(average), style };
   }
 
-  private extractVocabulary(posts: string[]): VoicePattern['vocabulary'] {
-    const slangRegex = /\b(lol|lmao|rofl|ngl|tbh|imo|imho|afaik|fwiw|gm|gn|ngmi|wagmi|lfg|iykyk|degens?|alpha|cope|hopium|moon|pump|dump|rug|rekt|ser|fren|anon|chad|noob|normie|pleb|whale|hodl|diamond hands|paper hands|ape|gmi|probably nothing|few understand|up only|down bad|touch grass)\b/gi;
-    const intensifierRegex = /\b(really|actually|literally|totally|absolutely|definitely|seriously|genuinely|truly|extremely|super|very|quite|pretty|so|mega|ultra|hella)\b/gi;
-    const fillerRegex = /\b(like|just|kinda|sorta|maybe|probably|basically|essentially|apparently|obviously|clearly|honestly|lowkey|highkey)\b/gi;
-    
+  private extractVocabulary(posts: string[]): VoicePattern["vocabulary"] {
+    const slangRegex =
+      /\b(lol|lmao|rofl|ngl|tbh|imo|imho|afaik|fwiw|gm|gn|ngmi|wagmi|lfg|iykyk|degens?|alpha|cope|hopium|moon|pump|dump|rug|rekt|ser|fren|anon|chad|noob|normie|pleb|whale|hodl|diamond hands|paper hands|ape|gmi|probably nothing|few understand|up only|down bad|touch grass)\b/gi;
+    const intensifierRegex =
+      /\b(really|actually|literally|totally|absolutely|definitely|seriously|genuinely|truly|extremely|super|very|quite|pretty|so|mega|ultra|hella)\b/gi;
+    const fillerRegex =
+      /\b(like|just|kinda|sorta|maybe|probably|basically|essentially|apparently|obviously|clearly|honestly|lowkey|highkey)\b/gi;
+
     const slang = new Set<string>();
     const intensifiers = new Set<string>();
     const fillers = new Set<string>();
 
-    posts.forEach(post => {
+    posts.forEach((post) => {
       const slangMatches = post.match(slangRegex);
       const intensifierMatches = post.match(intensifierRegex);
       const fillerMatches = post.match(fillerRegex);
-      
-      if (slangMatches) slangMatches.forEach(s => slang.add(s.toLowerCase()));
-      if (intensifierMatches) intensifierMatches.forEach(i => intensifiers.add(i.toLowerCase()));
-      if (fillerMatches) fillerMatches.forEach(f => fillers.add(f.toLowerCase()));
+
+      if (slangMatches) slangMatches.forEach((s) => slang.add(s.toLowerCase()));
+      if (intensifierMatches)
+        intensifierMatches.forEach((i) => intensifiers.add(i.toLowerCase()));
+      if (fillerMatches)
+        fillerMatches.forEach((f) => fillers.add(f.toLowerCase()));
     });
 
     return {
       slangTerms: Array.from(slang),
       technicalTerms: [], // Could be expanded with domain-specific detection
       fillerWords: Array.from(fillers),
-      intensifiers: Array.from(intensifiers)
+      intensifiers: Array.from(intensifiers),
     };
   }
 
-  private analyzeCapitalization(posts: string[]): VoicePattern['capitalization'] {
-    let allLower = 0, standard = 0, random = 0, emphasis = 0;
-    
-    posts.forEach(post => {
+  private analyzeCapitalization(
+    posts: string[]
+  ): VoicePattern["capitalization"] {
+    let allLower = 0,
+      standard = 0,
+      random = 0,
+      emphasis = 0;
+
+    posts.forEach((post) => {
       const hasUppercase = /[A-Z]/.test(post);
       const startsCapital = /^[A-Z]/.test(post);
       const hasAllCaps = /\b[A-Z]{2,}\b/.test(post);
-      
+
       if (!hasUppercase) {
         allLower++;
       } else if (hasAllCaps) {
@@ -336,16 +384,22 @@ class VoiceAnalyzer {
     });
 
     const max = Math.max(allLower, standard, random, emphasis);
-    return max === allLower ? 'all-lowercase' : 
-           max === standard ? 'standard' : 
-           max === emphasis ? 'emphasis' : 'random';
+    return max === allLower
+      ? "all-lowercase"
+      : max === standard
+        ? "standard"
+        : max === emphasis
+          ? "emphasis"
+          : "random";
   }
 
-  private analyzeTweetStyle(posts: string[]): VoicePattern['tweetStyle'] {
-    let singleLine = 0, multiLine = 0, threadLike = 0;
-    
-    posts.forEach(post => {
-      const lineCount = post.split('\n').length;
+  private analyzeTweetStyle(posts: string[]): VoicePattern["tweetStyle"] {
+    let singleLine = 0,
+      multiLine = 0,
+      threadLike = 0;
+
+    posts.forEach((post) => {
+      const lineCount = post.split("\n").length;
       if (lineCount === 1) {
         singleLine++;
       } else if (lineCount > 3) {
@@ -356,8 +410,11 @@ class VoiceAnalyzer {
     });
 
     const max = Math.max(singleLine, multiLine, threadLike);
-    return max === threadLike ? 'thread-like' :
-           max === multiLine ? 'multi-line' : 'single-line';
+    return max === threadLike
+      ? "thread-like"
+      : max === multiLine
+        ? "multi-line"
+        : "single-line";
   }
 
   formatVoiceInstructions(pattern: VoicePattern): string {
@@ -365,61 +422,87 @@ class VoiceAnalyzer {
 
     // Add sentence structures if found
     if (pattern.sentenceStructures.length > 0) {
-      instructions.push(`Common patterns: ${pattern.sentenceStructures.slice(0, 3).join(', ')}`);
+      instructions.push(
+        `Common patterns: ${pattern.sentenceStructures.slice(0, 3).join(", ")}`
+      );
     }
 
     // Add opening patterns if consistent
     if (pattern.openingPatterns.length > 0) {
-      instructions.push(`Often starts with: "${pattern.openingPatterns[0]}" or "${pattern.openingPatterns[1] || pattern.openingPatterns[0]}"`);
+      instructions.push(
+        `Often starts with: "${pattern.openingPatterns[0]}" or "${pattern.openingPatterns[1] || pattern.openingPatterns[0]}"`
+      );
     }
 
     // Add reaction words if they use them
     if (pattern.reactionWords.length > 0) {
       const topReactions = pattern.reactionWords.slice(0, 5);
-      instructions.push(`Reactions: ${topReactions.join(', ')}`);
+      instructions.push(`Reactions: ${topReactions.join(", ")}`);
     }
 
     // Punctuation style
     const punctuation: string[] = [];
-    if (pattern.punctuationStyle.usesEllipsis) punctuation.push('uses ...');
-    if (pattern.punctuationStyle.multipleMarks) punctuation.push('uses !!! or ???');
-    if (!pattern.punctuationStyle.usesPeriods) punctuation.push('rarely uses periods');
-    if (pattern.punctuationStyle.usesExclamation) punctuation.push('uses !');
+    if (pattern.punctuationStyle.usesEllipsis) punctuation.push("uses ...");
+    if (pattern.punctuationStyle.multipleMarks)
+      punctuation.push("uses !!! or ???");
+    if (!pattern.punctuationStyle.usesPeriods)
+      punctuation.push("rarely uses periods");
+    if (pattern.punctuationStyle.usesExclamation) punctuation.push("uses !");
     if (punctuation.length > 0) {
-      instructions.push(`Punctuation: ${punctuation.join(', ')}`);
+      instructions.push(`Punctuation: ${punctuation.join(", ")}`);
     }
 
     // Emoji usage
-    if (pattern.emojiPatterns.frequency !== 'never' && pattern.emojiPatterns.emojis.length > 0) {
-      instructions.push(`${pattern.emojiPatterns.frequency === 'often' ? 'Often uses' : 
-                         pattern.emojiPatterns.frequency === 'sometimes' ? 'Sometimes uses' : 
-                         'Rarely uses'} emojis: ${pattern.emojiPatterns.emojis.join(' ')}`);
+    if (
+      pattern.emojiPatterns.frequency !== "never" &&
+      pattern.emojiPatterns.emojis.length > 0
+    ) {
+      instructions.push(
+        `${
+          pattern.emojiPatterns.frequency === "often"
+            ? "Often uses"
+            : pattern.emojiPatterns.frequency === "sometimes"
+              ? "Sometimes uses"
+              : "Rarely uses"
+        } emojis: ${pattern.emojiPatterns.emojis.join(" ")}`
+      );
     }
 
     // Vocabulary style
     if (pattern.vocabulary.slangTerms.length > 0) {
-      instructions.push(`Slang: ${pattern.vocabulary.slangTerms.slice(0, 5).join(', ')}`);
+      instructions.push(
+        `Slang: ${pattern.vocabulary.slangTerms.slice(0, 5).join(", ")}`
+      );
     }
     if (pattern.vocabulary.fillerWords.length > 0) {
-      instructions.push(`Filler words: ${pattern.vocabulary.fillerWords.slice(0, 3).join(', ')}`);
+      instructions.push(
+        `Filler words: ${pattern.vocabulary.fillerWords.slice(0, 3).join(", ")}`
+      );
     }
 
     // Capitalization
-    if (pattern.capitalization === 'all-lowercase') {
-      instructions.push('Writes in all lowercase');
-    } else if (pattern.capitalization === 'emphasis') {
-      instructions.push('Uses CAPS for emphasis');
+    if (pattern.capitalization === "all-lowercase") {
+      instructions.push("Writes in all lowercase");
+    } else if (pattern.capitalization === "emphasis") {
+      instructions.push("Uses CAPS for emphasis");
     }
 
     // Length
-    instructions.push(`Average length: ~${pattern.sentenceLength.average} words`);
+    instructions.push(
+      `Average length: ~${pattern.sentenceLength.average} words`
+    );
 
     // Style
-    if (pattern.tweetStyle === 'multi-line') {
-      instructions.push('Often uses line breaks');
+    if (pattern.tweetStyle === "multi-line") {
+      instructions.push("Often uses line breaks");
     }
 
-    return instructions.join('\n');
+    // Add note about reaction style (based on replies)
+    instructions.push(
+      "Focus on your REPLY patterns above - quote casts are reactions like replies"
+    );
+
+    return instructions.join("\n");
   }
 }
 
@@ -624,14 +707,17 @@ export class HypemanAI {
       if (embed.url) contextParts.push(`url: ${embed.url}`);
       if (embed.cast?.text) {
         const castAuthor = embed.cast.author?.username || "unknown";
-        contextParts.push(`embedded cast by @${castAuthor}: "${embed.cast.text}"`);
+        contextParts.push(
+          `embedded cast by @${castAuthor}: "${embed.cast.text}"`
+        );
       }
       if (embed.metadata?.frame?.title) {
         contextParts.push(`frame: ${embed.metadata.frame.title}`);
       }
     }
 
-    const additionalContext = contextParts.length > 0 ? contextParts.join("\n") : "";
+    const additionalContext =
+      contextParts.length > 0 ? contextParts.join("\n") : "";
 
     // Handle images
     const imageUrls = this.extractImageFromEmbeds(embedContext);
@@ -647,32 +733,60 @@ export class HypemanAI {
     // Get trending context if available
     const trending_sentiment_summary = await redis.get("trending:summary");
 
-    // SIMPLIFIED SYSTEM PROMPT
-    const systemContent = `You are @${this.username} quote casting on Farcaster.
+    // Format existing quotes to avoid
+    const existingQuotesSection =
+      sanitizedExistingQuotes.length > 0
+        ? "\nOthers already quoted this - avoid these angles:\n" +
+          sanitizedExistingQuotes
+            .slice(0, 3)
+            .map((quote) => {
+              const preview = quote.text.substring(0, 60);
+              return `- ${preview}${quote.text.length > 60 ? "..." : ""}`;
+            })
+            .join("\n")
+        : "";
 
-Voice patterns:
+    // Format trending section
+    const trendingSection = trending_sentiment_summary
+      ? `\nCurrent vibe: ${trending_sentiment_summary}`
+      : "";
+
+    // Format top casts
+    const topCastsFormatted = this.topCasts
+      .slice(0, 3)
+      .map((cast) => `"${cast.text}"`)
+      .join("\n");
+
+    // Format replies
+    const repliesFormatted = this.userReplies
+      .slice(0, 4)
+      .map((reply) => `"${reply.text}"`)
+      .join("\n");
+
+    // Build system prompt with strong identity anchoring
+    const systemContent = `You are @${this.username}. This is your identity - you ARE this person, not someone imitating them.
+
+YOUR ACTUAL POSTS (how YOU create content):
+${topCastsFormatted}
+
+YOUR REPLIES (how YOU react to others - THIS IS CRUCIAL FOR QUOTE CASTS):
+${repliesFormatted}
+
+YOUR BIO: ${this.userBio}
+
+YOUR SPECIFIC PATTERNS:
 ${voiceInstructions}
 
-Your recent posts:
-${this.topCasts.slice(0, 3).map((cast) => `"${cast.text}"`).join("\n")}
+CRITICAL: Quote casts are reactions, like your replies above. Study how YOU respond to others' content. You're not creating standalone content - you're REACTING to someone else's post, just like in your replies.
 
-Bio: ${this.userBio}
+REMEMBER: You are @${this.username}. Every word comes from YOUR perspective. The examples above are YOUR OWN posts and replies.${existingQuotesSection}${trendingSection}
 
-${sanitizedExistingQuotes.length > 0 ? `
-Others already quoted this - avoid these angles:
-${sanitizedExistingQuotes.slice(0, 3).map((quote) => {
-  const preview = quote.text.substring(0, 60);
-  return `- ${preview}${quote.text.length > 60 ? '...' : ''}`;
-}).join("\n")}` : ''}
+Write YOUR quote cast as @${this.username}. Under 280 chars.`;
 
-${trending_sentiment_summary ? `Current vibe: ${trending_sentiment_summary}` : ''}
-
-Write a quote cast under 280 chars.`;
-
-    // SIMPLIFIED USER PROMPT
+    // Build user prompt content
     const userContent: any[] = [];
 
-    // Add images first if available
+    // Add images first if available (Claude performs better with images before text)
     for (const imageData of imageDataArray) {
       userContent.push({
         type: "image",
@@ -680,20 +794,36 @@ Write a quote cast under 280 chars.`;
       });
     }
 
-    // Add text - much simpler
+    // Add text prompt with identity reinforcement
     const isOwnContent = this.username === promotionAuthor;
+
+    // Build context sections
+    const contextSection = additionalContext
+      ? `Context: ${additionalContext}\n`
+      : "";
+
+    const imageSection =
+      imageDataArray.length > 0
+        ? `[${imageDataArray.length} image(s) attached]\n`
+        : "";
+
+    // Build identity instruction
+    const identityInstruction = isOwnContent
+      ? " This is YOUR own content you're promoting."
+      : ` You are @${this.username} reacting to @${promotionAuthor}'s post.`;
+
     userContent.push({
       type: "text",
-      text: `@${promotionAuthor}${isOwnContent ? ' (you)' : ''} posted:
+      text: `@${promotionAuthor}${isOwnContent ? " (you)" : ""} posted:
 
 "${promotionContent}"
 
-${additionalContext ? `Context: ${additionalContext}\n` : ''}
-${imageDataArray.length > 0 ? `[${imageDataArray.length} image(s) attached]\n` : ''}
+${contextSection}${imageSection}
+As @${this.username}, write YOUR quote cast reaction.${identityInstruction}
 
-Write your quote cast.${isOwnContent ? ' Reference it as your own content.' : ' React to their post.'}
+Remember: You ARE @${this.username}. Write exactly as YOU would write, using YOUR voice from the examples above.
 
-Output only the quote cast text.`
+Output only the quote cast text.`,
     });
 
     return [
@@ -733,18 +863,23 @@ Output only the quote cast text.`
   async performVoiceWarmup(): Promise<void> {
     try {
       if (this.topCasts.length === 0) return;
-      
+
       const warmupExample = this.topCasts[0];
       await generateText({
         model: this.fastModel,
         messages: [
           {
             role: "system",
-            content: `You are ${this.username}. Match this style exactly: ${warmupExample.text}`,
+            content: `You are @${this.username}. These are YOUR actual posts that YOU wrote:
+"${warmupExample.text}"
+${this.topCasts[1]?.text ? `"${this.topCasts[1].text}"` : ""}
+
+You ARE this person. Write as yourself.`,
           },
           {
             role: "user",
-            content: "Write a short test message in this style.",
+            content:
+              "As @" + this.username + ", write a short message in YOUR style.",
           },
         ],
         temperature: 0.9,
@@ -831,9 +966,12 @@ Output only the quote cast text.`
         },
         {
           role: "user" as const,
-          content: `Feedback: ${userFeedback}
+          content: `As @${this.username}, you just wrote: "${previousCast}"
 
-Rewrite the quote cast addressing this feedback. Stay under 280 chars.
+Feedback: ${userFeedback}
+
+Rewrite YOUR quote cast as @${this.username} addressing this feedback. 
+Remember: You ARE @${this.username}. Stay in character. Stay under 280 chars.
 Output only the new quote cast text.`,
         },
       ];
