@@ -48,10 +48,17 @@ const CastCard: React.FC<CastCardProps> = ({
   const [refreshFeedback, setRefreshFeedback] = useState("");
   const [hasClaimed, setHasClaimed] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
+  console.log(promotion);
 
+  console.log(
+    parseFloat(formatUnits(promotion.base_rate, 6)),
+    "base rate in CastCard"
+  );
   const pricing = useGetPostPricing(
     parseFloat(formatUnits(promotion.base_rate, 6))
   );
+
+  console.log(pricing, " pricing in CastCard");
 
   const { connectedUserData } = useUserStats() as {
     connectedUserData: UserStats;

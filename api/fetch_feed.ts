@@ -77,8 +77,6 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       }
     }
 
-    console.log(activeIds);
-
     promotions
       .sort((a: any, b: any) => b.score - a.score)
       .map((promotion: any) => ({

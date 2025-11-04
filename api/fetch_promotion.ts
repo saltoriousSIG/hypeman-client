@@ -76,6 +76,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
 
     console.log(cast.embeds);
 
+    console.log(promotion.result);
     if (cast) {
       const promotionData = {
         ...promotion.result,
@@ -102,7 +103,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
             promoterData.result.state > BigInt(0) &&
             promoterData.result.cast_hash !== zeroHash) ||
           !!current_user_intent?.cast_hash,
-        base_rate: parseUnits(default_base_rate, 6).toString(),
+        base_rate: promotion.result.base_rate > 0n ? promotion.result.base_rate.toString() : parseUnits(default_base_rate, 6).toString(),
         cast_data: {
           text: cast.text,
           embeds: cast.embeds,

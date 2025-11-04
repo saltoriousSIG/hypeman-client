@@ -90,7 +90,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
     let fee: number;
     switch (tier) {
       case Tiers.TIER_1:
-        if (promotion.base_rate) {
+        if (promotion.base_rate > 0n) {
           fee =
             parseFloat(formatUnits(promotion.base_rate, 6)) *
             pricing_tiers.tier1;
@@ -99,7 +99,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
         }
         break;
       case Tiers.TIER_2:
-        if (promotion.base_rate) {
+        if (promotion.base_rate > 0n) {
           fee =
             parseFloat(formatUnits(promotion.base_rate, 6)) *
             pricing_tiers.tier2;
@@ -108,7 +108,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
         }
         break;
       case Tiers.TIER_3:
-        if (promotion.base_rate) {
+        if (promotion.base_rate > 0n) {
           fee =
             parseFloat(formatUnits(promotion.base_rate, 6)) *
             pricing_tiers.tier3;
@@ -126,9 +126,6 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
         }
         break;
     }
-
-    console.log(tier);
-    console.log(fee, "fee");
 
     // Generate expiry (default: 1 hour from now) if not provided
     const expiry = body.expiry
