@@ -109,7 +109,7 @@ export default function PromotionCastPreview({
                     </Button>
                     <img
                       key={index}
-                      src={embed.metadata.frame.image}
+                      src={embed?.metadata?.frame?.image}
                       className="rounded-lg "
                     />
                   </div>
