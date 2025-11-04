@@ -22,6 +22,7 @@ interface GenerationResult {
   feedback?: string;
   variationIndex?: number;
 }
+
 interface EmbedContext {
   // For image embeds
   metadata?: {
@@ -61,6 +62,367 @@ const ContentComparisonSchema = z.object({
     .describe("Whether the two texts convey the same core message and meaning"),
 });
 
+// Voice Pattern Analysis Types and Class
+interface VoicePattern {
+  sentenceStructures: string[];
+  openingPatterns: string[];
+  reactionWords: string[];
+  punctuationStyle: {
+    usesPeriods: boolean;
+    usesEllipsis: boolean;
+    usesExclamation: boolean;
+    usesQuestionMarks: boolean;
+    multipleMarks: boolean;
+  };
+  emojiPatterns: {
+    emojis: string[];
+    frequency: 'never' | 'rarely' | 'sometimes' | 'often';
+    placement: 'start' | 'end' | 'middle' | 'mixed';
+  };
+  sentenceLength: {
+    average: number;
+    style: 'short' | 'mixed' | 'long';
+  };
+  vocabulary: {
+    slangTerms: string[];
+    technicalTerms: string[];
+    fillerWords: string[];
+    intensifiers: string[];
+  };
+  capitalization: 'standard' | 'all-lowercase' | 'random' | 'emphasis';
+  tweetStyle: 'single-line' | 'multi-line' | 'thread-like';
+}
+
+class VoiceAnalyzer {
+  private topCasts: Array<{ text: string; embeds: Embed[] }>;
+  private userReplies: Array<{ text: string; embeds: Embed[] }>;
+  
+  constructor(
+    topCasts: Array<{ text: string; embeds: Embed[] }>, 
+    userReplies: Array<{ text: string; embeds: Embed[] }>
+  ) {
+    this.topCasts = topCasts;
+    this.userReplies = userReplies;
+  }
+
+  analyzeVoicePatterns(): VoicePattern {
+    const allPosts = [...this.topCasts, ...this.userReplies].map(c => c.text);
+    
+    return {
+      sentenceStructures: this.extractSentenceStructures(allPosts),
+      openingPatterns: this.extractOpeningPatterns(allPosts),
+      reactionWords: this.extractReactionWords(allPosts),
+      punctuationStyle: this.analyzePunctuation(allPosts),
+      emojiPatterns: this.analyzeEmojis(allPosts),
+      sentenceLength: this.analyzeSentenceLength(allPosts),
+      vocabulary: this.extractVocabulary(allPosts),
+      capitalization: this.analyzeCapitalization(allPosts),
+      tweetStyle: this.analyzeTweetStyle(allPosts)
+    };
+  }
+
+  private extractSentenceStructures(posts: string[]): string[] {
+    const structures = new Set<string>();
+    
+    posts.forEach(post => {
+      const sentences = post.split(/[.!?]+/).filter(s => s.trim());
+      sentences.forEach(sentence => {
+        const trimmed = sentence.trim();
+        if (trimmed.length > 10 && trimmed.length < 100) {
+          const structure = this.generalizeStructure(trimmed);
+          if (structure) structures.add(structure);
+        }
+      });
+    });
+
+    return Array.from(structures).slice(0, 5);
+  }
+
+  private generalizeStructure(sentence: string): string {
+    const patterns = [
+      { regex: /^this is \w+/i, pattern: "this is [REACTION]" },
+      { regex: /^finally\s/i, pattern: "finally [OBSERVATION]" },
+      { regex: /^just \w+/i, pattern: "just [VERB/ADJ]" },
+      { regex: /^been \w+ing/i, pattern: "been [VERB]ing" },
+      { regex: /^love (that|when|how)/i, pattern: "love [CLAUSE]" },
+      { regex: /^the fact that/i, pattern: "the fact that [OBSERVATION]" },
+      { regex: /^wondering if/i, pattern: "wondering if [QUESTION]" },
+      { regex: /^imagine if/i, pattern: "imagine if [SCENARIO]" },
+      { regex: /^wait,?\s/i, pattern: "wait, [REALIZATION]" },
+      { regex: /^okay but/i, pattern: "okay but [COUNTER]" },
+      { regex: /^so basically/i, pattern: "so basically [SUMMARY]" }
+    ];
+
+    for (const { regex, pattern } of patterns) {
+      if (regex.test(sentence)) return pattern;
+    }
+
+    return null;
+  }
+
+  private extractOpeningPatterns(posts: string[]): string[] {
+    const openings = new Map<string, number>();
+    
+    posts.forEach(post => {
+      // Get first 2-4 words as opening pattern
+      const words = post.split(/\s+/);
+      if (words.length > 0) {
+        // Try different lengths
+        const twoWord = words.slice(0, 2).join(' ').toLowerCase();
+        const threeWord = words.slice(0, 3).join(' ').toLowerCase();
+        
+        if (twoWord.length < 20) {
+          openings.set(twoWord, (openings.get(twoWord) || 0) + 1);
+        }
+        if (threeWord.length < 30) {
+          openings.set(threeWord, (openings.get(threeWord) || 0) + 1);
+        }
+      }
+    });
+
+    return Array.from(openings.entries())
+      .filter(([_, count]) => count > 1) // Only patterns used more than once
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([pattern]) => pattern);
+  }
+
+  private extractReactionWords(posts: string[]): string[] {
+    const reactions = new Set<string>();
+    const reactionRegex = /\b(wild|cool|dope|sick|fire|based|crazy|insane|huge|massive|solid|clean|fresh|nice|awesome|great|amazing|interesting|fascinating|bullish|bearish|vibes?|slaps?|bangs?|hits?|goated|peak|mid|bussin|facts|real|legit|valid)\b/gi;
+    
+    posts.forEach(post => {
+      const matches = post.match(reactionRegex);
+      if (matches) {
+        matches.forEach(match => reactions.add(match.toLowerCase()));
+      }
+    });
+
+    return Array.from(reactions);
+  }
+
+  private analyzePunctuation(posts: string[]): VoicePattern['punctuationStyle'] {
+    let periods = 0, ellipsis = 0, exclamation = 0, questions = 0, multiple = 0;
+    
+    posts.forEach(post => {
+      if (post.match(/\.\s/)) periods++;
+      if (post.match(/\.{2,}/)) ellipsis++;
+      if (post.includes('!')) exclamation++;
+      if (post.includes('?')) questions++;
+      if (post.match(/[!?]{2,}/)) multiple++;
+    });
+
+    const total = Math.max(posts.length, 1);
+    
+    return {
+      usesPeriods: periods > total * 0.3,
+      usesEllipsis: ellipsis > total * 0.15,
+      usesExclamation: exclamation > total * 0.2,
+      usesQuestionMarks: questions > total * 0.15,
+      multipleMarks: multiple > total * 0.1
+    };
+  }
+
+  private analyzeEmojis(posts: string[]): VoicePattern['emojiPatterns'] {
+    const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]/gu;
+    const emojis = new Map<string, number>();
+    let totalWithEmoji = 0;
+    let placements = { start: 0, end: 0, middle: 0 };
+    
+    posts.forEach(post => {
+      const matches = post.match(emojiRegex);
+      if (matches) {
+        totalWithEmoji++;
+        matches.forEach(emoji => {
+          emojis.set(emoji, (emojis.get(emoji) || 0) + 1);
+        });
+        
+        // Check placement
+        const firstEmoji = post.search(emojiRegex);
+        const lastEmoji = post.lastIndexOf(matches[matches.length - 1]);
+        
+        if (firstEmoji === 0) {
+          placements.start++;
+        } else if (lastEmoji === post.length - matches[matches.length - 1].length) {
+          placements.end++;
+        } else if (firstEmoji > 0) {
+          placements.middle++;
+        }
+      }
+    });
+
+    const ratio = posts.length > 0 ? totalWithEmoji / posts.length : 0;
+    const frequency = ratio === 0 ? 'never' : 
+                     ratio < 0.2 ? 'rarely' : 
+                     ratio < 0.5 ? 'sometimes' : 'often';
+    
+    const maxPlacement = Math.max(placements.start, placements.end, placements.middle);
+    const placement = maxPlacement === 0 ? 'mixed' :
+                     maxPlacement === placements.end ? 'end' :
+                     maxPlacement === placements.start ? 'start' :
+                     maxPlacement === placements.middle ? 'middle' : 'mixed';
+
+    return {
+      emojis: Array.from(emojis.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([emoji]) => emoji),
+      frequency,
+      placement
+    };
+  }
+
+  private analyzeSentenceLength(posts: string[]): VoicePattern['sentenceLength'] {
+    const lengths: number[] = [];
+    
+    posts.forEach(post => {
+      const words = post.split(/\s+/).filter(w => w.length > 0).length;
+      lengths.push(words);
+    });
+
+    const average = lengths.length > 0 
+      ? lengths.reduce((a, b) => a + b, 0) / lengths.length 
+      : 20;
+    
+    const style = average < 20 ? 'short' : average < 40 ? 'mixed' : 'long';
+
+    return { average: Math.round(average), style };
+  }
+
+  private extractVocabulary(posts: string[]): VoicePattern['vocabulary'] {
+    const slangRegex = /\b(lol|lmao|rofl|ngl|tbh|imo|imho|afaik|fwiw|gm|gn|ngmi|wagmi|lfg|iykyk|degens?|alpha|cope|hopium|moon|pump|dump|rug|rekt|ser|fren|anon|chad|noob|normie|pleb|whale|hodl|diamond hands|paper hands|ape|gmi|probably nothing|few understand|up only|down bad|touch grass)\b/gi;
+    const intensifierRegex = /\b(really|actually|literally|totally|absolutely|definitely|seriously|genuinely|truly|extremely|super|very|quite|pretty|so|mega|ultra|hella)\b/gi;
+    const fillerRegex = /\b(like|just|kinda|sorta|maybe|probably|basically|essentially|apparently|obviously|clearly|honestly|lowkey|highkey)\b/gi;
+    
+    const slang = new Set<string>();
+    const intensifiers = new Set<string>();
+    const fillers = new Set<string>();
+
+    posts.forEach(post => {
+      const slangMatches = post.match(slangRegex);
+      const intensifierMatches = post.match(intensifierRegex);
+      const fillerMatches = post.match(fillerRegex);
+      
+      if (slangMatches) slangMatches.forEach(s => slang.add(s.toLowerCase()));
+      if (intensifierMatches) intensifierMatches.forEach(i => intensifiers.add(i.toLowerCase()));
+      if (fillerMatches) fillerMatches.forEach(f => fillers.add(f.toLowerCase()));
+    });
+
+    return {
+      slangTerms: Array.from(slang),
+      technicalTerms: [], // Could be expanded with domain-specific detection
+      fillerWords: Array.from(fillers),
+      intensifiers: Array.from(intensifiers)
+    };
+  }
+
+  private analyzeCapitalization(posts: string[]): VoicePattern['capitalization'] {
+    let allLower = 0, standard = 0, random = 0, emphasis = 0;
+    
+    posts.forEach(post => {
+      const hasUppercase = /[A-Z]/.test(post);
+      const startsCapital = /^[A-Z]/.test(post);
+      const hasAllCaps = /\b[A-Z]{2,}\b/.test(post);
+      
+      if (!hasUppercase) {
+        allLower++;
+      } else if (hasAllCaps) {
+        emphasis++;
+      } else if (startsCapital && !post.match(/[A-Z]/g)?.slice(1).length) {
+        standard++;
+      } else {
+        random++;
+      }
+    });
+
+    const max = Math.max(allLower, standard, random, emphasis);
+    return max === allLower ? 'all-lowercase' : 
+           max === standard ? 'standard' : 
+           max === emphasis ? 'emphasis' : 'random';
+  }
+
+  private analyzeTweetStyle(posts: string[]): VoicePattern['tweetStyle'] {
+    let singleLine = 0, multiLine = 0, threadLike = 0;
+    
+    posts.forEach(post => {
+      const lineCount = post.split('\n').length;
+      if (lineCount === 1) {
+        singleLine++;
+      } else if (lineCount > 3) {
+        threadLike++;
+      } else {
+        multiLine++;
+      }
+    });
+
+    const max = Math.max(singleLine, multiLine, threadLike);
+    return max === threadLike ? 'thread-like' :
+           max === multiLine ? 'multi-line' : 'single-line';
+  }
+
+  formatVoiceInstructions(pattern: VoicePattern): string {
+    const instructions: string[] = [];
+
+    // Add sentence structures if found
+    if (pattern.sentenceStructures.length > 0) {
+      instructions.push(`Common patterns: ${pattern.sentenceStructures.slice(0, 3).join(', ')}`);
+    }
+
+    // Add opening patterns if consistent
+    if (pattern.openingPatterns.length > 0) {
+      instructions.push(`Often starts with: "${pattern.openingPatterns[0]}" or "${pattern.openingPatterns[1] || pattern.openingPatterns[0]}"`);
+    }
+
+    // Add reaction words if they use them
+    if (pattern.reactionWords.length > 0) {
+      const topReactions = pattern.reactionWords.slice(0, 5);
+      instructions.push(`Reactions: ${topReactions.join(', ')}`);
+    }
+
+    // Punctuation style
+    const punctuation: string[] = [];
+    if (pattern.punctuationStyle.usesEllipsis) punctuation.push('uses ...');
+    if (pattern.punctuationStyle.multipleMarks) punctuation.push('uses !!! or ???');
+    if (!pattern.punctuationStyle.usesPeriods) punctuation.push('rarely uses periods');
+    if (pattern.punctuationStyle.usesExclamation) punctuation.push('uses !');
+    if (punctuation.length > 0) {
+      instructions.push(`Punctuation: ${punctuation.join(', ')}`);
+    }
+
+    // Emoji usage
+    if (pattern.emojiPatterns.frequency !== 'never' && pattern.emojiPatterns.emojis.length > 0) {
+      instructions.push(`${pattern.emojiPatterns.frequency === 'often' ? 'Often uses' : 
+                         pattern.emojiPatterns.frequency === 'sometimes' ? 'Sometimes uses' : 
+                         'Rarely uses'} emojis: ${pattern.emojiPatterns.emojis.join(' ')}`);
+    }
+
+    // Vocabulary style
+    if (pattern.vocabulary.slangTerms.length > 0) {
+      instructions.push(`Slang: ${pattern.vocabulary.slangTerms.slice(0, 5).join(', ')}`);
+    }
+    if (pattern.vocabulary.fillerWords.length > 0) {
+      instructions.push(`Filler words: ${pattern.vocabulary.fillerWords.slice(0, 3).join(', ')}`);
+    }
+
+    // Capitalization
+    if (pattern.capitalization === 'all-lowercase') {
+      instructions.push('Writes in all lowercase');
+    } else if (pattern.capitalization === 'emphasis') {
+      instructions.push('Uses CAPS for emphasis');
+    }
+
+    // Length
+    instructions.push(`Average length: ~${pattern.sentenceLength.average} words`);
+
+    // Style
+    if (pattern.tweetStyle === 'multi-line') {
+      instructions.push('Often uses line breaks');
+    }
+
+    return instructions.join('\n');
+  }
+}
+
 export class HypemanAI {
   private static instance: HypemanAI;
   private initPromise: Promise<void> | null = null;
@@ -76,9 +438,6 @@ export class HypemanAI {
     text: string;
     embeds: Embed[];
   }[] = [];
-  // private user_casts: Cast[];
-  // private voiceProfile: VoiceProfile | null = null;
-  // private topExamples: Cast[] = [];
 
   constructor(fid: number, username: string) {
     // Haiku-optimized model
@@ -190,6 +549,7 @@ export class HypemanAI {
 
     return imageUrls;
   }
+
   private async compressImageIfNeeded(
     base64Image: string,
     maxSizeBytes: number = 5242880 // Exact 5MB limit
@@ -239,6 +599,7 @@ export class HypemanAI {
     promotionAuthor: string,
     embedContext: EmbedContext[]
   ) {
+    // Fetch existing quotes
     const {
       data: { casts: existing_quotes },
     } = await axios.get(
@@ -252,40 +613,29 @@ export class HypemanAI {
 
     const sanitizedExistingQuotes = this.sanitizeCasts(existing_quotes);
 
-    console.log(sanitizedExistingQuotes, "existing quotes");
+    // Analyze voice patterns
+    const analyzer = new VoiceAnalyzer(this.topCasts, this.userReplies);
+    const voicePattern = analyzer.analyzeVoicePatterns();
+    const voiceInstructions = analyzer.formatVoiceInstructions(voicePattern);
 
-    // Build additional context from all embeds
+    // Build context
     const contextParts: string[] = [];
-
     for (const embed of embedContext) {
-      // Add URL context
-      if (embed.url) {
-        contextParts.push(`url: ${embed.url}`);
-      }
-
-      // Add embedded cast context
+      if (embed.url) contextParts.push(`url: ${embed.url}`);
       if (embed.cast?.text) {
         const castAuthor = embed.cast.author?.username || "unknown";
-        contextParts.push(
-          `embedded cast by @${castAuthor}: "${embed.cast.text}"`
-        );
+        contextParts.push(`embedded cast by @${castAuthor}: "${embed.cast.text}"`);
       }
-
-      // Add frame/miniapp context
       if (embed.metadata?.frame?.title) {
         contextParts.push(`frame: ${embed.metadata.frame.title}`);
       }
     }
 
-    const contextUrl = embedContext.find((e) => e.url)?.url;
-    const additionalContext =
-      contextParts.length > 0 ? contextParts.join("\n") : "";
+    const additionalContext = contextParts.length > 0 ? contextParts.join("\n") : "";
 
-    // Check for images (separate from other context)
+    // Handle images
     const imageUrls = this.extractImageFromEmbeds(embedContext);
     const imageDataArray: string[] = [];
-
-    // Fetch all images
     for (const imageUrl of imageUrls) {
       const imageData = await this.fetchImageAsBase64(imageUrl);
       if (imageData) {
@@ -294,132 +644,35 @@ export class HypemanAI {
       }
     }
 
+    // Get trending context if available
     const trending_sentiment_summary = await redis.get("trending:summary");
-    console.log(trending_sentiment_summary, "trending sentiment summary");
-    console.log(additionalContext, "additional context");
-    console.log(this.userBio);
-    console.log(this.username);
-    console.log(this.topCasts);
-    console.log(this.userReplies);
 
-    const systemContent = `You are ${this.username} on Farcaster. You're writing a quote cast to share interesting content with your followers.
+    // SIMPLIFIED SYSTEM PROMPT
+    const systemContent = `You are @${this.username} quote casting on Farcaster.
 
-<your_voice>
-Study these examples to understand exactly how you write:
+Voice patterns:
+${voiceInstructions}
 
-<top_casts>
-${this.topCasts.map((cast) => cast.text).join("\n\n")}
-</top_casts>
+Your recent posts:
+${this.topCasts.slice(0, 3).map((cast) => `"${cast.text}"`).join("\n")}
 
-<reply_casts>
-${this.userReplies.map((cast) => cast.text).join("\n\n")}
-</reply_casts>
+Bio: ${this.userBio}
 
-<profile_bio>
-${this.userBio}
-</profile_bio>
-</your_voice>
+${sanitizedExistingQuotes.length > 0 ? `
+Others already quoted this - avoid these angles:
+${sanitizedExistingQuotes.slice(0, 3).map((quote) => {
+  const preview = quote.text.substring(0, 60);
+  return `- ${preview}${quote.text.length > 60 ? '...' : ''}`;
+}).join("\n")}` : ''}
 
-${
-  sanitizedExistingQuotes.length > 0
-    ? `
-<already_written>
-⚠️ IMPORTANT: These quote casts already exist for this content. Your cast must be CLEARLY DIFFERENT in wording, angle, and structure:
+${trending_sentiment_summary ? `Current vibe: ${trending_sentiment_summary}` : ''}
 
-${sanitizedExistingQuotes.map((quote) => `"${quote.text}" - @${quote.author}`).join("\n")}
+Write a quote cast under 280 chars.`;
 
-Do NOT use similar phrases, openings, or patterns. Write something fresh.
-</already_written>
-`
-    : ""
-}
-
-<task>
-You are @${this.username}. You're quote casting content written by @${promotionAuthor}.
-
-${
-  this.username === promotionAuthor
-    ? `
-NOTE: You are quote casting YOUR OWN content. You can reference it as your own.
-`
-    : `
-CRITICAL: @${promotionAuthor} wrote this content, NOT YOU. You are reacting to THEIR post.
-- Do NOT speak as if you did what they did
-- Do NOT retell their story in first person
-- React, comment on, or add to what THEY shared
-- You are the outside observer/supporter, not the original author
-`
-}
-
-Your quote cast must:
-- Be under 280 characters
-- Match your voice EXACTLY - same tone, punctuation, capitalization, typical length
-- Sound like you genuinely found something worth sharing
-- Add your authentic reaction or insight, not just a summary
-</task>
-
-<rules>
-✓ Write like a real person sharing something they like
-✓ Match the sentence structure and length you typically use
-✓ Use only the slang, emojis, and expressions YOU actually use in your examples
-✓ Stay focused on the actual content provided
-✓ Keep it under 280 characters
-
-✗ Don't use generic AI phrases like "yo", "ngl", "hits different", "that's the vibe" unless they appear in YOUR examples above
-✗ Don't use corporate/marketing language or formulaic phrases
-✗ Don't invent facts, URLs, or details not in the content
-✗ Don't use em dashes (—)
-✗ Don't just copy or paraphrase the original content in first person${this.username !== promotionAuthor ? `\n✗ Don't speak as if YOU did what @${promotionAuthor} did - you're commenting on THEIR experience` : ""}
-</rules>
-
-${
-  trending_sentiment_summary
-    ? `
-<current_vibe>
-Recent Farcaster trends:
-${trending_sentiment_summary}
-
-Only reference this if it naturally fits your voice and the content.
-</current_vibe>
-`
-    : ""
-}
-
-Output only the quote cast text - nothing else.`;
-
-    const textContent = `
-<original_content>
-This content was written by @${promotionAuthor}${this.username !== promotionAuthor ? " (NOT you)" : " (this is YOUR content)"}:
-
-${promotionContent}
-</original_content>
-
-${
-  additionalContext || contextUrl || imageDataArray.length > 0
-    ? `
-<additional_context>
-${additionalContext ? `${additionalContext}\n` : ""}${contextUrl ? `URL: ${contextUrl}\n` : ""}${imageDataArray.length > 0 ? `${imageDataArray.length} image(s) attached - analyze and reference naturally if relevant.` : ""}
-</additional_context>
-`
-    : ""
-}
-
-${
-  this.username === promotionAuthor
-    ? `
-Write a quote cast promoting your own content above. You can reference it as your own work.
-`
-    : `
-Write a quote cast reacting to @${promotionAuthor}'s content above. Remember: THEY wrote this, not you. You're commenting on what THEY shared.
-`
-}
-
-Make it sound like ${this.username} actually wrote it - not "similar to" their voice, but IDENTICAL.`;
-
-    // Build the user message content with or without images
+    // SIMPLIFIED USER PROMPT
     const userContent: any[] = [];
 
-    // Add all images first if available (Claude performs better with images before text)
+    // Add images first if available
     for (const imageData of imageDataArray) {
       userContent.push({
         type: "image",
@@ -427,10 +680,20 @@ Make it sound like ${this.username} actually wrote it - not "similar to" their v
       });
     }
 
-    // Add text content
+    // Add text - much simpler
+    const isOwnContent = this.username === promotionAuthor;
     userContent.push({
       type: "text",
-      text: textContent,
+      text: `@${promotionAuthor}${isOwnContent ? ' (you)' : ''} posted:
+
+"${promotionContent}"
+
+${additionalContext ? `Context: ${additionalContext}\n` : ''}
+${imageDataArray.length > 0 ? `[${imageDataArray.length} image(s) attached]\n` : ''}
+
+Write your quote cast.${isOwnContent ? ' Reference it as your own content.' : ' React to their post.'}
+
+Output only the quote cast text.`
     });
 
     return [
@@ -444,8 +707,6 @@ Make it sound like ${this.username} actually wrote it - not "similar to" their v
       },
     ];
   }
-
-  // ... rest of the methods remain the same until generateVariations
 
   private extractCastFromResponse(text: string): string {
     text = text.trim();
@@ -470,8 +731,9 @@ Make it sound like ${this.username} actually wrote it - not "similar to" their v
   }
 
   async performVoiceWarmup(): Promise<void> {
-    // if (this.topExamples.length === 0) return;
     try {
+      if (this.topCasts.length === 0) return;
+      
       const warmupExample = this.topCasts[0];
       await generateText({
         model: this.fastModel,
@@ -516,7 +778,7 @@ Make it sound like ${this.username} actually wrote it - not "similar to" their v
       const result = await generateText({
         model: this.fastModel,
         messages,
-        temperature: 0.95,
+        temperature: options?.temperature || 0.95,
         frequencyPenalty: 0.65, // moderate - avoid repetition
         presencePenalty: 0.65, // moderate - encourage new topics
         maxRetries: 1,
@@ -531,7 +793,7 @@ Make it sound like ${this.username} actually wrote it - not "similar to" their v
       return {
         success: true,
         text: castText,
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-5-20250929",
         generationType: "initial",
       };
     } catch (error) {
@@ -539,14 +801,11 @@ Make it sound like ${this.username} actually wrote it - not "similar to" their v
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-5-20250929",
       };
     }
   }
 
-  /**
-   * HAIKU-OPTIMIZED: Refinement with feedback
-   */
   async refineCast(
     promotionUrl: string,
     promotionContent: string,
@@ -563,7 +822,6 @@ Make it sound like ${this.username} actually wrote it - not "similar to" their v
         promotionAuthor,
         embedContext
       );
-      //const styleHints = this.generateStyleHints();
 
       const messages = [
         ...baseMessages,
@@ -573,18 +831,19 @@ Make it sound like ${this.username} actually wrote it - not "similar to" their v
         },
         {
           role: "user" as const,
-          content: `<${this.username}_feedback>${userFeedback}</${this.username}_feedback>
-          <task>Rewrite completely (under 280 chars). Match voice. Address feedback.</task>
-          <output>Only the revised cast</output>`,
+          content: `Feedback: ${userFeedback}
+
+Rewrite the quote cast addressing this feedback. Stay under 280 chars.
+Output only the new quote cast text.`,
         },
       ];
 
       const result = await generateText({
         model: this.fastModel,
         messages,
-        temperature: options?.temperature || 0.85, // Low for exact matching
-        frequencyPenalty: 0.05, // Very low - allow pattern reuse
-        presencePenalty: 0.05, // Very low - allow style matching
+        temperature: options?.temperature || 0.85,
+        frequencyPenalty: 0.4,
+        presencePenalty: 0.4,
         maxRetries: 2,
         abortSignal: AbortSignal.timeout(20000),
       });
@@ -595,7 +854,7 @@ Make it sound like ${this.username} actually wrote it - not "similar to" their v
       return {
         success: true,
         text: castText,
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-5-20250929",
         generationType: "refinement",
         originalCast: previousCast,
         feedback: userFeedback,
@@ -604,7 +863,7 @@ Make it sound like ${this.username} actually wrote it - not "similar to" their v
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-5-20250929",
       };
     }
   }
@@ -650,14 +909,6 @@ Make it sound like ${this.username} actually wrote it - not "similar to" their v
     }
   }
 
-  /**
-   * Generate a promotional cast for a given cast text and budget
-   * Uses the user's actual voice, not a generic character
-   * @param castText - The original cast text to promote
-   * @param budget - The budget amount for the promotion
-   * @param creatorUsername - The username of the creator to mention
-   * @returns Promise with promotional cast text
-   */
   async generatePromotionalCast(
     castText: string,
     budget: string,
@@ -673,91 +924,34 @@ Make it sound like ${this.username} actually wrote it - not "similar to" their v
           role: "system" as const,
           content: `You are Hypeman, a promotional cast writer.
 
-        <character>
-You are Hypeman, a charismatic hero who amplifies and promotes content for creators. You embody authentic enthusiasm and cultural credibility.
-APPEARANCE: You wear a signature red jacket with electric yellow lightning bolts, a black flat-top hat with gold stripes, futuristic rainbow-spectrum goggles, and gold "H" medallions on your chest and belt. Your style blends street culture with digital-age swagger.
-PERSONALITY: You are genuinely enthusiastic, energetic, and passionate about the content you promote. You're not just loud—you're strategic and authentic. You believe in what you hype up, and that belief is contagious. You bring momentum and cultural weight to everything you touch.
-COMMUNICATION STYLE: You speak with confidence and energy. You're lively and engaging, using cultural references and current slang naturally. You build people up and make them feel seen. You're encouraging without being fake, professional without being stiff.
-EXPERTISE: You've worked with cultural icons like Drake, Kendrick Lamar, Frank Ocean, Chance the Rapper, and Snoop Dogg. You understand what makes content resonate and how to amplify messages authentically. You champion both established legends and emerging talent.
-MISSION: Help creators get their content noticed by bringing authentic hype, cultural credibility, and strategic amplification. You translate creative vision into cultural impact.
-</character>
+You're the ultimate hype machine - energetic, authentic, passionate about amplifying great content. You speak with genuine enthusiasm and cultural credibility, like a mix between a music producer hyping their artist and a friend sharing something they genuinely love.
 
-
-<restrictions>
-CONTENT REQUIREMENTS:
-- You're promoting @${creatorUsername}'s content (they created the original post)
-- MUST mention @${creatorUsername} in the cast
-- MUST include the budget amount prominently
-- Under 280 characters
-
-BUDGET CLARIFICATION:
-- The budget (${budgetDisplay}) is a reward pool for people who quote cast this promotion
-- Do NOT imply the creator is charging this amount
-- Do NOT imply this is the cost to view the content
-- The budget is separate from the creator's actual post
-
-STYLE:
-- Make it sound like a genuine recommendation to check out the promotion
-- Be enthusiastic but authentic
-- Do NOT copy phrases directly from the original cast
-- Do NOT invent any facts about the content
-
-NEVER DO:
-- Mention that AI is involved in creating this promotional cast
-- Use dashes or em dashes in your writing
-</restrictions>`,
+Style: Natural excitement, cultural references, authentic slang that flows naturally. You build people up and make them feel seen.`,
         },
         {
           role: "user" as const,
-          content: `<task>Write a promotional cast recommending this content</task>
+          content: `Write a promotional cast for @${creatorUsername}'s content:
 
-<task>
-Write a promotional cast for @${creatorUsername}'s content below. You're recommending their content to others.
-</task>
+"${castText}"
 
-<original_cast>
-${castText}
-</original_cast>
+Budget: ${budgetDisplay} (reward pool for quotecasters)
 
-<creator>
-Original Creator: @${creatorUsername}
-</creator>
+Requirements:
+- Mention @${creatorUsername}
+- Include the budget prominently  
+- Under 280 chars
+- Sound genuinely excited about their content
+- Natural, authentic voice
 
-<budget>
-Budget: ${budgetDisplay}
-This is how much is available for quote casters to claim. Do NOT confuse this with the creator's content—the creator is not charging this amount, and this is not the cost to view their post. This is a reward pool for people who share the promotion.
-</budget>
-
-<requirements>
-MUST INCLUDE:
-- Mention @${creatorUsername} (the creator of this content)
-- Include the budget amount prominently
-
-STYLE:
-- Under 280 characters
-- Enthusiastic but authentic
-- Natural recommendation tone
-- Stay true to Hypeman's personality
-- Do NOT use dashes or em dashes
-- Do NOT copy phrases directly from the original cast
-- Do NOT mention AI involvement
-- Do NOT invent facts about the content
-- Never return models internal thinking or notes, only the cast text
-- DO NOT USE GENERIC PHRASES LIKE "CHECK THIS OUT" OR "FR" OR "LOWKEY" UNLESS THEY FIT NATURALLY IN THE CAST or HITS DIFFERENT or anything like that. Talk like flava flav
-</requirements>
-
-<output_format>
-Return only the promotional cast text, nothing else.
-Never include any explanations, notes, or formatting—just the cast text.
-</output_format>`,
+Output only the promotional cast text.`,
         },
       ];
 
       const result = await generateText({
         model: this.fastModel,
         messages,
-        temperature: 0.9, // Slightly higher for promotional variety
-        frequencyPenalty: 0.3, // Moderate - still promotional character
+        temperature: 0.9,
+        frequencyPenalty: 0.3,
         presencePenalty: 0.2,
         maxRetries: 2,
         abortSignal: AbortSignal.timeout(15000),
@@ -769,14 +963,14 @@ Never include any explanations, notes, or formatting—just the cast text.
       return {
         success: true,
         text: promotionalText,
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-5-20250929",
         generationType: "promotional",
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-5-20250929",
       };
     }
   }
