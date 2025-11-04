@@ -722,23 +722,19 @@ export class HypemanAI {
       systemContent +
       `
 
-CRITICAL UNIQUENESS INSTRUCTIONS:
-- Do NOT write generic reactions like "This is cool" or "Love this"  
-- Do NOT follow a template of [observation] + [restatement]
-- Your reaction must be DISTINCTLY yours based on YOUR specific voice patterns above
-- Consider approaching from: ${selectedAngles.join(" OR ")}
+Additional guidance:
+- Consider approaching from: ${selectedAngles.join(" or ")}
 - ${styleVariance.openingStyle === "direct" ? "Start directly with your point" : "Build up to your main point"}
-- ${styleVariance.energyLevel === "high" ? "Match your high-energy replies above" : "Use your measured, thoughtful tone"}
-- ${styleVariance.punctuationMood === "question" ? "Consider framing as a question if it fits your style" : "Make a clear statement"}
-- Be ${styleVariance.lengthBias === "concise" ? "punchy and brief" : "detailed within the limit"}
+- ${styleVariance.energyLevel === "high" ? "Use your energetic voice" : "Use your thoughtful tone"}
+- ${styleVariance.punctuationMood === "question" ? "Could frame as a question" : "Make a clear statement"}
+- Be ${styleVariance.lengthBias === "concise" ? "concise and punchy" : "detailed but within limit"}
 
-AVOID THESE GENERIC PATTERNS AT ALL COSTS:
+Try to avoid these common patterns:
 - "[Thing] on [platform]? This is [adjective]..."
 - "Finally a way to..."
-- "This is [adjective]... [restatement of original]"
-- Any variation of "not just empty [something]"
+- Direct restatements of the original
 
-YOUR ACTUAL UNIQUE REACTION:`;
+Write naturally in your voice.`;
 
     return [
       {
@@ -812,9 +808,9 @@ YOUR ACTUAL UNIQUE REACTION:`;
     // Extract the most unique patterns from this specific user
     const uniquePatterns = this.extractUniqueUserPatterns();
 
-    // Format replies - MOST IMPORTANT for reactions
+    // Format replies - important for reactions but not overwhelming
     const repliesFormatted = this.userReplies
-      .slice(0, 6)
+      .slice(0, 4)
       .map((reply, idx) => `${idx + 1}. "${reply.text}"`)
       .join("\n");
 
@@ -824,43 +820,30 @@ YOUR ACTUAL UNIQUE REACTION:`;
       .map((cast) => `"${cast.text}"`)
       .join("\n");
 
-    // List of BANNED generic starts
+    // List of overused generic starts to avoid
     const bannedStarts = [
-      "This is",
-      "That is",
+      "This is cool",
       "Love this",
-      "Love that",
       "So cool",
-      "This hits",
       "Finally",
-      "Check out",
-      "Check this",
-      "Interesting",
-      "Game changer",
-      "Wild",
-      "Dope",
-      "Fire",
-      "Reputation markets",
-      "Your portfolio",
+      "Check this out",
     ];
 
-    // Format existing quotes MORE aggressively
+    // Format existing quotes to avoid
     const existingQuotesSection =
       sanitizedExistingQuotes.length > 0
         ? sanitizedExistingQuotes
-            .slice(0, 8)
+            .slice(0, 3)
             .map((quote) => {
-              return `BANNED: "${quote.text.substring(0, 100)}"`;
+              return `"${quote.text.substring(0, 60)}${quote.text.length > 60 ? "..." : ""}"`;
             })
             .join("\n")
         : "";
 
-    // COMPLETELY DIFFERENT APPROACH - Force uniqueness through negative examples
-    const systemContent = `IDENTITY: You are @${this.username}
+    // BALANCED IDENTITY - not too aggressive
+    const systemContent = `You are @${this.username} on Farcaster.
 
-CRITICAL INSTRUCTION: If two different users would write the same quote cast, you have FAILED.
-
-YOUR ACTUAL REACTIONS (STUDY THESE - THIS IS HOW YOU UNIQUELY RESPOND):
+YOUR ACTUAL REACTIONS (how you respond to others):
 ${repliesFormatted}
 
 ${uniquePatterns}
@@ -870,28 +853,22 @@ ${topCastsFormatted}
 
 ${voiceInstructions}
 
-ABSOLUTELY FORBIDDEN STARTS (AUTOMATIC FAILURE):
-${bannedStarts.map((s) => `- "${s}..."`).join("\n")}
+Common phrases to avoid (they're overused):
+${bannedStarts
+  .slice(0, 5)
+  .map((s) => `- "${s}..."`)
+  .join("\n")}
 
 ${
   existingQuotesSection
     ? `
-OTHER USERS ALREADY SAID (MUST BE COMPLETELY DIFFERENT):
+Others already said these - try a different angle:
 ${existingQuotesSection}`
     : ""
 }
 
-MANDATORY SUCCESS CRITERIA:
-✓ Your response is SO specific to @${this.username} that no other user would write it
-✓ You use patterns/phrases from YOUR replies above, not generic reactions
-✓ If someone can't tell this is from @${this.username} specifically, you've failed
-✓ Under 280 characters
-
-FAILURE CRITERIA (INSTANT REJECTION):
-✗ Starting with any forbidden phrase above
-✗ Writing something that sounds like "any user" could say it
-✗ Following a template like "[observation] + [restatement]"
-✗ Using generic enthusiasm without YOUR specific voice
+Write a quote cast that sounds natural and authentic to YOUR voice.
+Stay under 280 characters.
 
 ${trending_sentiment_summary ? `Context: ${trending_sentiment_summary}` : ""}`;
 
@@ -921,26 +898,17 @@ ${trending_sentiment_summary ? `Context: ${trending_sentiment_summary}` : ""}`;
 
 ${additionalContext ? `Context: ${additionalContext}\n` : ""}
 
-TASK: Write a quote cast as @${this.username}
+Write a quote cast as @${this.username}.
 
-INSPIRATION: Look at how you replied before: "${randomReply?.text || this.userReplies[0]?.text}"
-Channel that EXACT energy and style, but for this content.
+${randomReply?.text ? `Use a similar style to how you replied before: "${randomReply.text}"` : ""}
 
 ${
   isOwnContent
-    ? `You're promoting YOUR OWN content. How would YOU specifically hype your own work?`
-    : `You're reacting to someone else's post. Use YOUR unique reaction style from the examples.`
+    ? `You're promoting your own content.`
+    : `You're reacting to someone else's post.`
 }
 
-DO NOT:
-- Write a generic tech bro response
-- Start with "This is" or any forbidden phrase
-- Sound like ChatGPT pretending to be human
-
-DO:
-- Sound exactly like the replies you've written before
-- Be unmistakably @${this.username}
-- Make it impossible for another user to have written this
+Keep it natural and authentic to your voice. Under 280 chars.
 
 Output only the quote cast text.`;
 
@@ -1021,10 +989,24 @@ Output only the quote cast text.`;
       .slice(0, 5);
 
     return `
-YOUR UNIQUE FINGERPRINT:
-Your common words: ${topWords.join(", ")}
-Your phrases: ${topPhrases.map((p) => `"${p}"`).join(", ")}
-How YOU start reactions: ${replyOpenings.map((o) => `"${o}..."`).join(", ")}
+Your style markers:
+${topWords.length > 0 ? `Words you use: ${topWords.slice(0, 3).join(", ")}` : ""}
+${
+  topPhrases.length > 0
+    ? `Your phrases: ${topPhrases
+        .slice(0, 3)
+        .map((p) => `"${p}"`)
+        .join(", ")}`
+    : ""
+}
+${
+  replyOpenings.length > 0
+    ? `How you start: ${replyOpenings
+        .slice(0, 3)
+        .map((o) => `"${o}..."`)
+        .join(", ")}`
+    : ""
+}
 `;
   }
 
@@ -1165,48 +1147,14 @@ How YOU start reactions: ${replyOpenings.map((o) => `"${o}..."`).join(", ")}
 
   private isGenericPattern(text: string): boolean {
     const genericPatterns = [
-      // Common generic openings
-      /^(this|that|it|here|what) is (cool|wild|dope|sick|amazing|great|awesome|fire|crazy|insane|huge)/i,
-      /^(finally|now|so|just) (a|we|there|got|have)/i,
-      /^(love|loving) (this|that|it|how)/i,
-      /^(check|checking) (this|that|it) out/i,
-
-      // Platform-specific generic patterns
-      /reputation market/i,
-      /not just empty/i,
-      /empty follows/i,
-      /^.+ on (fc|farcaster)\?/i,
-      /your portfolio (actually|really|now|finally) shows/i,
-
-      // Generic reaction patterns
-      /^interesting/i,
-      /^fascinating/i,
-      /^game.?changer/i,
-      /^this changes everything/i,
-      /^this hits different/i,
-      /^let'?s (go|fucking|freaking)/i,
-      /^holy (shit|crap|cow)/i,
-
-      // Template patterns
-      /^\w+ is the \w+$/i,
-      /^.+\?.+(this|that) is/i,
-      /^.+ is (basically|essentially|just)/i,
-
-      // Overused phrases
-      /bullish on/i,
-      /bearish on/i,
-      /^okay but/i,
-      /^wait/i,
-      /^yo /i,
-      /^ngl /i,
-      /fr fr/i,
-      /no cap/i,
-
-      // Generic observations
-      /^this is what/i,
-      /^this is how/i,
-      /^this is why/i,
-      /^this is where/i,
+      // Only the most egregious generic patterns
+      /^(this|that) is cool/i,
+      /^love this$/i,
+      /^finally a way to/i,
+      /not just empty follows/i,
+      /^check this out/i,
+      /^interesting$/i,
+      /^game.?changer$/i,
     ];
 
     return genericPatterns.some((pattern) => pattern.test(text.trim()));
@@ -1339,17 +1287,18 @@ You ARE this person. Write as yourself.`,
           styleVariance
         );
 
-        // Increase randomness with each attempt
-        const temperature = (options?.temperature || 0.9) + attempts * 0.1;
-        const frequencyPenalty = Math.min(0.8 + attempts * 0.1, 1.2);
-        const presencePenalty = Math.min(0.8 + attempts * 0.1, 1.2);
+        // Balanced parameters - temperature max is 1.0
+        const temperature = (options?.temperature || 0.85) + attempts * 0.05; // Max will be 0.95
+        const frequencyPenalty = Math.min(0.4 + attempts * 0.05, 0.6);
+        const presencePenalty = Math.min(0.3 + attempts * 0.05, 0.5);
 
         const result = await generateText({
           model: this.fastModel,
           messages,
-          temperature: temperature,
+          temperature: Math.min(temperature, 1.0), // Ensure never exceeds 1.0
           frequencyPenalty: frequencyPenalty,
           presencePenalty: presencePenalty,
+          // Note: topP removed - can't use with temperature on Sonnet
           maxRetries: 1,
           abortSignal: AbortSignal.timeout(15000),
         });
