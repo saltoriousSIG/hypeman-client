@@ -1350,7 +1350,6 @@ You ARE this person. Write as yourself.`,
           temperature: temperature,
           frequencyPenalty: frequencyPenalty,
           presencePenalty: presencePenalty,
-          topP: 0.92 - attempts * 0.02, // Slightly more constrained each time
           maxRetries: 1,
           abortSignal: AbortSignal.timeout(15000),
         });
