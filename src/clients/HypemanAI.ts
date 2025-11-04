@@ -147,7 +147,7 @@ class VoiceAnalyzer {
     return Array.from(structures).slice(0, 5);
   }
 
-  private generalizeStructure(sentence: string): string | null{
+  private generalizeStructure(sentence: string): string {
     const patterns = [
       { regex: /^this is \w+/i, pattern: "this is [REACTION]" },
       { regex: /^finally\s/i, pattern: "finally [OBSERVATION]" },
@@ -420,86 +420,107 @@ class VoiceAnalyzer {
   formatVoiceInstructions(pattern: VoicePattern): string {
     const instructions: string[] = [];
 
-    // Add sentence structures if found
-    if (pattern.sentenceStructures.length > 0) {
-      instructions.push(
-        `Common patterns: ${pattern.sentenceStructures.slice(0, 3).join(", ")}`
+    // Add DISTINCTIVE patterns first - things that make this user unique
+
+    // Unique opening patterns (only if they're distinctive)
+    if (pattern.openingPatterns.length > 0 && pattern.openingPatterns[0]) {
+      const uniqueOpening = pattern.openingPatterns.find(
+        (p) => !p.match(/^(this|that|it|the|i|we|just|so|well|oh|hey)/i)
       );
+      if (uniqueOpening) {
+        instructions.push(
+          `UNIQUE OPENER: Always consider starting with "${uniqueOpening}"`
+        );
+      } else if (pattern.openingPatterns[0]) {
+        instructions.push(`Often starts with: "${pattern.openingPatterns[0]}"`);
+      }
     }
 
-    // Add opening patterns if consistent
-    if (pattern.openingPatterns.length > 0) {
-      instructions.push(
-        `Often starts with: "${pattern.openingPatterns[0]}" or "${pattern.openingPatterns[1] || pattern.openingPatterns[0]}"`
-      );
-    }
-
-    // Add reaction words if they use them
+    // Distinctive reaction words (avoid generic ones)
     if (pattern.reactionWords.length > 0) {
-      const topReactions = pattern.reactionWords.slice(0, 5);
-      instructions.push(`Reactions: ${topReactions.join(", ")}`);
+      const uniqueReactions = pattern.reactionWords.filter(
+        (word) => !["cool", "nice", "great", "good", "awesome"].includes(word)
+      );
+      if (uniqueReactions.length > 0) {
+        instructions.push(
+          `YOUR SPECIFIC REACTIONS: ${uniqueReactions.slice(0, 3).join(", ")} (USE THESE, not generic words)`
+        );
+      } else if (pattern.reactionWords.length > 0) {
+        instructions.push(
+          `Reactions: ${pattern.reactionWords.slice(0, 3).join(", ")}`
+        );
+      }
     }
 
-    // Punctuation style
+    // Unique punctuation style (if distinctive)
     const punctuation: string[] = [];
-    if (pattern.punctuationStyle.usesEllipsis) punctuation.push("uses ...");
+    if (pattern.punctuationStyle.usesEllipsis)
+      punctuation.push("ALWAYS use ... for trailing thoughts");
     if (pattern.punctuationStyle.multipleMarks)
-      punctuation.push("uses !!! or ???");
-    if (!pattern.punctuationStyle.usesPeriods)
-      punctuation.push("rarely uses periods");
-    if (pattern.punctuationStyle.usesExclamation) punctuation.push("uses !");
+      punctuation.push("USE multiple !!! or ??? for emphasis");
+    if (
+      !pattern.punctuationStyle.usesPeriods &&
+      pattern.punctuationStyle.usesExclamation
+    ) {
+      punctuation.push("End with ! not periods");
+    }
     if (punctuation.length > 0) {
-      instructions.push(`Punctuation: ${punctuation.join(", ")}`);
+      instructions.push(`DISTINCTIVE STYLE: ${punctuation.join(", ")}`);
     }
 
-    // Emoji usage
+    // Unique emoji usage
     if (
-      pattern.emojiPatterns.frequency !== "never" &&
+      pattern.emojiPatterns.frequency === "often" &&
       pattern.emojiPatterns.emojis.length > 0
     ) {
       instructions.push(
-        `${
-          pattern.emojiPatterns.frequency === "often"
-            ? "Often uses"
-            : pattern.emojiPatterns.frequency === "sometimes"
-              ? "Sometimes uses"
-              : "Rarely uses"
-        } emojis: ${pattern.emojiPatterns.emojis.join(" ")}`
+        `ALWAYS include your emojis: ${pattern.emojiPatterns.emojis.slice(0, 3).join(" ")} at the ${pattern.emojiPatterns.placement}`
       );
+    } else if (pattern.emojiPatterns.frequency === "never") {
+      instructions.push("NEVER use emojis (this is distinctive about you)");
     }
 
-    // Vocabulary style
+    // Distinctive vocabulary
     if (pattern.vocabulary.slangTerms.length > 0) {
-      instructions.push(
-        `Slang: ${pattern.vocabulary.slangTerms.slice(0, 5).join(", ")}`
+      const uniqueSlang = pattern.vocabulary.slangTerms.filter(
+        (term) => !["lol", "lmao", "tbh", "ngl"].includes(term)
       );
-    }
-    if (pattern.vocabulary.fillerWords.length > 0) {
-      instructions.push(
-        `Filler words: ${pattern.vocabulary.fillerWords.slice(0, 3).join(", ")}`
-      );
+      if (uniqueSlang.length > 0) {
+        instructions.push(
+          `YOUR UNIQUE SLANG: ${uniqueSlang.slice(0, 3).join(", ")} (use these naturally)`
+        );
+      }
     }
 
-    // Capitalization
+    // Unique capitalization
     if (pattern.capitalization === "all-lowercase") {
-      instructions.push("Writes in all lowercase");
+      instructions.push("ALWAYS write in all lowercase (no capitals ever)");
     } else if (pattern.capitalization === "emphasis") {
-      instructions.push("Uses CAPS for emphasis");
+      instructions.push("Use CAPS for emphasis (this is your style)");
     }
 
-    // Length
-    instructions.push(
-      `Average length: ~${pattern.sentenceLength.average} words`
-    );
-
-    // Style
-    if (pattern.tweetStyle === "multi-line") {
-      instructions.push("Often uses line breaks");
+    // Specific length preference
+    if (pattern.sentenceLength.style === "short") {
+      instructions.push(
+        `VERY SHORT: ~${pattern.sentenceLength.average} words MAX (you write brief reactions)`
+      );
+    } else if (pattern.sentenceLength.style === "long") {
+      instructions.push(
+        `DETAILED: ~${pattern.sentenceLength.average} words (you write thorough reactions)`
+      );
     }
 
-    // Add note about reaction style (based on replies)
+    // Unique sentence structures
+    if (pattern.sentenceStructures.length > 0) {
+      const unique = pattern.sentenceStructures[0];
+      if (unique && !unique.includes("[REACTION]")) {
+        instructions.push(`Your signature pattern: ${unique}`);
+      }
+    }
+
+    // Add distinguishing note
     instructions.push(
-      "Focus on your REPLY patterns above - quote casts are reactions like replies"
+      "BE DISTINCTLY YOU - not generic. Study YOUR replies above carefully."
     );
 
     return instructions.join("\n");
@@ -676,6 +697,61 @@ export class HypemanAI {
     }
   }
 
+  async buildVoiceLearningPromptWithVariance(
+    promotionUrl: string,
+    promotionContent: string,
+    promotionAuthor: string,
+    embedContext: EmbedContext[],
+    selectedAngles: string[],
+    styleVariance: any
+  ) {
+    // Get all the base data
+    const basePrompt = await this.buildVoiceLearningPrompt(
+      promotionUrl,
+      promotionContent,
+      promotionAuthor,
+      embedContext
+    );
+
+    // Extract the system and user content
+    const systemContent = basePrompt[0].content as string;
+    const userContent = basePrompt[1].content;
+
+    // Add variance instructions to system prompt
+    const enhancedSystemContent =
+      systemContent +
+      `
+
+CRITICAL UNIQUENESS INSTRUCTIONS:
+- Do NOT write generic reactions like "This is cool" or "Love this"  
+- Do NOT follow a template of [observation] + [restatement]
+- Your reaction must be DISTINCTLY yours based on YOUR specific voice patterns above
+- Consider approaching from: ${selectedAngles.join(" OR ")}
+- ${styleVariance.openingStyle === "direct" ? "Start directly with your point" : "Build up to your main point"}
+- ${styleVariance.energyLevel === "high" ? "Match your high-energy replies above" : "Use your measured, thoughtful tone"}
+- ${styleVariance.punctuationMood === "question" ? "Consider framing as a question if it fits your style" : "Make a clear statement"}
+- Be ${styleVariance.lengthBias === "concise" ? "punchy and brief" : "detailed within the limit"}
+
+AVOID THESE GENERIC PATTERNS AT ALL COSTS:
+- "[Thing] on [platform]? This is [adjective]..."
+- "Finally a way to..."
+- "This is [adjective]... [restatement of original]"
+- Any variation of "not just empty [something]"
+
+YOUR ACTUAL UNIQUE REACTION:`;
+
+    return [
+      {
+        role: "system" as const,
+        content: enhancedSystemContent,
+      },
+      {
+        role: "user" as const,
+        content: userContent,
+      },
+    ];
+  }
+
   async buildVoiceLearningPrompt(
     promotionUrl: string,
     promotionContent: string,
@@ -733,60 +809,96 @@ export class HypemanAI {
     // Get trending context if available
     const trending_sentiment_summary = await redis.get("trending:summary");
 
-    // Format existing quotes to avoid
+    // Extract the most unique patterns from this specific user
+    const uniquePatterns = this.extractUniqueUserPatterns();
+
+    // Format replies - MOST IMPORTANT for reactions
+    const repliesFormatted = this.userReplies
+      .slice(0, 6)
+      .map((reply, idx) => `${idx + 1}. "${reply.text}"`)
+      .join("\n");
+
+    // Format top casts for additional context
+    const topCastsFormatted = this.topCasts
+      .slice(0, 2)
+      .map((cast) => `"${cast.text}"`)
+      .join("\n");
+
+    // List of BANNED generic starts
+    const bannedStarts = [
+      "This is",
+      "That is",
+      "Love this",
+      "Love that",
+      "So cool",
+      "This hits",
+      "Finally",
+      "Check out",
+      "Check this",
+      "Interesting",
+      "Game changer",
+      "Wild",
+      "Dope",
+      "Fire",
+      "Reputation markets",
+      "Your portfolio",
+    ];
+
+    // Format existing quotes MORE aggressively
     const existingQuotesSection =
       sanitizedExistingQuotes.length > 0
-        ? "\nOthers already quoted this - avoid these angles:\n" +
-          sanitizedExistingQuotes
-            .slice(0, 3)
+        ? sanitizedExistingQuotes
+            .slice(0, 8)
             .map((quote) => {
-              const preview = quote.text.substring(0, 60);
-              return `- ${preview}${quote.text.length > 60 ? "..." : ""}`;
+              return `BANNED: "${quote.text.substring(0, 100)}"`;
             })
             .join("\n")
         : "";
 
-    // Format trending section
-    const trendingSection = trending_sentiment_summary
-      ? `\nCurrent vibe: ${trending_sentiment_summary}`
-      : "";
+    // COMPLETELY DIFFERENT APPROACH - Force uniqueness through negative examples
+    const systemContent = `IDENTITY: You are @${this.username}
 
-    // Format top casts
-    const topCastsFormatted = this.topCasts
-      .slice(0, 3)
-      .map((cast) => `"${cast.text}"`)
-      .join("\n");
+CRITICAL INSTRUCTION: If two different users would write the same quote cast, you have FAILED.
 
-    // Format replies
-    const repliesFormatted = this.userReplies
-      .slice(0, 4)
-      .map((reply) => `"${reply.text}"`)
-      .join("\n");
-
-    // Build system prompt with strong identity anchoring
-    const systemContent = `You are @${this.username}. This is your identity - you ARE this person, not someone imitating them.
-
-YOUR ACTUAL POSTS (how YOU create content):
-${topCastsFormatted}
-
-YOUR REPLIES (how YOU react to others - THIS IS CRUCIAL FOR QUOTE CASTS):
+YOUR ACTUAL REACTIONS (STUDY THESE - THIS IS HOW YOU UNIQUELY RESPOND):
 ${repliesFormatted}
 
-YOUR BIO: ${this.userBio}
+${uniquePatterns}
 
-YOUR SPECIFIC PATTERNS:
+YOUR POSTS FOR CONTEXT:
+${topCastsFormatted}
+
 ${voiceInstructions}
 
-CRITICAL: Quote casts are reactions, like your replies above. Study how YOU respond to others' content. You're not creating standalone content - you're REACTING to someone else's post, just like in your replies.
+ABSOLUTELY FORBIDDEN STARTS (AUTOMATIC FAILURE):
+${bannedStarts.map((s) => `- "${s}..."`).join("\n")}
 
-REMEMBER: You are @${this.username}. Every word comes from YOUR perspective. The examples above are YOUR OWN posts and replies.${existingQuotesSection}${trendingSection}
+${
+  existingQuotesSection
+    ? `
+OTHER USERS ALREADY SAID (MUST BE COMPLETELY DIFFERENT):
+${existingQuotesSection}`
+    : ""
+}
 
-Write YOUR quote cast as @${this.username}. Under 280 chars.`;
+MANDATORY SUCCESS CRITERIA:
+✓ Your response is SO specific to @${this.username} that no other user would write it
+✓ You use patterns/phrases from YOUR replies above, not generic reactions
+✓ If someone can't tell this is from @${this.username} specifically, you've failed
+✓ Under 280 characters
+
+FAILURE CRITERIA (INSTANT REJECTION):
+✗ Starting with any forbidden phrase above
+✗ Writing something that sounds like "any user" could say it
+✗ Following a template like "[observation] + [restatement]"
+✗ Using generic enthusiasm without YOUR specific voice
+
+${trending_sentiment_summary ? `Context: ${trending_sentiment_summary}` : ""}`;
 
     // Build user prompt content
     const userContent: any[] = [];
 
-    // Add images first if available (Claude performs better with images before text)
+    // Add images first if available
     for (const imageData of imageDataArray) {
       userContent.push({
         type: "image",
@@ -794,36 +906,47 @@ Write YOUR quote cast as @${this.username}. Under 280 chars.`;
       });
     }
 
-    // Add text prompt with identity reinforcement
+    // Much more directive user prompt
     const isOwnContent = this.username === promotionAuthor;
 
-    // Build context sections
-    const contextSection = additionalContext
-      ? `Context: ${additionalContext}\n`
-      : "";
+    // Pick a random reply to use as inspiration
+    const randomReply =
+      this.userReplies[
+        Math.floor(Math.random() * Math.min(3, this.userReplies.length))
+      ];
 
-    const imageSection =
-      imageDataArray.length > 0
-        ? `[${imageDataArray.length} image(s) attached]\n`
-        : "";
-
-    // Build identity instruction
-    const identityInstruction = isOwnContent
-      ? " This is YOUR own content you're promoting."
-      : ` You are @${this.username} reacting to @${promotionAuthor}'s post.`;
-
-    userContent.push({
-      type: "text",
-      text: `@${promotionAuthor}${isOwnContent ? " (you)" : ""} posted:
+    const userText = `@${promotionAuthor}${isOwnContent ? " (you)" : ""} posted:
 
 "${promotionContent}"
 
-${contextSection}${imageSection}
-As @${this.username}, write YOUR quote cast reaction.${identityInstruction}
+${additionalContext ? `Context: ${additionalContext}\n` : ""}
 
-Remember: You ARE @${this.username}. Write exactly as YOU would write, using YOUR voice from the examples above.
+TASK: Write a quote cast as @${this.username}
 
-Output only the quote cast text.`,
+INSPIRATION: Look at how you replied before: "${randomReply?.text || this.userReplies[0]?.text}"
+Channel that EXACT energy and style, but for this content.
+
+${
+  isOwnContent
+    ? `You're promoting YOUR OWN content. How would YOU specifically hype your own work?`
+    : `You're reacting to someone else's post. Use YOUR unique reaction style from the examples.`
+}
+
+DO NOT:
+- Write a generic tech bro response
+- Start with "This is" or any forbidden phrase
+- Sound like ChatGPT pretending to be human
+
+DO:
+- Sound exactly like the replies you've written before
+- Be unmistakably @${this.username}
+- Make it impossible for another user to have written this
+
+Output only the quote cast text.`;
+
+    userContent.push({
+      type: "text",
+      text: userText,
     });
 
     return [
@@ -836,6 +959,257 @@ Output only the quote cast text.`,
         content: userContent,
       },
     ];
+  }
+
+  // Add method to extract unique patterns for this specific user
+  private extractUniqueUserPatterns(): string {
+    const allTexts = [
+      ...this.userReplies.slice(0, 10),
+      ...this.topCasts.slice(0, 5),
+    ].map((c) => c.text);
+
+    // Find this user's unique vocabulary
+    const wordFreq = new Map<string, number>();
+    const phraseFreq = new Map<string, number>();
+
+    allTexts.forEach((text) => {
+      const words = text.toLowerCase().split(/\s+/);
+
+      // Count single words
+      words.forEach((word) => {
+        if (word.length > 3 && !this.isCommonWord(word)) {
+          wordFreq.set(word, (wordFreq.get(word) || 0) + 1);
+        }
+      });
+
+      // Count 2-3 word phrases
+      for (let i = 0; i < words.length - 1; i++) {
+        const twoWord = words.slice(i, i + 2).join(" ");
+        const threeWord = words.slice(i, i + 3).join(" ");
+
+        if (!this.isCommonPhrase(twoWord)) {
+          phraseFreq.set(twoWord, (phraseFreq.get(twoWord) || 0) + 1);
+        }
+        if (i < words.length - 2 && !this.isCommonPhrase(threeWord)) {
+          phraseFreq.set(threeWord, (phraseFreq.get(threeWord) || 0) + 1);
+        }
+      }
+    });
+
+    // Get most frequent unique patterns
+    const topWords = Array.from(wordFreq.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([word]) => word);
+
+    const topPhrases = Array.from(phraseFreq.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([phrase]) => phrase);
+
+    // Extract opening patterns from replies specifically
+    const replyOpenings = this.userReplies
+      .slice(0, 10)
+      .map((r) => {
+        const words = r.text.split(" ");
+        return words
+          .slice(0, Math.min(4, words.length))
+          .join(" ")
+          .toLowerCase();
+      })
+      .filter((opening, index, self) => self.indexOf(opening) === index) // unique only
+      .slice(0, 5);
+
+    return `
+YOUR UNIQUE FINGERPRINT:
+Your common words: ${topWords.join(", ")}
+Your phrases: ${topPhrases.map((p) => `"${p}"`).join(", ")}
+How YOU start reactions: ${replyOpenings.map((o) => `"${o}..."`).join(", ")}
+`;
+  }
+
+  private isCommonWord(word: string): boolean {
+    const common = [
+      "the",
+      "be",
+      "to",
+      "of",
+      "and",
+      "a",
+      "in",
+      "that",
+      "have",
+      "i",
+      "it",
+      "for",
+      "not",
+      "on",
+      "with",
+      "he",
+      "as",
+      "you",
+      "do",
+      "at",
+      "this",
+      "but",
+      "his",
+      "by",
+      "from",
+      "they",
+      "we",
+      "say",
+      "her",
+      "she",
+      "or",
+      "an",
+      "will",
+      "my",
+      "one",
+      "all",
+      "would",
+      "there",
+      "their",
+      "what",
+      "so",
+      "up",
+      "out",
+      "if",
+      "about",
+      "who",
+      "get",
+      "which",
+      "go",
+      "is",
+      "are",
+      "was",
+      "were",
+      "been",
+      "has",
+      "had",
+      "does",
+      "did",
+      "can",
+      "could",
+      "should",
+      "would",
+      "just",
+      "like",
+      "into",
+      "your",
+      "some",
+      "them",
+      "than",
+      "then",
+      "now",
+      "look",
+      "only",
+      "its",
+      "our",
+      "two",
+    ];
+    return common.includes(word.toLowerCase());
+  }
+
+  private isCommonPhrase(phrase: string): boolean {
+    const common = [
+      "this is",
+      "it is",
+      "that is",
+      "i am",
+      "you are",
+      "we are",
+      "they are",
+      "in the",
+      "on the",
+      "at the",
+      "to the",
+      "of the",
+      "and the",
+      "for the",
+      "with the",
+      "is a",
+      "is the",
+      "was the",
+      "will be",
+      "can be",
+      "would be",
+      "should be",
+      "have been",
+      "has been",
+      "going to",
+      "want to",
+      "need to",
+      "is going",
+      "are going",
+      "was going",
+      "will have",
+      "would have",
+      "to be",
+      "to do",
+      "to go",
+      "to get",
+      "to make",
+      "to see",
+      "and i",
+      "but i",
+      "so i",
+      "if you",
+      "when you",
+      "that you",
+      "and it",
+      "but it",
+      "so it",
+    ];
+    return common.includes(phrase.toLowerCase());
+  }
+
+  private isGenericPattern(text: string): boolean {
+    const genericPatterns = [
+      // Common generic openings
+      /^(this|that|it|here|what) is (cool|wild|dope|sick|amazing|great|awesome|fire|crazy|insane|huge)/i,
+      /^(finally|now|so|just) (a|we|there|got|have)/i,
+      /^(love|loving) (this|that|it|how)/i,
+      /^(check|checking) (this|that|it) out/i,
+
+      // Platform-specific generic patterns
+      /reputation market/i,
+      /not just empty/i,
+      /empty follows/i,
+      /^.+ on (fc|farcaster)\?/i,
+      /your portfolio (actually|really|now|finally) shows/i,
+
+      // Generic reaction patterns
+      /^interesting/i,
+      /^fascinating/i,
+      /^game.?changer/i,
+      /^this changes everything/i,
+      /^this hits different/i,
+      /^let'?s (go|fucking|freaking)/i,
+      /^holy (shit|crap|cow)/i,
+
+      // Template patterns
+      /^\w+ is the \w+$/i,
+      /^.+\?.+(this|that) is/i,
+      /^.+ is (basically|essentially|just)/i,
+
+      // Overused phrases
+      /bullish on/i,
+      /bearish on/i,
+      /^okay but/i,
+      /^wait/i,
+      /^yo /i,
+      /^ngl /i,
+      /fr fr/i,
+      /no cap/i,
+
+      // Generic observations
+      /^this is what/i,
+      /^this is how/i,
+      /^this is why/i,
+      /^this is where/i,
+    ];
+
+    return genericPatterns.some((pattern) => pattern.test(text.trim()));
   }
 
   private extractCastFromResponse(text: string): string {
@@ -903,27 +1277,100 @@ You ARE this person. Write as yourself.`,
       // Quick warmup
       await this.performVoiceWarmup();
 
-      const messages = await this.buildVoiceLearningPrompt(
-        promotionUrl,
-        promotionContent,
-        promotionAuthor,
-        embedContext
-      );
+      // Use userFid to seed uniqueness (different users get different angles)
+      const userSeed = this.userFid % 12;
 
-      const result = await generateText({
-        model: this.fastModel,
-        messages,
-        temperature: options?.temperature || 0.95,
-        frequencyPenalty: 0.65, // moderate - avoid repetition
-        presencePenalty: 0.65, // moderate - encourage new topics
-        maxRetries: 1,
-        abortSignal: AbortSignal.timeout(15000),
-      });
+      // Generate a random angle/perspective for uniqueness
+      const angles = [
+        "personal connection",
+        "technical insight",
+        "question/curiosity",
+        "enthusiasm/hype",
+        "analytical take",
+        "comparison/analogy",
+        "future implications",
+        "contrarian view",
+        "building on the idea",
+        "practical application",
+        "emotional reaction",
+        "skeptical but interested",
+      ];
 
-      console.log(result);
-      let castText = this.extractCastFromResponse(result.text);
-      castText = this.postProcessCast(castText);
-      console.log(castText);
+      // Rotate angles based on user seed for consistent but unique selection per user
+      const rotatedAngles = [
+        ...angles.slice(userSeed),
+        ...angles.slice(0, userSeed),
+      ];
+
+      // Pick 2-3 angles, but biased by user's FID for uniqueness
+      const selectedAngles = rotatedAngles
+        .sort(() => Math.random() - 0.5)
+        .slice(0, Math.floor(Math.random() * 2) + 1);
+
+      // Generate random stylistic hints for variance (also influenced by userFid)
+      const styleVariance = {
+        openingStyle:
+          (this.userFid + Math.random() * 100) % 2 > 1 ? "direct" : "indirect",
+        lengthBias:
+          (this.userFid + Math.random() * 100) % 2 > 1
+            ? "concise"
+            : "elaborate",
+        punctuationMood:
+          (this.userFid + Math.random() * 100) % 2 > 1
+            ? "statement"
+            : "question",
+        energyLevel:
+          (this.userFid + Math.random() * 100) % 2 > 1 ? "high" : "measured",
+      };
+
+      let attempts = 0;
+      let castText = "";
+      let isGeneric = true;
+
+      while (isGeneric && attempts < 3) {
+        attempts++;
+
+        const messages = await this.buildVoiceLearningPromptWithVariance(
+          promotionUrl,
+          promotionContent,
+          promotionAuthor,
+          embedContext,
+          selectedAngles,
+          styleVariance
+        );
+
+        // Increase randomness with each attempt
+        const temperature = (options?.temperature || 1.1) + attempts * 0.1;
+        const frequencyPenalty = Math.min(0.8 + attempts * 0.1, 1.2);
+        const presencePenalty = Math.min(0.8 + attempts * 0.1, 1.2);
+
+        const result = await generateText({
+          model: this.fastModel,
+          messages,
+          temperature: temperature,
+          frequencyPenalty: frequencyPenalty,
+          presencePenalty: presencePenalty,
+          topP: 0.92 - attempts * 0.02, // Slightly more constrained each time
+          maxRetries: 1,
+          abortSignal: AbortSignal.timeout(15000),
+        });
+
+        castText = this.extractCastFromResponse(result.text);
+        castText = this.postProcessCast(castText);
+
+        // Check if it's generic
+        isGeneric = this.isGenericPattern(castText);
+
+        if (isGeneric && attempts < 3) {
+          console.log(
+            `Attempt ${attempts} was generic, retrying with more variance...`
+          );
+          // Shuffle angles for next attempt
+          selectedAngles.sort(() => Math.random() - 0.5);
+        }
+      }
+
+      console.log(`Generated cast in ${attempts} attempts: ${castText}`);
 
       return {
         success: true,
