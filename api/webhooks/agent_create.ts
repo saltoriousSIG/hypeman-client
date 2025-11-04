@@ -337,7 +337,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
                   notification: {
                     title: `New Promotion!`,
                     body: `New Promotion from @${creator}! earn rewards by promoting it!`,
-                    target_url: `https://hypeman.social/promotions/${decoded.args.id.toString()}`,
+                    target_url: `https://hypeman.social/promotion/${decoded.args.id.toString()}`,
                   },
                   target_fids: [...to_fids],
                 },
