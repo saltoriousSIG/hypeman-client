@@ -146,7 +146,7 @@ async function publishCast(
         text: text,
         embeds: [
           {
-            url: `https://hypeman.social/promotions/${id.toString()}`,
+            url: `https://hypeman.social/promotion/${id.toString()}`,
           },
           {
             cast_id: {
