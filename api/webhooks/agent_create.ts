@@ -234,27 +234,27 @@ async function handler(req: VercelRequest, res: VercelResponse) {
               console.log("Cast text:", promotionDetails.castText);
               console.log("==================");
 
-              //if (promotionalResult.success) {
-              //  console.log("=== PROMOTIONAL CAST GENERATED ===");
-              //  console.log("Promotional Text:", promotionalResult.text);
-              //  console.log("==================================");
+              if (promotionalResult.success) {
+                console.log("=== PROMOTIONAL CAST GENERATED ===");
+                console.log("Promotional Text:", promotionalResult.text);
+                console.log("==================================");
 
-              //  // Publish the promotional cast using Neynar API
-              //  const publishResult = await publishCast(
-              //    decoded.args.id.toString(),
-              //    promotionalResult.text || "",
-              //    promotionDetails.hash || "",
-              //    parseInt(decoded.args.creatorFid.toString())
-              //  );
+                // Publish the promotional cast using Neynar API
+                const publishResult = await publishCast(
+                  decoded.args.id.toString(),
+                  promotionalResult.text || "",
+                  promotionDetails.hash || "",
+                  parseInt(decoded.args.creatorFid.toString())
+                );
 
-              //  if (publishResult.success) {
-              //    console.log("=== CAST PUBLISHED SUCCESSFULLY ===");
-              //    console.log("Published Cast Hash:", publishResult.castHash);
-              //    console.log("==================================");
-              //  } else {
-              //    console.log("Failed to publish cast:", publishResult.error);
-              //  }
-              //}
+                if (publishResult.success) {
+                  console.log("=== CAST PUBLISHED SUCCESSFULLY ===");
+                  console.log("Published Cast Hash:", publishResult.castHash);
+                  console.log("==================================");
+                } else {
+                  console.log("Failed to publish cast:", publishResult.error);
+                }
+              }
 
               // update redis
               const {
@@ -331,22 +331,22 @@ async function handler(req: VercelRequest, res: VercelResponse) {
 
               const to_fids = data.users.map((f: any) => f.user.fid);
 
-              //await axios.post(
-              //  `https://api.neynar.com/v2/farcaster/frame/notifications`,
-              //  {
-              //    notification: {
-              //      title: `New Promotion!`,
-              //      body: `New Promotion from @${creator}! earn rewards by promoting it!`,
-              //      target_url: `https://hypeman.social/promotions/${decoded.args.id.toString()}`,
-              //    },
-              //    target_fids: [...to_fids],
-              //  },
-              //  {
-              //    headers: {
-              //      "x-api-key": process.env.NEYNAR_API_KEY as string,
-              //    },
-              //  }
-              //);
+              await axios.post(
+                `https://api.neynar.com/v2/farcaster/frame/notifications`,
+                {
+                  notification: {
+                    title: `New Promotion!`,
+                    body: `New Promotion from @${creator}! earn rewards by promoting it!`,
+                    target_url: `https://hypeman.social/promotions/${decoded.args.id.toString()}`,
+                  },
+                  target_fids: [...to_fids],
+                },
+                {
+                  headers: {
+                    "x-api-key": process.env.NEYNAR_API_KEY as string,
+                  },
+                }
+              );
 
 
               const new_pipeline = redis.pipeline();
