@@ -1340,7 +1340,7 @@ You ARE this person. Write as yourself.`,
         );
 
         // Increase randomness with each attempt
-        const temperature = (options?.temperature || 1.1) + attempts * 0.1;
+        const temperature = (options?.temperature || 0.9) + attempts * 0.1;
         const frequencyPenalty = Math.min(0.8 + attempts * 0.1, 1.2);
         const presencePenalty = Math.min(0.8 + attempts * 0.1, 1.2);
 
