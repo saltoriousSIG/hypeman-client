@@ -804,6 +804,7 @@ STYLE:
 - Do NOT mention AI involvement
 - Do NOT invent facts about the content
 - Never return models internal thinking or notes, only the cast text
+- DO NOT USE GENERIC PHRASES LIKE "CHECK THIS OUT" OR "FR" OR "LOWKEY" UNLESS THEY FIT NATURALLY IN THE CAST or HITS DIFFERENT or anything like that. Talk like flava flav
 </requirements>
 
 <output_format>
