@@ -1,6 +1,5 @@
 import { User, ExternalLink } from "lucide-react";
 import sdk from "@farcaster/frame-sdk";
-import { Button } from "@/components/ui/button";
 
 interface PromotionCastPreviewProps {
   username: string;
@@ -80,44 +79,23 @@ export default function PromotionCastPreview({
           <div className="flex-1">
             <p className="text-xs text-white/90 whitespace-pre-wrap">{text}</p>
           </div>
-          <div className="w-full overflow-x-auto hide-scrollbar">
-            <div className="flex gap-4 pb-4">
-            {embeds.map((embed, index) => {
-              if (embed.metadata?.content_type?.startsWith("image/")) {
-                return (
-                  <img
-                    key={index}
-                    src={embed.url}
-                    className="rounded-lg  h-auto flex-1  flex-shrink-0 max-w-[250px]"
-                  />
-                );
-              }
-              if (embed.metadata?.content_type?.startsWith("text/html")) {
-                return (
-                  <div
-                    className="w-full h-auto flex flex-col items-center justify-center space-y-2  flex-shrink-0 max-w-[250px]"
-                    key={index}
-                  >
-                    <Button
-                      variant="outline"
-                      className="w-full h-[30px] bg-transparent"
-                      onClick={() => {
-                        sdk.actions.openUrl(embed.url);
-                      }}
-                    >
-                      View Frame
-                    </Button>
-                    <img
-                      key={index}
-                      src={embed?.metadata?.frame?.image}
-                      className="rounded-lg "
-                    />
-                  </div>
-                );
-              }
-            })}
+          {embeds.some((embed) => embed.metadata?.content_type?.startsWith("image/")) && (
+            <div className="w-full overflow-x-auto hide-scrollbar">
+              <div className="flex gap-4 pb-4">
+                {embeds.map((embed, index) => {
+                  if (embed.metadata?.content_type?.startsWith("image/")) {
+                    return (
+                      <img
+                        key={index}
+                        src={embed.url}
+                        className="rounded-lg  h-auto flex-1  flex-shrink-0 max-w-[250px]"
+                      />
+                    );
+                  }
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
