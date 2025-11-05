@@ -48,17 +48,9 @@ const CastCard: React.FC<CastCardProps> = ({
   const [refreshFeedback, setRefreshFeedback] = useState("");
   const [hasClaimed, setHasClaimed] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
-  console.log(promotion);
-
-  console.log(
-    parseFloat(formatUnits(promotion.base_rate, 6)),
-    "base rate in CastCard"
-  );
   const pricing = useGetPostPricing(
     parseFloat(formatUnits(promotion.base_rate, 6))
   );
-
-  console.log(pricing, " pricing in CastCard");
 
   const { connectedUserData } = useUserStats() as {
     connectedUserData: UserStats;
@@ -460,7 +452,7 @@ const CastCard: React.FC<CastCardProps> = ({
           </div>
         ) : (
           <div className="space-y-4">
-            {!isContentRevealed && !promotion.claimable ? (
+            {!isContentRevealed && !promotion.claimable && !(!!intent) ? (
               // Step 1: Show generate button
               <div className="text-center p-4 bg-black">
                 <button

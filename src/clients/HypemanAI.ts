@@ -912,6 +912,7 @@ Keep it natural and authentic to your voice. Under 280 chars.
 
 Output only the quote cast text.`;
 
+
     userContent.push({
       type: "text",
       text: userText,
@@ -1220,7 +1221,6 @@ You ARE this person. Write as yourself.`,
     embedContext: EmbedContext[],
     options?: GenerationOptions
   ): Promise<GenerationResult> {
-    console.log(promotionUrl, "promotion url ");
     try {
       // Quick warmup
       await this.performVoiceWarmup();
