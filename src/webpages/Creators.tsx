@@ -14,7 +14,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { Quote, Loader2 } from "lucide-react";
+import { Quote, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import useContract, { ExecutionType } from "@/hooks/useContract";
 import { USDC_ADDRESS, DIAMOND_ADDRESS } from "@/lib/utils";
@@ -270,8 +270,6 @@ export default function BuyersPage() {
     !!selectedCast // Only fetch when a cast is selected
   );
 
-  const total = budget * (1 + (platformFee || 0));
-
   return (
     <MainLayout className="pb-20 space-y-4">
       {isLoading ? (
@@ -335,15 +333,28 @@ export default function BuyersPage() {
       {/* Promotion Drawer */}
       <Drawer open={isDrawerOpen} onOpenChange={handleDrawerClose}>
         <DrawerContent className="bg-gradient-to-b from-gray-900 to-black border-t border-white/20">
-          <DrawerHeader>
-            <DrawerTitle className="text-white text-xl">
-              {drawerStep === 1 ? "Target Audience" : "Set Budget"}
-            </DrawerTitle>
-            <DrawerDescription className="text-white/60">
-              {drawerStep === 1
-                ? "Define who can promote your cast"
-                : "Set your total promotion budget"}
-            </DrawerDescription>
+          <DrawerHeader className="relative">
+            {drawerStep === 2 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setDrawerStep(1)}
+                className="absolute left-4 top-4 h-8 w-8 bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/20"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <div className="text-center">
+              <DrawerTitle className="text-white text-xl">
+                {drawerStep === 1 ? "Target Audience" : "Set Budget"}
+              </DrawerTitle>
+              <DrawerDescription className="text-white/60">
+                {drawerStep === 1
+                  ? "Define who can promote your cast"
+                  : "Set your total promotion budget"}
+              </DrawerDescription>
+            </div>
           </DrawerHeader>
 
           <div className="px-4 pb-0 space-y-4">
@@ -375,14 +386,6 @@ export default function BuyersPage() {
                     <div className="text-lg font-bold text-purple-400">
                       {neynarScore.toFixed(2)}
                     </div>
-
-                    {/* Promote button - right */}
-                    <Button
-                      onClick={() => handleSelectCast(selectedCast as Cast)}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-xs font-semibold px-4 h-8 rounded-lg transition-all active:scale-[0.95] cursor-pointer shrink-0"
-                    >
-                      Promote
-                    </Button>
                   </div>
 
                   <Slider
@@ -466,13 +469,6 @@ export default function BuyersPage() {
                 >
                   Approve {(budget * 1.10).toFixed(2)} USDC
                 </Button>
-                <Button
-                  onClick={() => setDrawerStep(1)}
-                  variant="outline"
-                  className="w-full bg-white/5 border-white/20 text-white hover:bg-white/10 h-12"
-                >
-                  Back
-                </Button>
               </>
             ) : (
               <>
@@ -481,13 +477,6 @@ export default function BuyersPage() {
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-white font-medium active:scale-[0.98] transition-all border-0"
                 >
                   Create Promotion
-                </Button>
-                <Button
-                  onClick={() => setDrawerStep(1)}
-                  variant="outline"
-                  className="w-full bg-white/5 border-white/20 text-white hover:bg-white/10 h-12"
-                >
-                  Back
                 </Button>
               </>
             )}
