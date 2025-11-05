@@ -50,7 +50,7 @@ export default function HomePage() {
             )}
             {promotions?.map((cast) => {
                 return (
-                    <div key={cast.id} className="space-y-2 border border-white/10 rounded-lg mb-5 bg-white/15 backdrop-blur-sm">
+                    <div key={cast.id} className="space-y-2 border border-white/10 rounded-lg mb-5 bg-white/10 backdrop-blur-sm">
                         <PromotionCastPreview
                             username={cast.cast_data.author.username}
                             text={cast.cast_data?.text || ""}
