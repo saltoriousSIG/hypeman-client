@@ -217,7 +217,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
 
             // Generate promotional cast using HypemanAI
             try {
-              const hypemanAI = await HypemanAI.getInstance(
+              const hypemanAI = new HypemanAI(
                 parseInt(decoded.args.creatorFid.toString()),
                 promotionDetails.creator
               );

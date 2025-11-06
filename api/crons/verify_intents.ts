@@ -34,7 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const intentsAbiFileContents = fs.readFileSync(intentsAbiFilePath, "utf8");
     const intents_abi = JSON.parse(intentsAbiFileContents);
 
-    const hypeman = await HypemanAI.getInstance(0, "hypeman_admin");
+    const hypeman = new HypemanAI(0, "hypeman_admin");
 
     const { publicClient, walletClient, account } = setupAdminWallet();
 

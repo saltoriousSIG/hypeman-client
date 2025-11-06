@@ -21,7 +21,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       userFeedback,
     } = req.body;
 
-    const hypeman_ai = await HypemanAI.getInstance(req.fid as number, username);
+    const hypeman_ai = new HypemanAI(req.fid as number, username);
 
     const cast = await hypeman_ai.refineCast(
       promotionId,

@@ -29,8 +29,6 @@ interface GenerationResult {
 }
 
 export class HypemanAI {
-  private static instance: HypemanAI;
-  private initPromise: Promise<void> | null = null;
   private model;
   private userFid: number = 0;
   private username: string;
@@ -40,17 +38,6 @@ export class HypemanAI {
     this.model = anthropic("claude-sonnet-4-5-20250929");
     this.userFid = fid;
     this.username = username;
-  }
-
-  public static async getInstance(
-    fid: number,
-    username: string
-  ): Promise<HypemanAI> {
-    if (!HypemanAI.instance) {
-      HypemanAI.instance = new HypemanAI(fid, username);
-    }
-    await HypemanAI.instance.initPromise;
-    return HypemanAI.instance;
   }
 
   sanitizeCasts(casts: Cast[]): {
