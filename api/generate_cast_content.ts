@@ -7,6 +7,8 @@ import { validateSignature } from "../middleware/validateSignature.js";
 
 const redisClient = new RedisClient(process.env.REDIS_URL as string);
 
+export const maxDuration = 300; 
+
 async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -16,7 +18,6 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
     const {
       username,
       promotionId,
-      promotionUrl,
       promotionContent,
       promotionAuthor,
       embedContext,
@@ -68,25 +69,22 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
 
     // Generate cast content - use refineCast if user feedback is provided, otherwise generateInitialCast
     let castResult;
+
+    //promotion_id: string,
+    //userFeedback: string,
+    //previousCast: string,
+    //options?: GenerationOptions
     if (userFeedback && userFeedback.trim()) {
       // Use refineCast with the provided previous cast
       castResult = await hypeman_ai.refineCast(
-        promotionUrl,
-        promotionContent,
-        promotionAuthor,
-        embedContext,
+        promotionId,
         userFeedback,
         previousCast || "", // Use provided previous cast or empty string
         { temperature: 0.92 }
       );
     } else {
       // Use generateInitialCast for regular generation
-      castResult = await hypeman_ai.generateInitialCast(
-        promotionUrl,
-        promotionContent,
-        promotionAuthor,
-        embedContext
-      );
+      castResult = await hypeman_ai.generateInitialCast(promotionId);
     }
 
     if (!castResult.success) {
