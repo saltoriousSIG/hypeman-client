@@ -5,16 +5,11 @@ import { tool, generateObject } from "ai";
 import { TopPostsSummarySchema } from "../schemas.js";
 import { sanitizeCasts } from "../utils.js";
 import { RedisClient } from "../../RedisClient.js";
-import { openai } from "@ai-sdk/openai";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
 const anthropicModel = anthropic(
   process.env.ANTHROPIC_MODEL_NAME || "claude-haiku-4-5-20251001"
-);
-
-const openAIModel = openai.responses(
-  process.env.OPENAI_MODEL_NAME || "gpt-4o-mini"
 );
 
 const topPostsAnalysisTool = tool({
@@ -24,6 +19,10 @@ const topPostsAnalysisTool = tool({
     fid: z.number().describe("The farcaster FID of the user to analyze"),
   }),
   execute: async ({ fid }) => {
+    const cachedAnalysis = await redis.get(`top_posts_analysis:${fid}`);
+    if (cachedAnalysis) {
+      return cachedAnalysis;
+    }
     const {
       data: { casts: popular_casts },
     } = await axios.get(
@@ -36,7 +35,7 @@ const topPostsAnalysisTool = tool({
     );
     const sanitizedCasts = sanitizeCasts(popular_casts);
     const topPostsSummary = await generateObject({
-      model: openAIModel,
+      model: anthropicModel,
       messages: [
         {
           role: "system",

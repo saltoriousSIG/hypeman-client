@@ -1,7 +1,6 @@
 import { z } from "zod";
 import axios from "axios";
 import { anthropic } from "@ai-sdk/anthropic";
-import { openai } from "@ai-sdk/openai";
 import { tool, generateObject } from "ai";
 import { ExistingQuoteCastSchema } from "../schemas.js";
 import { sanitizeCasts } from "../utils.js";
@@ -11,11 +10,6 @@ const redis = new RedisClient(process.env.REDIS_URL as string);
 
 const anthropicModel = anthropic(
   process.env.ANTHROPIC_MODEL_NAME || "claude-haiku-4-5-20251001"
-);
-
-
-const openAIModel = openai.responses(
-  process.env.OPENAI_MODEL_NAME || "gpt-4o-mini"
 );
 
 const existingQuoteCastAnalysisTool = tool({
@@ -39,7 +33,7 @@ const existingQuoteCastAnalysisTool = tool({
     );
     const sanitizedQuotesCasts = sanitizeCasts(casts);
     const existingQuoteCastsSummary = await generateObject({
-      model: openAIModel,
+      model: anthropicModel,
       messages: [
         {
           role: "system",

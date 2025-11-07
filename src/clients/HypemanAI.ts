@@ -36,7 +36,7 @@ export class HypemanAI {
 
   constructor(fid: number, username: string) {
     // Haiku-optimized model
-    this.model = openai("gpt-4o-mini") 
+    this.model = anthropic("claude-sonnet-4-5-20250929");
     this.userFid = fid;
     this.username = username;
   }

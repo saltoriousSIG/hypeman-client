@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { anthropic } from "@ai-sdk/anthropic";
-import { openai } from "@ai-sdk/openai";
 import { tool, generateObject } from "ai";
 import { PromotionAnalysisSchema } from "../schemas.js";
 import { RedisClient } from "../../RedisClient.js";
@@ -16,10 +15,6 @@ const anthropicModel = anthropic(
   process.env.ANTHROPIC_MODEL_NAME || "claude-haiku-4-5-20251001"
 );
 
-const openAIModel = openai.responses(
-  process.env.OPENAI_MODEL_NAME || "gpt-4o-mini"
-);
-
 const promotionAnalysisTool = tool({
   description:
     "Analyze the promotion content to generate a detailed analysis including topics, summary, creator profile, alignment with promoter, emotional tone, distinctive elements, additional context, and whether more information is needed.",
@@ -27,6 +22,10 @@ const promotionAnalysisTool = tool({
     promotion_id: z.number().describe("The ID of the promotion to analyze"),
   }),
   execute: async ({ promotion_id }) => {
+    const cachedAnalysis = await redis.get(`promotion_analysis:${promotion_id}`);
+    if (cachedAnalysis) {
+      return JSON.parse(cachedAnalysis);
+    }
     const castKey = `promotion:cast:${promotion_id}`;
     const castData = await redis.get(castKey);
 
@@ -89,7 +88,7 @@ const promotionAnalysisTool = tool({
     }
 
     const promotionAnalysis = await generateObject({
-      model: openAIModel,
+      model: anthropicModel,
       messages,
       schema: PromotionAnalysisSchema,
     });
