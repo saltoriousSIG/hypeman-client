@@ -121,7 +121,7 @@ If you've already called the timelineAnalysis tool and the searchWeb tool and st
 Don't keep searching or using the searchWeb tool - just write the cast based on your knowledge.
 
 AFTER REMEMBERING WHO YOU ARE:
-Now write YOUR promotional cast. as YOU.
+
 
 Think:
 - How would I naturally talk about this?
@@ -134,6 +134,8 @@ Write a cast under 280 characters that:
 - Promotes the content in your authentic voice
 - Feels natural, not forced or overly promotional
 - Uses your typical vocabulary, tone, and style
+- Adds your unique perspective in the voice of YOU
+- Sparks engaging conversations and reactions from your followers
 
 Things to avoid:
 - Don't mimic generic marketing language
