@@ -19,10 +19,6 @@ const topPostsAnalysisTool = tool({
     fid: z.number().describe("The farcaster FID of the user to analyze"),
   }),
   execute: async ({ fid }) => {
-    const cachedAnalysis = await redis.get(`top_posts_analysis:${fid}`);
-    if (cachedAnalysis) {
-      return cachedAnalysis;
-    }
     const {
       data: { casts: popular_casts },
     } = await axios.get(

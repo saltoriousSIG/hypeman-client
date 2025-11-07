@@ -22,10 +22,6 @@ const promotionAnalysisTool = tool({
     promotion_id: z.number().describe("The ID of the promotion to analyze"),
   }),
   execute: async ({ promotion_id }) => {
-    const cachedAnalysis = await redis.get(`promotion_analysis:${promotion_id}`);
-    if (cachedAnalysis) {
-      return JSON.parse(cachedAnalysis);
-    }
     const castKey = `promotion:cast:${promotion_id}`;
     const castData = await redis.get(castKey);
 

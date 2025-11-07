@@ -19,10 +19,6 @@ const repliesAnalysisTool = tool({
     fid: z.number().describe("The farcaster FID of the user to analyze"),
   }),
   execute: async ({ fid }) => {
-    const cachedAnalysis = await redis.get(`replies_analysis:${fid}`);
-    if (cachedAnalysis) {
-      return cachedAnalysis;
-    }
     const { data: replies } = await axios.get(
       `https://api.neynar.com/v2/farcaster/feed/user/replies_and_recasts/?filter=replies&limit=50&fid=${fid}`,
       {
