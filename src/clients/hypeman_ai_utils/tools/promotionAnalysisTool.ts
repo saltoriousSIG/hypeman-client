@@ -22,6 +22,10 @@ const promotionAnalysisTool = tool({
     promotion_id: z.number().describe("The ID of the promotion to analyze"),
   }),
   execute: async ({ promotion_id }) => {
+    const cachedAnalysis = await redis.get(`promotion_analysis:${promotion_id}`);
+    if (cachedAnalysis) {
+      return JSON.parse(cachedAnalysis);
+    }
     const castKey = `promotion:cast:${promotion_id}`;
     const castData = await redis.get(castKey);
 
@@ -89,6 +93,11 @@ const promotionAnalysisTool = tool({
       schema: PromotionAnalysisSchema,
     });
     console.log(promotionAnalysis.object);
+    await redis.set(
+      `promotion_analysis:${promotion_id}`,
+      JSON.stringify(promotionAnalysis.object),
+      60 * 60 * 24 * 7
+    ); // Cache for 7 days
     return promotionAnalysis.object;
   },
 });

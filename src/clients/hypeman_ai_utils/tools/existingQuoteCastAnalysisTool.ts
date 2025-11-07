@@ -48,7 +48,6 @@ const existingQuoteCastAnalysisTool = tool({
       ],
       schema: ExistingQuoteCastSchema,
     });
-    console.log(existingQuoteCastsSummary.object);
     return existingQuoteCastsSummary.object;
   },
 });

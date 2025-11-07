@@ -4,6 +4,9 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { tool, generateObject } from "ai";
 import { RepliesSummarySchema } from "../schemas.js";
 import { sanitizeCasts } from "../utils.js";
+import { RedisClient } from "@/clients/RedisClient.js";
+
+const redis = new RedisClient(process.env.REDIS_URL as string);
 
 const anthropicModel = anthropic(
   process.env.ANTHROPIC_MODEL_NAME || "claude-haiku-4-5-20251001"
@@ -16,6 +19,10 @@ const repliesAnalysisTool = tool({
     fid: z.number().describe("The farcaster FID of the user to analyze"),
   }),
   execute: async ({ fid }) => {
+    const cachedAnalysis = await redis.get(`replies_analysis:${fid}`);
+    if (cachedAnalysis) {
+      return cachedAnalysis;
+    }
     const { data: replies } = await axios.get(
       `https://api.neynar.com/v2/farcaster/feed/user/replies_and_recasts/?filter=replies&limit=50&fid=${fid}`,
       {
@@ -40,6 +47,7 @@ const repliesAnalysisTool = tool({
       schema: RepliesSummarySchema,
     });
     console.log(repliesSummary.object);
+    await redis.set(`replies_analysis:${fid}`, JSON.stringify(repliesSummary.object), 60 * 60 * 24 * 7); // Cache for 7 days
     return repliesSummary.object;
   },
 });
