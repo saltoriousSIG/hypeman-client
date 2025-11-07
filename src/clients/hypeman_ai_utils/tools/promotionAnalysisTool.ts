@@ -63,7 +63,10 @@ const promotionAnalysisTool = tool({
     const messages: any = [
       {
         role: "system",
-        content: `You are an expert social media analyst. Based on the promotion content and author profile below, generate a detailed analysis including topics, summary, creator profile, alignment with promoter, emotional tone, distinctive elements, additional context, and whether more information is needed.`,
+        content: `You are an expert social media analyst. Based on the promotion content and author profile below, generate a detailed analysis including topics, summary, creator profile, alignment with promoter, emotional tone, distinctive elements, additional context, and whether more information is needed.
+        If there is no promotion content focus your quote cast on the additional context provided with the promotion. That includes any embedded casts, URLs, or frame titles.
+
+`,
       },
       {
         role: "user",
