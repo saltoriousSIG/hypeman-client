@@ -1,6 +1,7 @@
 import { z } from "zod";
 import axios from "axios";
 import { anthropic } from "@ai-sdk/anthropic";
+import { openai } from "@ai-sdk/openai";
 import { tool, generateObject } from "ai";
 import { RepliesSummarySchema } from "../schemas.js";
 import { sanitizeCasts } from "../utils.js";
@@ -10,6 +11,10 @@ const redis = new RedisClient(process.env.REDIS_URL as string);
 
 const anthropicModel = anthropic(
   process.env.ANTHROPIC_MODEL_NAME || "claude-haiku-4-5-20251001"
+);
+
+const openAIModel = openai.responses(
+  process.env.OPENAI_MODEL_NAME || "gpt-4o-mini"
 );
 
 const repliesAnalysisTool = tool({
@@ -29,7 +34,7 @@ const repliesAnalysisTool = tool({
     );
     const sanitizedCasts = sanitizeCasts(replies.casts);
     const repliesSummary = await generateObject({
-      model: anthropicModel,
+      model: openAIModel,
       messages: [
         {
           role: "system",

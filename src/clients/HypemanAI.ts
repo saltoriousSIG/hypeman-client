@@ -1,6 +1,7 @@
 import { generateText, stepCountIs, generateObject } from "ai";
 import { createHypemanAITools } from "./hypeman_ai_utils/tools.js";
 import { anthropic } from "@ai-sdk/anthropic";
+import { openai } from "@ai-sdk/openai";
 import { Cast, Embed } from "@neynar/nodejs-sdk/build/api";
 import { RedisClient } from "./RedisClient.js";
 import { z } from "zod";
@@ -35,7 +36,7 @@ export class HypemanAI {
 
   constructor(fid: number, username: string) {
     // Haiku-optimized model
-    this.model = anthropic("claude-sonnet-4-5-20250929");
+    this.model = openai("gpt-4o-mini") 
     this.userFid = fid;
     this.username = username;
   }
