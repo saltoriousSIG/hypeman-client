@@ -3,7 +3,8 @@ import axios from "axios";
 import { anthropic } from "@ai-sdk/anthropic";
 import { tool, generateObject } from "ai";
 import { UserProfileSchema } from "../schemas.js";
-import { RedisClient } from "@/clients/RedisClient.js";
+import { RedisClient } from "../../RedisClient.js";
+
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
 const anthropicModel = anthropic(

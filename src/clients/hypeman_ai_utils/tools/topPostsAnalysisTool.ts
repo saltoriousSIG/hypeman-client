@@ -4,7 +4,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { tool, generateObject } from "ai";
 import { TopPostsSummarySchema } from "../schemas.js";
 import { sanitizeCasts } from "../utils.js";
-import { RedisClient } from "@/clients/RedisClient.js";
+import { RedisClient } from "../../RedisClient.js";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
