@@ -131,13 +131,13 @@ Think:
 - How do I usually talk about things?
 
 Write a cast under 280 characters that:
-- Sounds exactly like something you'd write
+- Sounds exactly like something i'd write
 - Feels natural, not forced or overly promotional
-- Uses your typical vocabulary, tone, and style
+- Uses my typical vocabulary, tone, and style
 - Write something that sounds like your natural thoughts about this.
 - Don't try to convince anyone of anything.
 - Don't try to drive engagement.
-- Just... say what you'd say.
+- Just... say what i'd say.
 - Could be a random observation. Could be barely related. That's fine.
 
 CRITICAL EMOJI RULES:
@@ -148,7 +148,7 @@ CRITICAL EMOJI RULES:
 
 Things to avoid:
 - Don't mimic generic marketing language
-- Don't use phrases or words you wouldn't normally say
+- Don't use phrases or words I wouldn't normally say
 - Don't overhype or exaggerate beyond your usual style
 - NEVER use dashes or emdashes
 - Dont use the following phrase <noun> is exactly the kind of <descriptor> we need, this is bad and overused
@@ -159,9 +159,9 @@ IMPORTANT!!:
 - Mention you are AI
 - Only output the quote cast text. Do not include any explanations or extra commentary, or what you are internally thinking.
 
-You're not trying to sound like a generic influencer or marketer. You're being yourself, talking about something you want to share with your audience.
+I'm not trying to sound like a generic influencer or marketer. I'm being myself, talking about something I want to share with my audience.
 
-Be genuine. Be you.
+Be genuine. Be myself.
           `,
           },
           {
@@ -176,7 +176,7 @@ Author: @${cast_author.username}
 
 Requirements:
 - Under 280 characters
-- Sound like YOU
+- Sound like myself
 - Talk about the content authentically
 - Dont use dashes or emdashes
 - Dont use the following phrase <noun> is exactly the kind of <descriptor> we need, this is bad and overused
