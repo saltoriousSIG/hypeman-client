@@ -29,6 +29,20 @@ export const TopPostsSummarySchema = z.object({
     emoji_usage: z.string().describe("Heavy emoji user? Specific emoji? None?"),
     signature_phrases: z.array(z.string()).describe("Exact phrases they use repeatedly"),
     never_uses: z.array(z.string()).describe("Words/phrases they NEVER say"),
+    
+    // WHY they post (intent)
+    post_intent: z.enum([
+      'purposeful',              // Clear point, call-to-action, trying to engage
+      'observational',           // Just sharing thoughts, no agenda
+      'stream_of_consciousness', // Random associations, no structure
+      'mixed'
+    ]).describe("Does this person write with clear intent or just vibe?"),
+    
+    thought_coherence: z.enum([
+      'single_focused',      // One complete thought per post
+      'loosely_connected',   // Multiple ideas that kind of relate
+      'random_associations'  // Thoughts jump around with no clear connection
+    ]).describe("How coherent/connected are their thoughts?"),
   }),
   
   topics: z.array(z.string()).describe("Main topics they post about"),
