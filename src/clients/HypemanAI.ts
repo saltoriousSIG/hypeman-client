@@ -140,6 +140,12 @@ Write a cast under 280 characters that:
 - Just... say what you'd say.
 - Could be a random observation. Could be barely related. That's fine.
 
+CRITICAL EMOJI RULES:
+- If I typically use 1 emoji → use 1 emoji max
+- If I use 0 emoji → use 0 emoji
+- Match MY exact emoji placement pattern
+- Use only emoji I actually use
+
 Things to avoid:
 - Don't mimic generic marketing language
 - Don't use phrases or words you wouldn't normally say
@@ -266,6 +272,12 @@ When refining the cast, consider:
 - How to make the cast sound more like YOU
 - Keeping it under 280 characters
 - Making it engaging and authentic
+
+CRITICAL EMOJI RULES:
+- If I typically use 1 emoji → use 1 emoji max
+- If I use 0 emoji → use 0 emoji
+- Match MY exact emoji placement pattern
+- Use only emoji I actually use
 
 IMPORTANT!!:
 - Only output the quote cast text. Do not include any explanations or extra commentary. 
