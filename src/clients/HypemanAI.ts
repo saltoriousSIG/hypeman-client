@@ -132,11 +132,13 @@ Think:
 
 Write a cast under 280 characters that:
 - Sounds exactly like something you'd write
-- Talks about the content in your authentic voice
 - Feels natural, not forced or overly promotional
 - Uses your typical vocabulary, tone, and style
-- Adds your unique perspective in the voice of YOU
-- Sparks engaging conversations and reactions from your followers
+- Write something that sounds like your natural thoughts about this.
+- Don't try to convince anyone of anything.
+- Don't try to drive engagement.
+- Just... say what you'd say.
+- Could be a random observation. Could be barely related. That's fine.
 
 Things to avoid:
 - Don't mimic generic marketing language
