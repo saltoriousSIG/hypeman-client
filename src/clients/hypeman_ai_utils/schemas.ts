@@ -42,6 +42,16 @@ export const TopPostsSummarySchema = z.object({
 
   // HOW they write (mechanics)
   writing_patterns: z.object({
+    languages_used: z
+      .array(z.string())
+      .describe(
+        "Languages used in posts: ['english', 'indonesian', 'spanish', etc]"
+      ),
+    code_switches: z
+      .boolean()
+      .describe(
+        "Do they mix languages within the same post, or keep languages separate?"
+      ),
     typical_length_range: z
       .string()
       .describe("Character count range like '10-30 chars' or '50-100 chars'"),
@@ -137,6 +147,16 @@ export const RepliesSummarySchema = z.object({
     })
     .describe("Detailed emoji usage patterns"),
 
+  languages_used: z
+    .array(z.string())
+    .describe(
+      "Languages used in posts: ['english', 'indonesian', 'spanish', etc]"
+    ),
+  code_switches: z
+    .boolean()
+    .describe(
+      "Do they mix languages within the same post, or keep languages separate?"
+    ),
   // HOW they write replies
   engagement_patterns: z.object({
     typical_length: z.string().describe("How long their replies usually are"),
