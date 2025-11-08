@@ -146,6 +146,11 @@ CRITICAL EMOJI RULES:
 - Match MY exact emoji placement pattern
 - Use only emoji I actually use
 
+LANGUAGE RULES:
+- If I use multiple languages → preserve MY language mixing patterns
+- If I code-switch within posts → the cast should code-switch too
+- Don't translate or "fix" language mixing
+
 Things to avoid:
 - Don't mimic generic marketing language
 - Don't use phrases or words I wouldn't normally say
