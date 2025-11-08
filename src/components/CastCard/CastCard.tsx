@@ -139,7 +139,13 @@ const CastCard: React.FC<CastCardProps> = ({
       return toast.error("This promotion is only available to Pro users.");
     }
 
-    if (score < parseFloat(promotion.neynar_score)) {
+    if (promotion.id === "120") {
+      if (score < 0.85) {
+        return toast.error(
+          "Your Neynar score is not high enough to reveal this content."
+        );
+      }
+    } else if (score < parseFloat(promotion.neynar_score)) {
       return toast.error(
         "Your Neynar score is not high enough to reveal this content."
       );
