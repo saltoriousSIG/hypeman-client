@@ -1,66 +1,94 @@
+
 import { z } from 'zod';
 
 export const UserProfileSchema = z.object({
   fid: z.string().describe("The farcaster FID of the user"),
-  username: z.string().describe("The display name of the user"),
+  username: z.string().describe("The username of the user"),
   location: z.string().nullable().describe("The location of the user from their profile if available otherwise null"),
-  character_descrption: z.string().describe("A brief description of the user's character based on their bio and overall profile"),
-  popularity_score: z.number().describe("A numerical score representing the user's popularity based on their follower count"),
+  bio: z.string().nullable().describe("Their actual bio text, unedited"),
+  follower_count: z.number().describe("The user's follower count"),
+  character_description: z.string().describe("A brief description of the user's character/personality based on their bio and profile"),
 });
 
 export const TopPostsSummarySchema = z.object({
-  summary: z.string().describe("A summary of the user's top posts"),
-  topics: z.array(z.string()).describe("A list of main topics covered in the user's top posts"),
-  tone: z.string().describe("A description of the overall tone of the user's top posts"),
-  writing_style: z.string().describe("A description of the writing style used in the post"),
-  sample: z.string().describe("A representative sample from one of the user's top posts"),
+  raw_examples: z.array(z.string()).describe("5-7 complete, unedited posts - their actual words"),
+  
+  // WHO they are (persona)
+  persona: z.object({
+    tone: z.string().describe("Their overall tone: sarcastic, earnest, skeptical, enthusiastic, etc"),
+    attitude: z.string().describe("Their general attitude: optimistic, cynical, playful, serious, etc"),
+    energy_level: z.enum(['high', 'medium', 'low']).describe("How much energy/excitement they typically show"),
+  }),
+  
+  // HOW they write (mechanics)
+  writing_patterns: z.object({
+    typical_length_range: z.string().describe("Character count range like '10-30 chars' or '50-100 chars'"),
+    sentence_structure: z.enum(['complete_sentences', 'fragments', 'run_ons', 'mixed']).describe("How they structure sentences"),
+    capitalization: z.enum(['standard', 'all_lowercase', 'all_uppercase', 'random']).describe("Capitalization patterns"),
+    punctuation_style: z.string().describe("Uses periods? Only emoji? No punctuation? Ellipses?"),
+    emoji_usage: z.string().describe("Heavy emoji user? Specific emoji? None?"),
+    signature_phrases: z.array(z.string()).describe("Exact phrases they use repeatedly"),
+    never_uses: z.array(z.string()).describe("Words/phrases they NEVER say"),
+  }),
+  
+  topics: z.array(z.string()).describe("Main topics they post about"),
 });
 
 export const RepliesSummarySchema = z.object({
-  summary: z.string().describe("A summary of the user's replies to other posts"),
-  engagement_style: z.string().describe("A description of how the user engages with others in their replies"),
-  tone: z.string().describe("A description of the overall tone of the user's replies"),
-  disposition: z.string().describe("A description of the user's general disposition as reflected in their replies"),
-  attitude: z.string().describe("A description of the user's attitude in their replies"),
-  sample: z.string().describe("A representative sample from one of the user's replies"),
-}); 
+  raw_examples: z.array(z.string()).describe("5-7 actual replies, unedited"),
+  
+  // WHO they are in conversations
+  persona: z.object({
+    disposition: z.string().describe("How they come across: helpful, contrarian, supportive, challenging, etc"),
+    engagement_style: z.string().describe("How they engage: builds on ideas, asks questions, gives advice, jokes around, etc"),
+  }),
+  
+  // HOW they write replies
+  engagement_patterns: z.object({
+    typical_length: z.string().describe("How long their replies usually are"),
+    starts_with: z.array(z.string()).describe("How they typically open replies"),
+    formality_level: z.enum(['very_casual', 'casual', 'neutral', 'formal']).describe("How formal they are in replies"),
+    uses_questions: z.boolean().describe("Do they ask questions in replies?"),
+    uses_agreement_words: z.array(z.string()).describe("How they agree: 'yes', 'fr', 'facts', etc"),
+  }),
+});
 
 export const ExistingQuoteCastSchema = z.object({
-  examples: z.array(z.string()).describe("A list of existing quote casts for the current promotion"),
-  common_phrases: z.array(z.string()).describe("A list of common phrases used in the existing quote casts"),
-  tone: z.string().describe("A description of the overall tone of the existing quote casts"),
-  things_to_avoid_for_new_quote_casts: z.string().describe("A list of things to avoid when generating new quote casts based on the existing ones, cannot use phrases already present in existing quote casts"),
-})
+  examples: z.array(z.string()).describe("Existing quote casts for this promotion"),
+  overused_phrases: z.array(z.string()).describe("Phrases already used - avoid these"),
+  average_length: z.number().describe("Average character count of existing casts"),
+  common_tone: z.string().describe("The tone used in existing quote casts for this promotion"),
+});
 
 export const PromotionImageAnalysisSchema = z.object({
-  description: z.string().describe("A description of the image content related to the promotion"),
-  emotional_tone: z.string().describe("A description of the emotional tone conveyed by the image"),
-  alignment_with_promotion: z.enum(['high', 'medium', 'low']).describe("An assessment of how well the image aligns with the promotion content"),
-  distinctive_elements: z.string().describe("A description of any distinctive visual elements in the image that make it stand out"),
-  include_in_promotion: z.enum(['yes', 'no']).describe("A recommendation on whether to include context about the image content in the promotional quote casts"),
+  what_it_shows: z.string().describe("Literal description of what's in the image"),
+  mention_in_cast: z.boolean().describe("Should the cast reference the image content?"),
 });
 
 export const PromotionAnalysisSchema = z.object({
-  topics: z.array(z.string()).describe("A list of topics covered in the promotion to be promoted"),
-  summary: z.string().describe("A summary of the content that is going to be promoted"),
-  promotion_creator: z.string().describe("A brief description of the creator of the promotion"),
-  promotion_creator_profile: z.string().describe("An analysis of the promotion creator's profile and typical content"),
-  emotional_tone: z.string().describe("A description of the emotional tone of the promotion content"),
-  distinctive_elements: z.string().describe("A description of any distinctive elements in the promotion that make it stand out"),
-  additional_context: z.string().describe("Any additional context that would help understand the promotion better."),
-  requires_more_info: z.enum(['yes', 'no']).describe("An assessment of whether more information is needed to fully understand the promotion via an internet search"),
-  has_image: z.enum(['yes', 'no']).describe("Indicates if the promotion includes an image"),
-  image_analysis: z.nullable(PromotionImageAnalysisSchema).describe("Analysis of the image content if the promotion includes an image"),
+  what_it_is: z.string().describe("Factual summary of what's being promoted"),
+  creator_username: z.string().describe("Username of the promotion creator"),
+  why_interesting: z.string().describe("Why someone might care about this"),
+  key_details: z.array(z.string()).describe("Important facts to potentially mention"),
+  
+  // Decision flags for additional tool usage
+  needs_web_search: z.boolean().describe("Is more information needed via web search to understand this promotion?"),
+  web_search_query: z.string().nullable().describe("Suggested search query if web search is needed"),
+  
+  relates_to_current_trends: z.boolean().describe("Does this promotion relate to current events or trending topics that would benefit from timeline analysis?"),
+  
+  has_image: z.boolean().describe("Does the promotion include an image?"),
+  image_analysis: z.nullable(PromotionImageAnalysisSchema).describe("Analysis of the image content if present"),
 });
 
 export const TimelineSummarySchema = z.object({
-  summary: z.string().describe("A summary of the user's overall timeline activity"),
-  relevant_to_promotion: z.enum(['yes', 'no']).describe("An assessment of how relevant the trending timeline summary is to the promotion topic"),
-}); 
+  trending_topics: z.array(z.string()).describe("What's trending right now on Farcaster"),
+  relevant_to_promotion: z.boolean().describe("Is the trending content relevant to this promotion?"),
+});
 
 export const SearchWebResultsSchema = z.object({
-  summary: z.string().describe("A summary of the web search results related to the promotion topic"),
-  relevant: z.enum(['yes', 'no']).describe("An assessment of if the search results are relevant to the promotion topic"),
+  key_findings: z.array(z.string()).describe("Important facts found from web search"),
+  relevant: z.boolean().describe("Are the search results relevant to the promotion?"),
 });
 
 export const GeneratedQuoteCastSchema = z.object({
@@ -68,4 +96,3 @@ export const GeneratedQuoteCastSchema = z.object({
   model: z.string().describe("The AI model used to generate the quote cast"),
   confidence_score: z.number().describe("A numerical score representing the confidence level that the quote cast is written in the voice of the promoter"),
 });
-
