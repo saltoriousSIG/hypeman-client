@@ -143,6 +143,7 @@ Things to avoid:
 - Don't use phrases or words you wouldn't normally say
 - Don't overhype or exaggerate beyond your usual style
 - NEVER use dashes or emdashes
+- Dont use the following phrase <noun> is exactly the kind of <descriptor> we need, this is bad and overused
 
 
 IMPORTANT!!:
@@ -170,6 +171,7 @@ Requirements:
 - Sound like YOU
 - Talk about the content authentically
 - Dont use dashes or emdashes
+- Dont use the following phrase <noun> is exactly the kind of <descriptor> we need, this is bad and overused
 
 IMPORTANT!!:
 Only output the quote cast text. Do not include any explanations or extra commentary, or what you are internally thinking. Even if one of the tools fail, you need to produce only the cast regardless.
@@ -268,6 +270,7 @@ IMPORTANT!!:
 - NEVER include any thinking or resoning steps.
 - NEVER reference the user feedback in the cast.
 - ONLY OUTPUT THE FINAL REFINED CAST.
+- Dont use the following phrase <noun> is exactly the kind of <descriptor> we need, this is bad and overused
 
           `,
           },
