@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Promotion } from "@/types/promotion.type";
 import { formatUnits } from "viem";
 import useAxios from "@/hooks/useAxios";
+import { useFrameContext } from "./FrameProvider";
 
 interface PromotionManageContextValue {
   creatorPromotions?: (Promotion & {
@@ -50,6 +51,8 @@ export function PromotionManageProvider({
 }) {
   const axios = useAxios();
 
+  const { isAuthenticated } = useFrameContext();
+
   const promotion_insights = useContract(
     ExecutionType.READABLE,
     "Data",
@@ -67,7 +70,7 @@ export function PromotionManageProvider({
   );
 
   const { data: creatorPromotions, isPending: creatorPromotionsLoading, refetch: refetchCreatorPromotions } = useQuery({
-    queryKey: ["creatorPromotions", axios],
+    queryKey: ["creatorPromotions", axios, isAuthenticated],
     queryFn: async () => {
       if (!axios) return [];
       const { data } = await axios.get("api/fetch_creator_promotions");
