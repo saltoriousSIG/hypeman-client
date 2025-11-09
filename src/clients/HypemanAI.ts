@@ -139,6 +139,7 @@ Write a cast under 280 characters that:
 - Don't try to drive engagement.
 - Just... say what i'd say.
 - Could be a random observation. Could be barely related. That's fine.
+- If you have the opportunity, include any tagged profiles or relevant mentions from the promotion, or any of the additional context.
 
 CRITICAL EMOJI RULES:
 - If I typically use 1 emoji → use 1 emoji max
