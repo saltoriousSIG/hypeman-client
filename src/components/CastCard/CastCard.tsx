@@ -376,7 +376,7 @@ const CastCard: React.FC<CastCardProps> = ({
   const embeds = promotion.cast_data.embeds;
 
   return (
-    <div className="space-y-3 mb-5">
+    <div className="space-y-4 mb-5">
       <PromotionCastPreview
         username={username}
         text={text}
@@ -562,12 +562,17 @@ const CastCard: React.FC<CastCardProps> = ({
                               ) : !isIntentProcessed || isCheckingIntent ? (
                                 <>
                                   <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
-                                  Your claim is being processed...
+                                  Claiming...
                                 </>
                               ) : (
                                 `Claim $${formatUnits(intent.fee, 6)}`
                               )}
                             </button>
+                            { (!isIntentProcessed || isCheckingIntent) && (
+                              <div className="text-sm text-white/80">
+                                This can take up to 5 minutes to process. We'll notify you.
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
