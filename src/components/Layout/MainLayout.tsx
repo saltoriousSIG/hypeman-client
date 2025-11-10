@@ -33,7 +33,7 @@ export default function MainLayout({ children, className = "" }: MainLayoutProps
             <Header />
 
             {/* Main content area with relative z-index to appear above decorative elements */}
-            <div className={`pt-20 px-4 relative z-10 ${className}`}>
+            <div className={`pt-16 px-4 relative z-10 ${className}`}>
                 {children}
             </div>
 

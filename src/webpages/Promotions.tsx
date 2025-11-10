@@ -13,7 +13,7 @@ const ManageComponent = () => {
   );
   const { creatorPromotionsLoading } = usePromotionManage();
   return (
-    <MainLayout className="space-y-6">
+    <MainLayout className="space-y-4">
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 max-w-sm w-full">
@@ -46,18 +46,17 @@ const ManageComponent = () => {
             </div>
           </div>
         )}
-        <div className="flex items-center justify-between">
-          <PromotionManageStats />
-        </div>
+        <PromotionManageStats />
 
         {creatorPromotionsLoading ? (
-          <div className="text-center py-12 flex flex-col items-center justify-center">
+          <div className="text-center py-12">
             <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
               <Loader2 className="w-8 h-8 text-white animate-spin absolute" />
             </div>
-            <span className="text-xl font-bold text-white">
-              Loading Your Promotions
-            </span>
+            <h3 className="text-xl font-bold text-white mb-2">Loading Your Promotions...</h3>
+            <p className="text-white/60 max-w-sm mx-auto leading-relaxed">
+              Please wait while we fetch your promotion details.
+            </p>
           </div>
         ) : (
           <PromotionManage />
