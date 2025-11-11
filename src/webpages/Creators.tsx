@@ -270,6 +270,9 @@ export default function BuyersPage() {
     !!selectedCast // Only fetch when a cast is selected
   );
 
+  const drawerCardBase =
+    "bg-[#0a0813]/95 border border-white/10 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.45)]";
+
   return (
     <MainLayout className="pb-20 space-y-4">
       {isLoading ? (
@@ -352,7 +355,7 @@ export default function BuyersPage() {
               <DrawerDescription className="text-white/60">
                 {drawerStep === 1
                   ? "Choose your ideal promoters and set quality filters"
-                  : "Allocate your budget to reach the right audience"}
+                  : "Reach the right audience"}
               </DrawerDescription>
             </div>
           </DrawerHeader>
@@ -360,20 +363,41 @@ export default function BuyersPage() {
           <div className="px-4 pb-0 space-y-4">
             {/* Selected cast preview */}
             {selectedCast && drawerStep === 1 && (
-              <div className="bg-white/5 rounded-lg p-2 border border-white/10">
-                <p className="text-white/80 text-xs leading-relaxed mb-2 line-clamp-2">
+              <div className={`${drawerCardBase} p-4 space-y-3`}>
+                <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-white/50">
+                  <span>Selected Cast</span>
+                  <span className="text-white/70">
+                    @{selectedCast.author?.username ?? fUser?.username}
+                  </span>
+                </div>
+                <p className="text-white/90 text-sm leading-relaxed line-clamp-3">
                   {selectedCast.text}
                 </p>
-                <div className="flex items-center gap-2 text-xs text-white/60">
-                  <Quote className="w-3 h-3" />
-                  <span>{selectedCastQuoteData?.quoteCount ?? 0} quotes</span>
+                <div className="flex items-center justify-between text-xs text-white/60">
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2 py-1 text-[11px]">
+                    <Quote className="w-3 h-3 text-purple-300" />
+                    <span>{selectedCastQuoteData?.quoteCount ?? 0} quotes</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleViewCast(selectedCast)}
+                    className="text-[11px] font-semibold text-purple-300 hover:text-pink-300 transition-colors"
+                  >
+                    View Cast →
+                  </button>
                 </div>
               </div>
             )}
 
             {/* Step 1: Audience Section */}
             {drawerStep === 1 && (
-              <div className="space-y-6">
+              <div className={`${drawerCardBase} p-4 space-y-6`}>
+                <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-white/60">
+                  <span>Step 1 · Target Audience</span>
+                  <span className="text-white/80">
+                    Filters apply to all promoters
+                  </span>
+                </div>
                 {/* Neynar Score Slider */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -409,7 +433,7 @@ export default function BuyersPage() {
                 </div>
 
                 {/* Pro User Toggle */}
-                <div className="flex items-center justify-between py-2 bg-white/5 rounded-lg px-4 border border-white/10">
+                <div className="flex items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-4 py-3 backdrop-blur">
                   <div className="space-y-1">
                     <Label
                       htmlFor="pro-user"
@@ -432,29 +456,37 @@ export default function BuyersPage() {
 
             {/* Step 2: Budget Section */}
             {drawerStep === 2 && (
-              <DynamicPricing
-                neynarScore={neynarScore}
-                proUser={proUser}
-                tierRates={tierRates || {}}
-                setTotalBudget={(budget: number) => setBudget(budget)}
-                setBasePrice={(price: number) => setBasePrice(price)}
-              />
+              <div className={`${drawerCardBase} p-4 space-y-4`}>
+                <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-white/60">
+                  <span>Step 2 · Budget & Reward</span>
+                  <span className="text-white/80">
+                    ${(budget || 0).toFixed(2)} planned
+                  </span>
+                </div>
+                <DynamicPricing
+                  neynarScore={neynarScore}
+                  proUser={proUser}
+                  tierRates={tierRates || {}}
+                  setTotalBudget={(budget: number) => setBudget(budget)}
+                  setBasePrice={(price: number) => setBasePrice(price)}
+                />
+              </div>
             )}
           </div>
 
-          <DrawerFooter className="pt-2">
+          <DrawerFooter className="pt-4 px-4 pb-6 space-y-3 border-t border-white/5">
             {drawerStep === 1 ? (
               <>
                 <Button
                   onClick={() => setDrawerStep(2)}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-white font-medium active:scale-[0.98] transition-all border-0"
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-white font-semibold active:scale-[0.98] transition-all border-0 rounded-2xl shadow-lg shadow-purple-500/20"
                 >
                   Next: Set Budget
                 </Button>
                 <DrawerClose asChild>
                   <Button
                     variant="outline"
-                    className="w-full bg-white/5 border-white/20 text-white hover:bg-white/10 h-12"
+                    className="w-full bg-white/5 border-white/15 text-white hover:bg-white/10 h-12 rounded-2xl"
                   >
                     Cancel
                   </Button>
@@ -465,19 +497,25 @@ export default function BuyersPage() {
                 <Button
                   onClick={handleApprove}
                   disabled={budget < pricing_tiers.tier1}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-white font-medium active:scale-[0.98] transition-all border-0"
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-white font-semibold active:scale-[0.98] transition-all border-0 rounded-2xl shadow-lg shadow-purple-500/20 disabled:opacity-50"
                 >
                   Approve {(budget * 1.10).toFixed(2)} USDC
                 </Button>
+                <p className="text-[11px] text-center text-white/50">
+                  Includes estimated 10% protocol fee based on your target reach
+                </p>
               </>
             ) : (
               <>
                 <Button
                   onClick={handleCreatePromotion}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-white font-medium active:scale-[0.98] transition-all border-0"
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-white font-semibold active:scale-[0.98] transition-all border-0 rounded-2xl shadow-lg shadow-purple-500/20"
                 >
                   Create Promotion
                 </Button>
+                <p className="text-[11px] text-center text-white/50">
+                  Budget locked in once transaction confirms
+                </p>
               </>
             )}
           </DrawerFooter>
