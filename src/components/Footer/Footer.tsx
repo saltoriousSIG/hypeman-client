@@ -1,9 +1,9 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { Volume2, Plus, Settings } from "lucide-react";
+import { DollarSign, Plus, Settings } from "lucide-react";
 
 const navItems = [
-  { to: "/", label: "Hype", icon: Volume2 },
+  { to: "/", label: "Earn", icon: DollarSign },
   { to: "/creators", label: "Promote", icon: Plus },
   { to: "/manage", label: "Manage", icon: Settings },
 ];

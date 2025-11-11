@@ -63,13 +63,12 @@ export default function CastListItem({ cast, onPromote, onView }: CastListItemPr
           <div className="flex items-center gap-2">
             <button
               onClick={() => onPromote(cast)}
-              className="cursor-pointer relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white/90 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-400/30 hover:border-pink-400/50 transition-all duration-500 group overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-purple-500/20 hover:scale-105"
+              className="cursor-pointer relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-md shadow-purple-500/30 border border-white/10 transition-transform duration-300 hover:scale-[1.03] active:scale-100"
             >
-              <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-              <div className="relative z-10 w-4 h-4 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center group-hover:rotate-90 transition-transform duration-500">
+              <div className="relative z-10 w-4 h-4 rounded-full bg-black/20 border border-white/30 flex items-center justify-center">
                 <Plus className="w-2.5 h-2.5 text-white" />
               </div>
-              <span className="relative z-10 bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent group-hover:from-purple-200 group-hover:to-pink-200 transition-all duration-300">
+              <span className="relative z-10 tracking-wide uppercase text-[11px]">
                 Promote
               </span>
             </button>
@@ -119,4 +118,3 @@ export default function CastListItem({ cast, onPromote, onView }: CastListItemPr
     </div>
   );
 }
-
