@@ -101,7 +101,6 @@ const useContract = <T extends ExecutionType, R = any>(
           );
           console.log(revertError);
           if (revertError instanceof ContractFunctionRevertedError) {
-            console.log(revertError.data);
             const errorName = revertError.data?.errorName ?? "";
             console.log(errorName);
             if (revertError.data?.args) {

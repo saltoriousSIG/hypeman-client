@@ -221,7 +221,10 @@ const CastCard: React.FC<CastCardProps> = ({
           toast.success("Intent submitted successfully!");
           console.log("✅ Intent submitted to blockchain and saved to backend");
         } catch (e: any) {
-          console.log(e);
+          console.log(e.message);
+          if (e.message.startsWith("User rejected the request.")){
+            throw new Error("Transaction rejected by user.");
+          }
           throw new Error(e.message);
         }
       }
@@ -244,6 +247,7 @@ const CastCard: React.FC<CastCardProps> = ({
       }
       setIsContentRevealed(true);
     } catch (e: any) {
+      setIntent(null)
       toast.error(`Error generating content: ${e.message}`);
       console.error("Error generating content:", e);
       // Handle error - maybe show a toast or error message
@@ -377,6 +381,10 @@ const CastCard: React.FC<CastCardProps> = ({
   const pfp_url = promotion.cast_data.author.pfp_url;
   const embeds = promotion.cast_data.embeds;
 
+
+  console.log(showRerollInput, "show reroll input");
+  console.log(isContentRevealed,"is content revealed", promotion.claimable, "claimable", intent, "intent")
+
   return (
     <div className="space-y-4 mb-5">
       <div className="bg-gradient-to-b from-[#3b374a]/60 via-[#171324]/90 to-[#040307]/95 border border-white/10 rounded-2xl overflow-hidden shadow-[0_25px_45px_rgba(0,0,0,0.45)]">
@@ -485,7 +493,7 @@ const CastCard: React.FC<CastCardProps> = ({
               // Step 2: Show content and slide-to-post
               <>
                 <div
-                  className={`bg-black border-t border-l border-r ${promotion.claimable && "hidden"} border-purple-500/20 p-4 pb-0 ${showRefreshFeedback ? "rounded-t-xl rounded-b-none mb-0" : "rounded-t-xl mb-0"}`}
+                  className={`bg-black border-t border-l border-r ${promotion.claimable && "hidden"} border-purple-500/20 p-4 pb-0 ${showRefreshFeedback ? "rounded-t-xl rounded-b-none mb-0" : "rounded-t-xl mb-0 pb-3"}`}
                 >
                   <div className="flex justify-between items-center gap-2 mb-2">
                     <span className="text-sm font-medium text-purple-400">
@@ -609,7 +617,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                   </button>
                                 </>
                               ) : (
-                                <>
+                                <div className="flex items-center justify-center gap-2">
                                   {!isPosting &&
                                     !intent?.cast_hash &&
                                     isContentRevealed && (
@@ -640,7 +648,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                   >
                                     Post Cast
                                   </button>
-                                </>
+                                </div>
                               )}
                             </div>
                           </div>

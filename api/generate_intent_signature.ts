@@ -21,7 +21,7 @@ import { validateSignature } from "../middleware/validateSignature.js";
 import { Intent } from "../src/types/intents.type.js";
 import setupAdminWallet from "../src/lib/setupAdminWallet.js";
 import fs from "fs";
-import path, { parse } from "path";
+import path from "path";
 import { DIAMOND_ADDRESS, default_base_rate } from "../src/lib/utils.js";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);

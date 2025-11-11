@@ -474,7 +474,7 @@ export default function BuyersPage() {
             )}
           </div>
 
-          <DrawerFooter className="pt-4 px-4 pb-6 space-y-3 border-t border-white/5">
+          <DrawerFooter className="pt-4 px-4 pb-6 space-y-1 border-t border-white/5">
             {drawerStep === 1 ? (
               <>
                 <Button

@@ -115,7 +115,7 @@ export default function PromotionDetailPage() {
     { label: "Budget Remaining", value: formatCurrency(remainingBudget) },
     { label: "Total Budget", value: formatCurrency(totalBudget) },
     rewardPerCast !== null
-      ? { label: "Reward / Cast", value: formatCurrency(rewardPerCast) }
+      ? { label: "Base Reward / Cast", value: formatCurrency(rewardPerCast) }
       : null,
     { label: "Paid Out", value: formatCurrency(amountPaidOut) },
   ].filter(Boolean) as { label: string; value: string }[];

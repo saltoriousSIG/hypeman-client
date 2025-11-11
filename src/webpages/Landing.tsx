@@ -36,7 +36,7 @@ export default function HomePage() {
     }
 
     return (
-        <MainLayout className="space-y-4 bg-white/5 backdrop-blur-sm">
+        <MainLayout className="space-y-4 bg-white/5 backdrop-blur-sm h-screen">
             {loading && (
                 <LoadingState
                     title="Loading promotions galaxy..."
