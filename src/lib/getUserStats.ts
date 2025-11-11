@@ -35,11 +35,13 @@ export const getUserStats = async (fid: number) => {
     return {
       score: data.users[0].score,
       follower_count: data.users[0].follower_count,
+      following_count: data.users[0].following_count,
       avgLikes,
       avgRecasts,
       avgReplies,
       casts: casts.casts,
       isPro: data.users[0]?.pro?.status === "subscribed",
+      power_badge: data.users[0].power_badge
     };
   } catch (e: any) {
     console.log(e);

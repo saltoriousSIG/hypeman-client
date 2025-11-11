@@ -34,6 +34,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const feeTierFrequencyMap = new Map<string, number>();
 
+
+
     for (let i = 0; i < Number(next_promotion_id); i++) {
       const list = await redis.lrange(`intent:${i}`, 0, -1);
       for (const item of list) {
@@ -42,10 +44,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const userData = await getUserStats(item.fid);
           const tier = calculateUserTier(
             userData.score,
+            item.fid,
             userData.follower_count,
+            userData.following_count,
             userData.avgLikes,
             userData.avgRecasts,
-            userData.avgReplies
+            userData.avgReplies,
+            userData.power_badge
           );
           await redis.set(`user_tier:${item.fid}`, tier, 60 * 60 * 24 * 7); // Cache for 24 hours
           feeTierFrequencyMap.set(

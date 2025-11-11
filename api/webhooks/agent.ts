@@ -135,18 +135,23 @@ async function handler(req: VercelRequest, res: VercelResponse) {
               const {
                 score,
                 follower_count,
+                following_count,
                 avgLikes,
                 avgRecasts,
                 avgReplies,
+                power_badge,
               } = stats;
 
               // Calculate composite score and tier
               const tier = calculateUserTier(
                 score,
+                fid,
                 follower_count,
+                following_count,
                 avgLikes,
                 avgRecasts,
-                avgReplies
+                avgReplies,
+                power_badge
               );
 
               // Calculate earning potential (tier value is USDC per promotion)
