@@ -1,10 +1,11 @@
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { PromotionManageProvider } from "@/providers/PromotionManageProvider";
 import PromotionManageStats from "@/components/PromotionManageStats/PromotionManageStats";
 import PromotionManage from "@/components/PromotionManage/PromotionManage";
 import { usePromotionManage } from "@/providers/PromotionManageProvider";
+import LoadingState from "@/components/LoadingState/LoadingState";
 
 
 const ManageComponent = () => {
@@ -49,15 +50,11 @@ const ManageComponent = () => {
         <PromotionManageStats />
 
         {creatorPromotionsLoading ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-              <Loader2 className="w-8 h-8 text-white animate-spin absolute" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">Loading Your Promotions...</h3>
-            <p className="text-white/60 max-w-sm mx-auto leading-relaxed">
-              Please wait while we fetch your promotion details.
-            </p>
-          </div>
+          <LoadingState
+            title="Summoning your promotions..."
+            message="Crunching stats, budgets, and payouts so everything looks perfect."
+            hint="Sip some matcha while we prep this"
+          />
         ) : (
           <PromotionManage />
         )}

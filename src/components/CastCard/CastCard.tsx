@@ -23,6 +23,7 @@ interface CastCardProps {
   promotionAuthor: string;
   promotionEmmbedContext?: any[];
   refetchPromotion: () => Promise<any>;
+  hidePromotionLink?: boolean;
 }
 
 const CastCard: React.FC<CastCardProps> = ({
@@ -31,6 +32,7 @@ const CastCard: React.FC<CastCardProps> = ({
   promotionAuthor,
   promotionEmmbedContext,
   refetchPromotion,
+  hidePromotionLink = false,
 }) => {
   const [isPosting, setIsPosting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -386,6 +388,7 @@ const CastCard: React.FC<CastCardProps> = ({
           castUrl={promotion.cast_url}
           embeds={embeds}
           promotionId={promotion.id}
+          hideViewPromotionButton={hidePromotionLink}
           className="rounded-none border-0 border-b border-white/5 bg-gradient-to-b from-[#49475a]/80 via-[#2a2738]/90 to-[#100d18]/95"
         />
 

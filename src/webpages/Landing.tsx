@@ -7,6 +7,7 @@ import LoginModal from "@/components/LoginModal/LoginModal";
 import MainLayout from "@/components/Layout/MainLayout";
 import { useData } from "@/providers/DataProvider";
 import MaintenancePage from "@/components/Maintenance/Maintenance";
+import LoadingState from "@/components/LoadingState/LoadingState";
 
 export default function HomePage() {
     const { isAuthenticated } = useFrameContext();
@@ -37,16 +38,11 @@ export default function HomePage() {
     return (
         <MainLayout className="space-y-4 bg-white/5 backdrop-blur-sm">
             {loading && (
-                <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                        <Loader2 className="w-8 h-8 text-white animate-spin absolute" />
-                    </div>
-
-                    <h3 className="text-xl font-bold text-white mb-2">Loading Promotions...</h3>
-                    <p className="text-white/60 max-w-sm mx-auto leading-relaxed">
-                        Please wait while we fetch the latest promotion opportunities for you.
-                    </p>
-                </div>
+                <LoadingState
+                    title="Loading promotions galaxy..."
+                    message="Fetching the cast, budgets, and intent status from the chain."
+                    hint="This usually takes just a sec"
+                />
             )}
             {promotions?.map((cast) => {
                 return (

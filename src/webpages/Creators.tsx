@@ -23,6 +23,7 @@ import { parseUnits } from "viem";
 import { pricing_tiers } from "@/lib/calculateUserScore";
 import ShareModal from "@/components/ShareModal/ShareModal";
 import MainLayout from "@/components/Layout/MainLayout";
+import LoadingState from "@/components/LoadingState/LoadingState";
 import { Cast } from "@neynar/nodejs-sdk/build/api";
 import sdk from "@farcaster/frame-sdk";
 import CastListItem from "@/components/CastListItem/CastListItem";
@@ -276,12 +277,11 @@ export default function BuyersPage() {
   return (
     <MainLayout className="pb-20 space-y-4">
       {isLoading ? (
-        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-          <CardContent className="p-8 text-center">
-            <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin text-purple-400" />
-            <p className="text-white/60">Loading your casts...</p>
-          </CardContent>
-        </Card>
+        <LoadingState
+          title="Gathering your casts..."
+          message="Dusting off your latest posts so you can promote them."
+          hint="Grab a sip of water while we sync with Farcaster"
+        />
       ) : isError ? (
         <Card className="bg-white/10 backdrop-blur-sm border-white/20">
           <CardContent className="p-8 text-center">

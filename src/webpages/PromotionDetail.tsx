@@ -1,11 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import CastCard from "@/components/CastCard/CastCard";
 import MainLayout from "@/components/Layout/MainLayout";
 import { useQuery } from "@tanstack/react-query";
 import useAxios from "@/hooks/useAxios";
 import { Promotion } from "@/types/promotion.type";
 import { formatUnits } from "viem";
+import LoadingState from "@/components/LoadingState/LoadingState";
 
 export default function PromotionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -47,18 +48,19 @@ export default function PromotionDetailPage() {
 
   if (loading) {
     return (
-      <MainLayout className="space-y-4">
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <Loader2 className="w-8 h-8 text-white animate-spin absolute" />
-          </div>
-          <h3 className="text-xl font-bold text-white mb-2">
-            Loading Promotion...
-          </h3>
-          <p className="text-white/60 max-w-sm mx-auto leading-relaxed">
-            Please wait while we fetch the promotion details.
-          </p>
-        </div>
+      <MainLayout className="space-y-4 pb-16">
+        <button
+          onClick={() => navigate("/")}
+          className="inline-flex items-center gap-2 text-sm text-white/80 hover:text-white transition-colors mb-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 hover:bg-white/10"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back</span>
+        </button>
+        <LoadingState
+          title="Loading promotion galaxy..."
+          message="Fetching the cast, budgets, and intent status from the chain."
+          hint="This usually takes just a sec"
+        />
       </MainLayout>
     );
   }
@@ -68,18 +70,20 @@ export default function PromotionDetailPage() {
       <MainLayout className="space-y-4 pb-16">
         <button
           onClick={() => navigate("/")}
-          className="flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-2"
+          className="inline-flex items-center gap-2 text-sm text-white/80 hover:text-white transition-colors mb-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 hover:bg-white/10"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm">Back to all promotions</span>
+          <span>Back</span>
         </button>
-        <div className="text-center py-12">
-          <h3 className="text-xl font-bold text-white mb-2">
-            Promotion Not Found
-          </h3>
-          <p className="text-white/60 max-w-sm mx-auto leading-relaxed">
-            This promotion doesn't exist or is no longer available.
-          </p>
+        <div className="bg-gradient-to-b from-[#3b374a]/60 via-[#171324]/90 to-[#040307]/95 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-[0_25px_45px_rgba(0,0,0,0.45)]">
+          <div className="p-8 text-center">
+            <h3 className="text-xl font-bold text-white mb-2">
+              Promotion Not Found
+            </h3>
+            <p className="text-white/60 max-w-sm mx-auto leading-relaxed">
+              This promotion doesn't exist or is no longer available.
+            </p>
+          </div>
         </div>
       </MainLayout>
     );
@@ -137,6 +141,7 @@ export default function PromotionDetailPage() {
             promotionAuthor={promotion.cast_data.author.username}
             promotionEmmbedContext={promotion.cast_data.embeds}
             refetchPromotion={refetchPromotion}
+            hidePromotionLink
           />
         )}
       <div className="space-y-4">
