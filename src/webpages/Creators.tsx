@@ -351,8 +351,8 @@ export default function BuyersPage() {
               </DrawerTitle>
               <DrawerDescription className="text-white/60">
                 {drawerStep === 1
-                  ? "Define who can promote your cast"
-                  : "Set your total promotion budget"}
+                  ? "Choose your ideal promoters and set quality filters"
+                  : "Allocate your budget to reach the right audience"}
               </DrawerDescription>
             </div>
           </DrawerHeader>
@@ -391,7 +391,7 @@ export default function BuyersPage() {
                   <Slider
                     id="neynar-score"
                     min={0}
-                    max={1}
+                    max={0.9}
                     step={0.01}
                     value={[neynarScore]}
                     onValueChange={(value) => setNeynarScore(value[0])}
@@ -400,7 +400,7 @@ export default function BuyersPage() {
 
                   <div className="flex justify-between text-xs text-white/40">
                     <span>0.00</span>
-                    <span>1.00</span>
+                    <span>0.90</span>
                   </div>
 
                   <p className="text-xs text-white/60">

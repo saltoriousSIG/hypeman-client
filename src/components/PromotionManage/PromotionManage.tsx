@@ -23,7 +23,7 @@ const PromotionManage: React.FC<PromotionManageProps> = () => {
             <div className="flex items-center gap-2 bg-white/5 rounded-lg p-1 backdrop-blur-sm border border-white/10">
                 <button
                     onClick={() => setActiveTab("active")}
-                    className={`flex-1 py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-300 ${activeTab === "active"
+                    className={`flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 ${activeTab === "active"
                         ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
                         : "text-white/60 hover:text-white/80 hover:bg-white/5"
                         }`}
@@ -32,7 +32,7 @@ const PromotionManage: React.FC<PromotionManageProps> = () => {
                 </button>
                 <button
                     onClick={() => setActiveTab("completed")}
-                    className={`flex-1 py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-300 ${activeTab === "completed"
+                    className={`flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 ${activeTab === "completed"
                         ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
                         : "text-white/60 hover:text-white/80 hover:bg-white/5"
                         }`}

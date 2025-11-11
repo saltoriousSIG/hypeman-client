@@ -14,6 +14,7 @@ export type Promotion = {
   description: string;
   id: string;
   is_open_promotion: boolean;
+  base_rate?: bigint;
   name: string;
   project_url: string;
   refund_requested: boolean;

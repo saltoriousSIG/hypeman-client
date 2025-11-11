@@ -35,7 +35,7 @@ export default function HomePage() {
     }
 
     return (
-        <MainLayout className="space-y-4">
+        <MainLayout className="space-y-4 bg-white/5 backdrop-blur-sm">
             {loading && (
                 <div className="text-center py-12">
                     <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
@@ -50,7 +50,7 @@ export default function HomePage() {
             )}
             {promotions?.map((cast) => {
                 return (
-                    <div key={cast.id} className="space-y-2 border border-white/10 rounded-lg mb-5 bg-white/10 backdrop-blur-sm">
+                    <div key={cast.id} className="space-y-2 border border-white/10 rounded-lg">
                         <PromotionCastPreview
                             username={cast.cast_data.author.username}
                             text={cast.cast_data?.text || ""}
@@ -58,17 +58,8 @@ export default function HomePage() {
                             authorFid={cast.cast_data.author.fid}
                             castUrl={(cast as any).cast_url || ""}
                             embeds={cast.cast_data?.embeds || []}
+                            promotionId={cast.id}
                         />
-                        <div className="p-2 pt-0">
-                            <button
-                                onClick={() => navigate(`/promotion/${cast.id}`)}
-                                className="w-full cursor-pointer flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95]"
-                            >
-                                <span>View Details</span>
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
-                        </div>
-
                     </div>
                 )
             })}

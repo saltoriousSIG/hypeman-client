@@ -1,5 +1,7 @@
-import { User, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import sdk from "@farcaster/frame-sdk";
+import { cn } from "@/lib/utils";
 
 interface PromotionCastPreviewProps {
   username: string;
@@ -8,6 +10,8 @@ interface PromotionCastPreviewProps {
   authorFid: number;
   castUrl: string;
   embeds: any[];
+  className?: string;
+  promotionId?: string | number;
 }
 
 export default function PromotionCastPreview({
@@ -17,7 +21,11 @@ export default function PromotionCastPreview({
   authorFid,
   castUrl,
   embeds,
+  className,
+  promotionId,
 }: PromotionCastPreviewProps) {
+  const navigate = useNavigate();
+
   const handleViewProfile = async () => {
     try {
       await sdk.actions.viewProfile({
@@ -27,8 +35,6 @@ export default function PromotionCastPreview({
       console.error("Error viewing profile:", error);
     }
   };
-
-  console.log("Embeds:", embeds);
 
   const handleViewCast = async () => {
     try {
@@ -41,11 +47,22 @@ export default function PromotionCastPreview({
     }
   };
 
+  const handleViewPromotion = () => {
+    if (promotionId) {
+      navigate(`/promotion/${promotionId}`);
+    }
+  };
+
   return (
-    <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/10 overflow-hidden p-4">
+    <div
+      className={cn(
+        "rounded-lg overflow-hidden p-4 bg-linear-to-b from-[#49475a]/80 via-[#2a2738]/90 to-[#100d18]/95",
+        className
+      )}
+    >
       <div>
         <div className="flex items-center justify-between gap-3 mb-3">
-          <div className="flex items-center gap-2">
+          <div onClick={handleViewProfile} className="flex items-center gap-2 cursor-pointer">
             <img
               src={pfpUrl}
               alt={username}
@@ -54,29 +71,28 @@ export default function PromotionCastPreview({
               className="rounded-full w-6 h-6"
             />
             <span className="text-white text-sm font-bold">{username}</span>
-            <button
-              onClick={handleViewProfile}
-              className="flex items-center justify-center gap-1 bg-white/10 hover:bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full text-xs text-white/80 border border-white/10 transition-all duration-200 hover:scale-105"
-              title="View Profile"
-            >
-              <User className="w-3 h-3" />
-              <span>Profile</span>
-            </button>
           </div>
           <div className="w-full flex justify-end gap-x-2">
+
             <button
-              onClick={handleViewCast}
-              className="flex items-center justify-center gap-1 bg-white/10 hover:bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full text-xs text-white/80 border border-white/10 transition-all duration-200 hover:scale-105"
-              title="View Cast"
+              onClick={handleViewPromotion}
+              disabled={!promotionId}
+              className="cursor-pointer relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white/90 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-400/30 hover:border-pink-400/50 transition-all duration-500 group overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-purple-500/20 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
+              title="View Promotion"
             >
-              <ExternalLink className="w-3 h-3" />
-              <span>Cast</span>
+              <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+              <div className="relative z-10 w-4 h-4 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center group-hover:rotate-90 transition-transform duration-500">
+                <ExternalLink className="w-2.5 h-2.5 text-white" />
+              </div>
+              <span className="relative z-10 bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent group-hover:from-purple-200 group-hover:to-pink-200 transition-all duration-300">
+                View
+              </span>
             </button>
           </div>
         </div>
 
         <div className="flex h-fit flex-col items-start gap-3">
-          <div className="flex-1">
+          <div className="flex-1 cursor-pointer" onClick={handleViewCast}>
             <p className="text-xs text-white/90 whitespace-pre-wrap">{text}</p>
           </div>
           {embeds.some((embed) => embed.metadata?.content_type?.startsWith("image/")) && (
