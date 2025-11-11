@@ -140,13 +140,13 @@ export function AddBudgetModal({
               <div className="bg-black/20 rounded-lg p-3">
                 <div className="text-xs text-white/60 mb-1">Current Budget</div>
                 <div className="text-lg font-bold text-white">
-                  ${formatUnits(promotion.total_budget, 6)}
+                  ${parseFloat(formatUnits(promotion.total_budget, 6)).toFixed(2)}
                 </div>
               </div>
               <div className="bg-black/20 rounded-lg p-3">
                 <div className="text-xs text-white/60 mb-1">Remaining</div>
                 <div className="text-lg font-bold text-emerald-400">
-                  ${formatUnits(promotion.remaining_budget, 6)}
+                  ${parseFloat(formatUnits(promotion.remaining_budget, 6)).toFixed(2)}
                 </div>
               </div>
             </div>
@@ -203,7 +203,7 @@ export function AddBudgetModal({
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-white/60">Current Budget</span>
                   <span className="font-medium text-white">
-                    ${formatUnits(promotion.total_budget, 6)}
+                    ${parseFloat(formatUnits(promotion.total_budget, 6)).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
@@ -218,7 +218,7 @@ export function AddBudgetModal({
                     New Total
                   </span>
                   <span className="text-xl font-bold text-emerald-400">
-                    ${newTotal}
+                    ${newTotal.toFixed(2)}
                   </span>
                 </div>
               </div>

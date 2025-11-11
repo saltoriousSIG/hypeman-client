@@ -65,7 +65,7 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
           ),
           base_rate: promotion.base_rate.toString(),
           intents: current_user_intent ? [current_user_intent] : [],
-          claimable: !!current_user_intent?.processed || !!current_user_intent?.cast_hash,
+          claimable: !!current_user_intent?.processed,
           cast_data: {
             text: cast.text,
             embeds: cast.embeds,

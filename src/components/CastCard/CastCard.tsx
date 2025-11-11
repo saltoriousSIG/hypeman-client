@@ -23,6 +23,7 @@ interface CastCardProps {
   promotionAuthor: string;
   promotionEmmbedContext?: any[];
   refetchPromotion: () => Promise<any>;
+  hidePromotionLink?: boolean;
 }
 
 const CastCard: React.FC<CastCardProps> = ({
@@ -31,6 +32,7 @@ const CastCard: React.FC<CastCardProps> = ({
   promotionAuthor,
   promotionEmmbedContext,
   refetchPromotion,
+  hidePromotionLink = false,
 }) => {
   const [isPosting, setIsPosting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +50,6 @@ const CastCard: React.FC<CastCardProps> = ({
   const [refreshFeedback, setRefreshFeedback] = useState("");
   const [hasClaimed, setHasClaimed] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
-
   const pricing = useGetPostPricing(
     parseFloat(formatUnits(promotion.base_rate, 6))
   );
@@ -139,13 +140,7 @@ const CastCard: React.FC<CastCardProps> = ({
       return toast.error("This promotion is only available to Pro users.");
     }
 
-    if (promotion.id === "120") {
-      if (score < 0.85) {
-        return toast.error(
-          "Your Neynar score is not high enough to reveal this content."
-        );
-      }
-    } else if (score < parseFloat(promotion.neynar_score)) {
+    if (score < parseFloat(promotion.neynar_score)) {
       return toast.error(
         "Your Neynar score is not high enough to reveal this content."
       );
@@ -226,8 +221,11 @@ const CastCard: React.FC<CastCardProps> = ({
           toast.success("Intent submitted successfully!");
           console.log("✅ Intent submitted to blockchain and saved to backend");
         } catch (e: any) {
-          console.error("❌ Error submitting intent to blockchain:", e);
-          throw new Error("Error submitting intent to blockchain");
+          console.log(e.message);
+          if (e.message.startsWith("User rejected the request.")){
+            throw new Error("Transaction rejected by user.");
+          }
+          throw new Error(e.message);
         }
       }
 
@@ -249,6 +247,7 @@ const CastCard: React.FC<CastCardProps> = ({
       }
       setIsContentRevealed(true);
     } catch (e: any) {
+      setIntent(null)
       toast.error(`Error generating content: ${e.message}`);
       console.error("Error generating content:", e);
       // Handle error - maybe show a toast or error message
@@ -382,18 +381,26 @@ const CastCard: React.FC<CastCardProps> = ({
   const pfp_url = promotion.cast_data.author.pfp_url;
   const embeds = promotion.cast_data.embeds;
 
-  return (
-    <div className="space-y-3 mb-5">
-      <PromotionCastPreview
-        username={username}
-        text={text}
-        pfpUrl={pfp_url}
-        authorFid={promotion.cast_data.author.fid}
-        castUrl={promotion.cast_url}
-        embeds={embeds}
-      />
 
-      <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/10 overflow-hidden">
+  console.log(showRerollInput, "show reroll input");
+  console.log(isContentRevealed,"is content revealed", promotion.claimable, "claimable", intent, "intent")
+
+  return (
+    <div className="space-y-4 mb-5">
+      <div className="bg-gradient-to-b from-[#3b374a]/60 via-[#171324]/90 to-[#040307]/95 border border-white/10 rounded-2xl overflow-hidden shadow-[0_25px_45px_rgba(0,0,0,0.45)]">
+        <PromotionCastPreview
+          username={username}
+          text={text}
+          pfpUrl={pfp_url}
+          authorFid={promotion.cast_data.author.fid}
+          castUrl={promotion.cast_url}
+          embeds={embeds}
+          promotionId={promotion.id}
+          hideViewPromotionButton={hidePromotionLink}
+          className="rounded-none border-0 border-b border-white/5 bg-gradient-to-b from-[#49475a]/80 via-[#2a2738]/90 to-[#100d18]/95"
+        />
+
+        <div className="p-4 space-y-4">
         {showRerollInput ? (
           <div className="space-y-4 h-full">
             {/* AI Generated Content Section */}
@@ -459,13 +466,13 @@ const CastCard: React.FC<CastCardProps> = ({
           </div>
         ) : (
           <div className="space-y-4">
-            {!isContentRevealed && !promotion.claimable ? (
+            {!isContentRevealed && !promotion.claimable && !intent ? (
               // Step 1: Show generate button
-              <div className="text-center p-4 bg-black">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <button
                   onClick={handleRevealContent}
                   disabled={isGeneratingContent || isGeneratingIntent}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
                 >
                   {isGeneratingIntent ? (
                     <>
@@ -485,46 +492,39 @@ const CastCard: React.FC<CastCardProps> = ({
             ) : (
               // Step 2: Show content and slide-to-post
               <>
-                {/* AI Generated Content Section */}
-                {isGeneratingContent ? (
-                  <div className="space-y-2 h-full">
-                    <Skeleton count={3} className="!bg-white/10" />
+                <div
+                  className={`bg-black border-t border-l border-r ${promotion.claimable && "hidden"} border-purple-500/20 p-4 pb-0 ${showRefreshFeedback ? "rounded-t-xl rounded-b-none mb-0" : "rounded-t-xl mb-0 pb-3"}`}
+                >
+                  <div className="flex justify-between items-center gap-2 mb-2">
+                    <span className="text-sm font-medium text-purple-400">
+                      Your Quote Cast
+                    </span>
                   </div>
-                ) : (
-                  <div
-                    className={`bg-black border-t border-l border-r ${promotion.claimable && "hidden"} border-purple-500/20 p-4 pb-0 ${showRefreshFeedback ? "rounded-t-xl rounded-b-none mb-0" : "rounded-t-xl mb-0"}`}
-                  >
-                    <div className="flex justify-between items-center gap-2 mb-2">
-                      <span className="text-sm font-medium text-purple-400">
-                        Your Quote Cast
-                      </span>
-                    </div>
-                    {!generatedCast && !rerolledCast && (
-                      <span className="text-sm text-red-300 font-mediut">
-                        Something happened when we tried to generate your cast.
-                        Click Update to get a new one!
-                      </span>
-                    )}
-                    <p className="text-sm leading-relaxed text-white/90">
-                      {rerolledCast || generatedCast}
-                    </p>
+                  {!generatedCast && !rerolledCast && (
+                    <span className="text-sm text-red-300 font-mediut">
+                      Something happened when we tried to generate your cast.
+                      Click Update to get a new one!
+                    </span>
+                  )}
+                  <p className="text-sm leading-relaxed text-white/90">
+                    {rerolledCast || generatedCast}
+                  </p>
 
-                    {/* Refresh Feedback Section - now part of the purple container */}
-                    {showRefreshFeedback && (
-                      <div className="mt-4 pt-4 border-t border-purple-500/20">
-                        <label className="block text-sm font-medium text-white/80 mb-2">
-                          How would you like to improve this cast? (optional)
-                        </label>
-                        <textarea
-                          value={refreshFeedback}
-                          onChange={(e) => setRefreshFeedback(e.target.value)}
-                          className="w-full bg-black/20 rounded-xl p-3 border border-white/10 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[80px] text-white placeholder-white/50"
-                          placeholder="e.g., make it more professional, add more excitement, use fewer emojis, make it shorter..."
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
+                  {/* Refresh Feedback Section - now part of the purple container */}
+                  {showRefreshFeedback && (
+                    <div className="mt-4 pt-4 border-t border-purple-500/20">
+                      <label className="block text-sm font-medium text-white/80 mb-2">
+                        How would you like to improve this cast? (optional)
+                      </label>
+                      <textarea
+                        value={refreshFeedback}
+                        onChange={(e) => setRefreshFeedback(e.target.value)}
+                        className="w-full bg-black/20 rounded-xl p-3 border border-white/10 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[80px] text-white placeholder-white/50"
+                        placeholder="e.g., make it more professional, add more excitement, use fewer emojis, make it shorter..."
+                      />
+                    </div>
+                  )}
+                </div>
 
                 {isPosting ? (
                   <div className="flex items-center justify-center gap-3 py-4">
@@ -536,9 +536,9 @@ const CastCard: React.FC<CastCardProps> = ({
                 ) : (
                   <>
                     {promotion.claimable ? (
-                      <div className="text-center p-4 bg-black">
+                      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                         {hasClaimed ? (
-                          <div className="text-sm text-white/80">
+                          <div className="text-sm text-white/80 text-center">
                             ✅ Successfully Claimed
                           </div>
                         ) : (
@@ -566,7 +566,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                   setIsClaiming(false);
                                 }
                               }}
-                              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
                             >
                               {isClaiming ? (
                                 <>
@@ -576,12 +576,17 @@ const CastCard: React.FC<CastCardProps> = ({
                               ) : !isIntentProcessed || isCheckingIntent ? (
                                 <>
                                   <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
-                                  Your claim is being processed...
+                                  Claiming...
                                 </>
                               ) : (
                                 `Claim $${formatUnits(intent.fee, 6)}`
                               )}
                             </button>
+                            { (!isIntentProcessed || isCheckingIntent) && (
+                              <div className="text-sm text-white/60 mt-2 text-center">
+                                This can take up to 5 minutes to process. We'll notify you.
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -589,7 +594,7 @@ const CastCard: React.FC<CastCardProps> = ({
                       <>
                         {intent ? (
                           <div className="space-y-2">
-                            <div className="flex gap-4 w-full p-4 bg-black">
+                            <div className="flex w-full flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 sm:flex-row">
                               {showRefreshFeedback ? (
                                 <>
                                   <button
@@ -604,7 +609,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                   <button
                                     onClick={handleRefreshWithFeedback}
                                     disabled={isGeneratingContent}
-                                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
                                   >
                                     {isGeneratingContent
                                       ? "Updating..."
@@ -612,7 +617,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                   </button>
                                 </>
                               ) : (
-                                <>
+                                <div className="flex items-center justify-center gap-2">
                                   {!isPosting &&
                                     !intent?.cast_hash &&
                                     isContentRevealed && (
@@ -631,7 +636,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                     )}
                                   <button
                                     onClick={handlePostCast}
-                                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] cursor-pointer"
+                                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] cursor-pointer shadow-lg shadow-purple-500/20"
                                     style={{
                                       width:
                                         !isPosting &&
@@ -643,7 +648,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                   >
                                     Post Cast
                                   </button>
-                                </>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -666,7 +671,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                     <button
                                       onClick={handleRefreshWithFeedback}
                                       disabled={isGeneratingContent}
-                                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
                                     >
                                       {isGeneratingContent
                                         ? "Generating..."
@@ -692,7 +697,7 @@ const CastCard: React.FC<CastCardProps> = ({
                                     <button
                                       onClick={handlePost}
                                       disabled={isPosting}
-                                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
                                       style={{
                                         width: isContentRevealed
                                           ? "calc(50% - 0.25rem)"
@@ -727,6 +732,7 @@ const CastCard: React.FC<CastCardProps> = ({
         )}
       </div>
     </div>
+  </div>
   );
 };
 

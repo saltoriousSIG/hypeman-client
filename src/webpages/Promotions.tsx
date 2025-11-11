@@ -1,10 +1,11 @@
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { PromotionManageProvider } from "@/providers/PromotionManageProvider";
 import PromotionManageStats from "@/components/PromotionManageStats/PromotionManageStats";
 import PromotionManage from "@/components/PromotionManage/PromotionManage";
 import { usePromotionManage } from "@/providers/PromotionManageProvider";
+import LoadingState from "@/components/LoadingState/LoadingState";
 
 
 const ManageComponent = () => {
@@ -13,7 +14,7 @@ const ManageComponent = () => {
   );
   const { creatorPromotionsLoading } = usePromotionManage();
   return (
-    <MainLayout className="space-y-6">
+    <MainLayout className="space-y-4 pb-16">
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 max-w-sm w-full">
@@ -46,19 +47,14 @@ const ManageComponent = () => {
             </div>
           </div>
         )}
-        <div className="flex items-center justify-between">
-          <PromotionManageStats />
-        </div>
+        <PromotionManageStats />
 
         {creatorPromotionsLoading ? (
-          <div className="text-center py-12 flex flex-col items-center justify-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-              <Loader2 className="w-8 h-8 text-white animate-spin absolute" />
-            </div>
-            <span className="text-xl font-bold text-white">
-              Loading Your Promotions
-            </span>
-          </div>
+          <LoadingState
+            title="Summoning your promotions..."
+            message="Crunching stats, budgets, and payouts so everything looks perfect."
+            hint="Sip some matcha while we prep this"
+          />
         ) : (
           <PromotionManage />
         )}

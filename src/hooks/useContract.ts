@@ -13,6 +13,7 @@ import PromotionCreate from "../abis/PromotionCreate.json";
 import PromotionManage from "../abis/PromotionManage.json";
 import PromotionIntents from "../abis/PromotionIntents.json";
 import ERC20 from "../abis/ERC20.json";
+import { BaseError, ContractFunctionRevertedError } from "viem";
 
 type Facets = "Create" | "Claim" | "Data" | "Manage" | "Intents" | "ERC20";
 
@@ -26,7 +27,9 @@ type ExecutionResult<
   R = any,
 > = T extends ExecutionType.READABLE
   ? (args: Array<any>) => Promise<R>
-  : (args: Array<any>) => Promise<{ hash: `0x${string}`; receipt: any; result: string }>;
+  : (
+      args: Array<any>
+    ) => Promise<{ hash: `0x${string}`; receipt: any; result: string }>;
 
 const useContract = <T extends ExecutionType, R = any>(
   type: T,
@@ -67,12 +70,15 @@ const useContract = <T extends ExecutionType, R = any>(
             });
             break;
           case ExecutionType.WRITABLE:
-            const { result }: { result: bigint } = await simulateContract(config as any, {
-              abi,
-              address: facet === "ERC20" ? contractAddress : DIAMOND_ADDRESS,
-              functionName,
-              args,
-            });
+            const { result }: { result: bigint } = await simulateContract(
+              config as any,
+              {
+                abi,
+                address: facet === "ERC20" ? contractAddress : DIAMOND_ADDRESS,
+                functionName,
+                args,
+              }
+            );
 
             const hash = await writeContract(config as any, {
               abi,
@@ -89,6 +95,19 @@ const useContract = <T extends ExecutionType, R = any>(
         }
         return res as any;
       } catch (e: any) {
+        if (e instanceof BaseError) {
+          const revertError = e.walk(
+            (err) => err instanceof ContractFunctionRevertedError
+          );
+          console.log(revertError);
+          if (revertError instanceof ContractFunctionRevertedError) {
+            const errorName = revertError.data?.errorName ?? "";
+            console.log(errorName);
+            if (revertError.data?.args) {
+              throw new Error(revertError.data?.args[0] as string);
+            }
+          }
+        }
         throw new Error(e.message);
       }
     },

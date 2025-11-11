@@ -20,11 +20,11 @@ const PromotionManage: React.FC<PromotionManageProps> = () => {
     }
     return (
         <>
-            <div className="flex items-center gap-2 mb-6 bg-white/5 rounded-2xl p-1 backdrop-blur-sm border border-white/10">
+            <div className="flex items-center gap-2 bg-white/5 rounded-lg p-1 backdrop-blur-sm border border-white/10">
                 <button
                     onClick={() => setActiveTab("active")}
-                    className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${activeTab === "active"
-                        ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25"
+                    className={`flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 ${activeTab === "active"
+                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
                         : "text-white/60 hover:text-white/80 hover:bg-white/5"
                         }`}
                 >
@@ -32,8 +32,8 @@ const PromotionManage: React.FC<PromotionManageProps> = () => {
                 </button>
                 <button
                     onClick={() => setActiveTab("completed")}
-                    className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${activeTab === "completed"
-                        ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25"
+                    className={`flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 ${activeTab === "completed"
+                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
                         : "text-white/60 hover:text-white/80 hover:bg-white/5"
                         }`}
                 >
@@ -49,11 +49,11 @@ const PromotionManage: React.FC<PromotionManageProps> = () => {
 
             {getCurrentPromotions().length === 0 && (
                 <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Eye className="w-8 h-8 text-white/40" />
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Eye className="w-8 h-8 text-white" />
                     </div>
-                    <h3 className="text-lg font-semibold text-white mb-2">No {activeTab} promotions</h3>
-                    <p className="text-white/60 text-sm">
+                    <h3 className="text-xl font-bold text-white mb-2">No {activeTab} promotions</h3>
+                    <p className="text-white/60 max-w-sm mx-auto leading-relaxed">
                         {activeTab === "active"
                             ? "Create your first promotion to get started"
                             : "Complete some campaigns to see results here"}

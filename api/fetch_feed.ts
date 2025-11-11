@@ -7,7 +7,7 @@ import { RedisClient } from "../src/clients/RedisClient.js";
 import fs from "fs";
 import path from "path";
 import { DIAMOND_ADDRESS } from "../src/lib/utils.js";
-import { zeroHash } from "viem";
+import { zeroHash, formatUnits } from "viem";
 
 const redis = new RedisClient(process.env.REDIS_URL as string);
 
@@ -110,10 +110,17 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
         const existing_generated_cast = await redis.get(
           `user_cast:${req?.fid}:${promotion.id}`
         );
+
+        const formattedRemainingBudget = parseFloat(formatUnits(promotion.remaining_budget, 6)); 
+        const formattedCommittedBudget = parseFloat(formatUnits(promotion.committed_budget, 6));
+        const formattedBaseRate = parseFloat(formatUnits(promotion.base_rate, 6));
+
+        const enoughBudget = (formattedRemainingBudget - formattedCommittedBudget) >= formattedBaseRate;
+
         return {
           ...promotion,
           display_to_promoters:
-            promotion.state === "0" && BigInt(promotion.remaining_budget) > 0n,
+            promotion.state === "0" && BigInt(promotion.remaining_budget) > 0n && enoughBudget,
           claimable:
             (promoterDetails.result &&
               promoterDetails.result?.fid > BigInt(0) &&

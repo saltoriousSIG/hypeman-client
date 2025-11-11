@@ -61,7 +61,7 @@ export default function CreatorSettingsPage() {
                 </div>
             </header>
 
-            <div className="pt-20 px-4 space-y-4 relative z-10 mb-5">
+            <div className="pt-16 px-4 space-y-4 relative z-10 mb-5">
                 {isVerifiedPromoter ? (
                     /* Profile Section - Only for verified promoters */
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/10">

@@ -73,9 +73,6 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
     );
 
     const cast = await redis.get(`promotion:cast:${id}`);
-
-    console.log(cast.embeds);
-
     console.log(promotion.result);
     if (cast) {
       const promotionData = {
