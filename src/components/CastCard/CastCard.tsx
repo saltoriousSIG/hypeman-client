@@ -222,7 +222,7 @@ const CastCard: React.FC<CastCardProps> = ({
           console.log("✅ Intent submitted to blockchain and saved to backend");
         } catch (e: any) {
           console.log(e.message);
-          if (e.message.startsWith("User rejected the request.")){
+          if (e.message.startsWith("User rejected the request.")) {
             throw new Error("Transaction rejected by user.");
           }
           throw new Error(e.message);
@@ -247,7 +247,7 @@ const CastCard: React.FC<CastCardProps> = ({
       }
       setIsContentRevealed(true);
     } catch (e: any) {
-      setIntent(null)
+      setIntent(null);
       toast.error(`Error generating content: ${e.message}`);
       console.error("Error generating content:", e);
       // Handle error - maybe show a toast or error message
@@ -381,9 +381,16 @@ const CastCard: React.FC<CastCardProps> = ({
   const pfp_url = promotion.cast_data.author.pfp_url;
   const embeds = promotion.cast_data.embeds;
 
-
   console.log(showRerollInput, "show reroll input");
-  console.log(isContentRevealed,"is content revealed", promotion.claimable, "claimable", intent, "intent")
+  console.log(
+    isContentRevealed,
+    "is content revealed",
+    promotion.claimable,
+    "claimable",
+    intent,
+    "intent",
+    promotion.cast_data
+  );
 
   return (
     <div className="space-y-4 mb-5">
@@ -401,261 +408,208 @@ const CastCard: React.FC<CastCardProps> = ({
         />
 
         <div className="p-4 space-y-4">
-        {showRerollInput ? (
-          <div className="space-y-4 h-full">
-            {/* AI Generated Content Section */}
-            <div>
-              {!generatedCast || isLoading ? (
-                <div className="space-y-2 h-full">
-                  <Skeleton count={3} className="!bg-white/10" />
-                </div>
-              ) : (
-                <div className="bg-purple-500/10 border-t border-l border-r border-purple-500/20 rounded-t-xl p-4 mb-0">
-                  <div className="flex justify-between items-center gap-2 mb-3">
-                    <span className="text-sm font-medium text-purple-400">
-                      Quote Cast
-                    </span>
-                    {!isPosting &&
-                      !intent?.cast_hash &&
-                      isContentRevealed &&
-                      !showRefreshFeedback && (
-                        <button
-                          onClick={handleRefreshClick}
-                          disabled={isGeneratingContent}
-                          className="bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-white/60 border border-white/10 hover:bg-white/20 transition-colors disabled:opacity-50"
-                        >
-                          {isGeneratingContent ? "Generating..." : "Refresh"}
-                        </button>
-                      )}
-                  </div>
-                  <p className="text-sm leading-relaxed text-white/90">
-                    {rerolledCast || generatedCast}
-                  </p>
-                </div>
-              )}
-            </div>
-            <div className="bg-black/20 rounded-2xl p-4 border border-white/10">
-              <label className="block text-sm font-medium text-white/80 mb-2">
-                Reroll Notes (optional)
-              </label>
-              <textarea
-                value={rerollNotes}
-                onChange={(e) => setRerollNotes(e.target.value)}
-                className="w-full bg-black/20 rounded-xl p-3 border border-white/10 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[80px] text-white placeholder-white/50"
-                placeholder="e.g., use less emojis, make it more professional, add more excitement..."
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={handleReroll}
-                variant="default"
-                size="sm"
-                className="rounded-full"
-              >
-                Reroll
-              </Button>
-              <Button
-                onClick={handleCancelReroll}
-                variant="outline"
-                size="sm"
-                className="rounded-full"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {!isContentRevealed && !generatedCast && !promotion.claimable && !intent ? (
-              // Step 1: Show generate button
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <button
-                  onClick={handleRevealContent}
-                  disabled={isGeneratingContent || isGeneratingIntent}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
-                >
-                  {isGeneratingIntent ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
-                      Submitting Intent Transaction...
-                    </>
-                  ) : isGeneratingContent ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
-                      Generating Content...
-                    </>
-                  ) : (
-                    <>Cast to Earn ${pricing}</>
-                  )}
-                </button>
-              </div>
-            ) : (
-              // Step 2: Show content and slide-to-post
-              <>
-                <div
-                  className={`bg-black border-t border-l border-r ${promotion.claimable && "hidden"} border-purple-500/20 p-4 pb-0 ${showRefreshFeedback ? "rounded-t-xl rounded-b-none mb-0" : "rounded-t-xl mb-0 pb-3"}`}
-                >
-                  <div className="flex justify-between items-center gap-2 mb-2">
-                    <span className="text-sm font-medium text-purple-400">
-                      Your Quote Cast
-                    </span>
-                  </div>
-                  {!generatedCast && !rerolledCast && (
-                    <span className="text-sm text-red-300 font-mediut">
-                      Something happened when we tried to generate your cast.
-                      Click Update to get a new one!
-                    </span>
-                  )}
-                  <p className="text-sm leading-relaxed text-white/90">
-                    {rerolledCast || generatedCast}
-                  </p>
-
-                  {/* Refresh Feedback Section - now part of the purple container */}
-                  {showRefreshFeedback && (
-                    <div className="mt-4 pt-4 border-t border-purple-500/20">
-                      <label className="block text-sm font-medium text-white/80 mb-2">
-                        How would you like to improve this cast? (optional)
-                      </label>
-                      <textarea
-                        value={refreshFeedback}
-                        onChange={(e) => setRefreshFeedback(e.target.value)}
-                        className="w-full bg-black/20 rounded-xl p-3 border border-white/10 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[80px] text-white placeholder-white/50"
-                        placeholder="e.g., make it more professional, add more excitement, use fewer emojis, make it shorter..."
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {isPosting ? (
-                  <div className="flex items-center justify-center gap-3 py-4">
-                    <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
-                    <span className="text-white/80 font-medium">
-                      Posting...
-                    </span>
+          {showRerollInput ? (
+            <div className="space-y-4 h-full">
+              {/* AI Generated Content Section */}
+              <div>
+                {!generatedCast || isLoading ? (
+                  <div className="space-y-2 h-full">
+                    <Skeleton count={3} className="!bg-white/10" />
                   </div>
                 ) : (
-                  <>
-                    {promotion.claimable ? (
-                      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                        {hasClaimed ? (
-                          <div className="text-sm text-white/80 text-center">
-                            ✅ Successfully Claimed
-                          </div>
-                        ) : (
-                          <div className="w-full flex flex-col items-center justify-center">
-                            <button
-                              disabled={
-                                !isIntentProcessed ||
-                                isCheckingIntent ||
-                                isClaiming
-                              }
-                              onClick={async () => {
-                                try {
-                                  setIsClaiming(true);
-                                  await claim([promotion.id]);
-                                  toast.success("Claim submitted!");
-                                  setHasClaimed(true); // Update local state immediately
-                                  await refetchPromotions();
-                                  await refetchPromotion();
-                                } catch (error) {
-                                  console.error("Error claiming:", error);
-                                  toast.error(
-                                    "Failed to claim. Please try again."
-                                  );
-                                } finally {
-                                  setIsClaiming(false);
-                                }
-                              }}
-                              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
-                            >
-                              {isClaiming ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
-                                  Claiming...
-                                </>
-                              ) : !isIntentProcessed || isCheckingIntent ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
-                                  Claiming...
-                                </>
-                              ) : (
-                                `Claim $${formatUnits(intent.fee, 6)}`
-                              )}
-                            </button>
-                            { (!isIntentProcessed || isCheckingIntent) && (
-                              <div className="text-sm text-white/60 mt-2 text-center">
-                                This can take up to 5 minutes to process. We'll notify you.
-                              </div>
-                            )}
-                          </div>
+                  <div className="bg-purple-500/10 border-t border-l border-r border-purple-500/20 rounded-t-xl p-4 mb-0">
+                    <div className="flex justify-between items-center gap-2 mb-3">
+                      <span className="text-sm font-medium text-purple-400">
+                        Quote Cast
+                      </span>
+                      {!isPosting &&
+                        !intent?.cast_hash &&
+                        isContentRevealed &&
+                        !showRefreshFeedback && (
+                          <button
+                            onClick={handleRefreshClick}
+                            disabled={isGeneratingContent}
+                            className="bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full text-xs text-white/60 border border-white/10 hover:bg-white/20 transition-colors disabled:opacity-50"
+                          >
+                            {isGeneratingContent ? "Generating..." : "Refresh"}
+                          </button>
                         )}
-                      </div>
-                    ) : (
+                    </div>
+                    <p className="text-sm leading-relaxed text-white/90">
+                      {rerolledCast || generatedCast}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <div className="bg-black/20 rounded-2xl p-4 border border-white/10">
+                <label className="block text-sm font-medium text-white/80 mb-2">
+                  Reroll Notes (optional)
+                </label>
+                <textarea
+                  value={rerollNotes}
+                  onChange={(e) => setRerollNotes(e.target.value)}
+                  className="w-full bg-black/20 rounded-xl p-3 border border-white/10 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[80px] text-white placeholder-white/50"
+                  placeholder="e.g., use less emojis, make it more professional, add more excitement..."
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={handleReroll}
+                  variant="default"
+                  size="sm"
+                  className="rounded-full"
+                >
+                  Reroll
+                </Button>
+                <Button
+                  onClick={handleCancelReroll}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {!isContentRevealed &&
+              !generatedCast &&
+              !promotion.claimable &&
+              !intent ? (
+                // Step 1: Show generate button
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <button
+                    onClick={handleRevealContent}
+                    disabled={isGeneratingContent || isGeneratingIntent}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
+                  >
+                    {isGeneratingIntent ? (
                       <>
-                        {intent ? (
-                          <div className="space-y-2">
-                            <div className="flex w-full flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 sm:flex-row">
-                              {showRefreshFeedback ? (
-                                <>
-                                  <button
-                                    onClick={handleCancelRefresh}
-                                    className="relative flex items-center justify-center gap-2 px-4 py-4 rounded-xl text-sm font-semibold text-white/90 bg-gradient-to-r from-gray-500/10 to-gray-600/10 border border-gray-400/30 hover:border-gray-300/50 transition-all duration-500 group overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-gray-500/20 hover:scale-105 flex-1 cursor-pointer"
-                                  >
-                                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-                                    <span className="relative z-10 bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent group-hover:from-gray-200 group-hover:to-gray-300 transition-all duration-300">
-                                      Cancel
-                                    </span>
-                                  </button>
-                                  <button
-                                    onClick={handleRefreshWithFeedback}
-                                    disabled={isGeneratingContent}
-                                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
-                                  >
-                                    {isGeneratingContent
-                                      ? "Updating..."
-                                      : "Update Cast"}
-                                  </button>
-                                </>
-                              ) : (
-                                <div className="flex items-center justify-center gap-2">
-                                  {!isPosting &&
-                                    !intent?.cast_hash &&
-                                    isContentRevealed && (
-                                      <button
-                                        onClick={handleRefreshClick}
-                                        disabled={isGeneratingContent}
-                                        className="relative flex items-center justify-center gap-2 px-4 py-4 rounded-xl text-sm font-semibold text-white/90 bg-gradient-to-r from-gray-500/10 to-gray-600/10 border border-gray-400/30 hover:border-gray-300/50 transition-all duration-500 group overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-gray-500/20 hover:scale-105 flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                                      >
-                                        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-                                        <span className="relative z-10 bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent group-hover:from-gray-200 group-hover:to-gray-300 transition-all duration-300">
-                                          {isGeneratingContent
-                                            ? "Generating..."
-                                            : "Refresh"}
-                                        </span>
-                                      </button>
-                                    )}
-                                  <button
-                                    onClick={handlePostCast}
-                                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] cursor-pointer shadow-lg shadow-purple-500/20"
-                                    style={{
-                                      width:
-                                        !isPosting &&
-                                        !intent?.cast_hash &&
-                                        isContentRevealed
-                                          ? "calc(50% - 0.25rem)"
-                                          : "100%",
-                                    }}
-                                  >
-                                    Post Cast
-                                  </button>
+                        <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
+                        Submitting Intent Transaction...
+                      </>
+                    ) : isGeneratingContent ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
+                        Generating Content...
+                      </>
+                    ) : (
+                      <>Cast to Earn ${pricing}</>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                // Step 2: Show content and slide-to-post
+                <>
+                  {promotion.claimable ? (
+                    <></>
+                  ) : (
+                    <div
+                      className={`bg-black border-t border-l border-r ${promotion.claimable && "hidden"} border-purple-500/20 p-4 pb-0 ${showRefreshFeedback ? "rounded-t-xl rounded-b-none mb-0" : "rounded-t-xl mb-0 pb-3"}`}
+                    >
+                      <div className="flex justify-between items-center gap-2 mb-2">
+                        <span className="text-sm font-medium text-purple-400">
+                          Your Quote Cast
+                        </span>
+                      </div>
+                      {!generatedCast && !rerolledCast && (
+                        <span className="text-sm text-red-300 font-mediut">
+                          Something happened when we tried to generate your
+                          cast. Click Update to get a new one!
+                        </span>
+                      )}
+                      <p className="text-sm leading-relaxed text-white/90">
+                        {rerolledCast || generatedCast}
+                      </p>
+
+                      {/* Refresh Feedback Section - now part of the purple container */}
+                      {showRefreshFeedback && (
+                        <div className="mt-4 pt-4 border-t border-purple-500/20">
+                          <label className="block text-sm font-medium text-white/80 mb-2">
+                            How would you like to improve this cast? (optional)
+                          </label>
+                          <textarea
+                            value={refreshFeedback}
+                            onChange={(e) => setRefreshFeedback(e.target.value)}
+                            className="w-full bg-black/20 rounded-xl p-3 border border-white/10 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[80px] text-white placeholder-white/50"
+                            placeholder="e.g., make it more professional, add more excitement, use fewer emojis, make it shorter..."
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {isPosting ? (
+                    <div className="flex items-center justify-center gap-3 py-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
+                      <span className="text-white/80 font-medium">
+                        Posting...
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      {promotion.claimable ? (
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                          {hasClaimed ? (
+                            <div className="text-sm text-white/80 text-center">
+                              ✅ Successfully Claimed
+                            </div>
+                          ) : (
+                            <div className="w-full flex flex-col items-center justify-center">
+                              <button
+                                disabled={
+                                  !isIntentProcessed ||
+                                  isCheckingIntent ||
+                                  isClaiming
+                                }
+                                onClick={async () => {
+                                  try {
+                                    setIsClaiming(true);
+                                    await claim([promotion.id]);
+                                    toast.success("Claim submitted!");
+                                    setHasClaimed(true); // Update local state immediately
+                                    await refetchPromotions();
+                                    await refetchPromotion();
+                                  } catch (error) {
+                                    console.error("Error claiming:", error);
+                                    toast.error(
+                                      "Failed to claim. Please try again."
+                                    );
+                                  } finally {
+                                    setIsClaiming(false);
+                                  }
+                                }}
+                                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
+                              >
+                                {isClaiming ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                                    Claiming...
+                                  </>
+                                ) : !isIntentProcessed || isCheckingIntent ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                                    Claiming...
+                                  </>
+                                ) : (
+                                  `Claim $${formatUnits(intent.fee, 6)}`
+                                )}
+                              </button>
+                              {(!isIntentProcessed || isCheckingIntent) && (
+                                <div className="text-sm text-white/60 mt-2 text-center">
+                                  This can take up to 5 minutes to process.
+                                  We'll notify you.
                                 </div>
                               )}
                             </div>
-                          </div>
-                        ) : (
-                          <>
-                            {!postSubmitted && (
-                              <div className="flex gap-2 w-full">
+                          )}
+                        </div>
+                      ) : (
+                        <>
+                          {intent ? (
+                            <div className="space-y-2">
+                              <div className="flex w-full flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 sm:flex-row">
                                 {showRefreshFeedback ? (
                                   <>
                                     <button
@@ -664,7 +618,6 @@ const CastCard: React.FC<CastCardProps> = ({
                                     >
                                       <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
                                       <span className="relative z-10 bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent group-hover:from-gray-200 group-hover:to-gray-300 transition-all duration-300">
-                                        <X className="w-4 h-4 inline mr-1" />
                                         Cancel
                                       </span>
                                     </button>
@@ -674,65 +627,127 @@ const CastCard: React.FC<CastCardProps> = ({
                                       className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
                                     >
                                       {isGeneratingContent
-                                        ? "Generating..."
-                                        : "🔄 Generate"}
+                                        ? "Updating..."
+                                        : "Update Cast"}
                                     </button>
                                   </>
                                 ) : (
-                                  <>
-                                    {isContentRevealed && (
+                                  <div className="flex items-center justify-center gap-2">
+                                    {!isPosting &&
+                                      !intent?.cast_hash &&
+                                      isContentRevealed && (
+                                        <button
+                                          onClick={handleRefreshClick}
+                                          disabled={isGeneratingContent}
+                                          className="relative flex items-center justify-center gap-2 px-4 py-4 rounded-xl text-sm font-semibold text-white/90 bg-gradient-to-r from-gray-500/10 to-gray-600/10 border border-gray-400/30 hover:border-gray-300/50 transition-all duration-500 group overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-gray-500/20 hover:scale-105 flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                        >
+                                          <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+                                          <span className="relative z-10 bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent group-hover:from-gray-200 group-hover:to-gray-300 transition-all duration-300">
+                                            {isGeneratingContent
+                                              ? "Generating..."
+                                              : "Refresh"}
+                                          </span>
+                                        </button>
+                                      )}
+                                    <button
+                                      onClick={handlePostCast}
+                                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] cursor-pointer shadow-lg shadow-purple-500/20"
+                                      style={{
+                                        width:
+                                          !isPosting &&
+                                          !intent?.cast_hash &&
+                                          isContentRevealed
+                                            ? "calc(50% - 0.25rem)"
+                                            : "100%",
+                                      }}
+                                    >
+                                      Post Cast
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              {!postSubmitted && (
+                                <div className="flex gap-2 w-full">
+                                  {showRefreshFeedback ? (
+                                    <>
                                       <button
-                                        onClick={handleRefreshClick}
-                                        disabled={isGeneratingContent}
-                                        className="relative flex items-center justify-center gap-2 px-4 py-4 rounded-xl text-sm font-semibold text-white/90 bg-gradient-to-r from-gray-500/10 to-gray-600/10 border border-gray-400/30 hover:border-gray-300/50 transition-all duration-500 group overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-gray-500/20 hover:scale-105 flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                        onClick={handleCancelRefresh}
+                                        className="relative flex items-center justify-center gap-2 px-4 py-4 rounded-xl text-sm font-semibold text-white/90 bg-gradient-to-r from-gray-500/10 to-gray-600/10 border border-gray-400/30 hover:border-gray-300/50 transition-all duration-500 group overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-gray-500/20 hover:scale-105 flex-1 cursor-pointer"
                                       >
                                         <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
                                         <span className="relative z-10 bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent group-hover:from-gray-200 group-hover:to-gray-300 transition-all duration-300">
-                                          {isGeneratingContent
-                                            ? "Generating..."
-                                            : "Refresh"}
+                                          <X className="w-4 h-4 inline mr-1" />
+                                          Cancel
                                         </span>
                                       </button>
-                                    )}
-                                    <button
-                                      onClick={handlePost}
-                                      disabled={isPosting}
-                                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
-                                      style={{
-                                        width: isContentRevealed
-                                          ? "calc(50% - 0.25rem)"
-                                          : "100%",
-                                      }}
-                                    >
-                                      {isPosting ? (
-                                        <>
-                                          <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
-                                          Posting...
-                                        </>
-                                      ) : (
-                                        <>
-                                          <span className="text-lg">💸</span>
-                                          Cast this to earn ${pricing}
-                                        </>
+                                      <button
+                                        onClick={handleRefreshWithFeedback}
+                                        disabled={isGeneratingContent}
+                                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
+                                      >
+                                        {isGeneratingContent
+                                          ? "Generating..."
+                                          : "🔄 Generate"}
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      {isContentRevealed && (
+                                        <button
+                                          onClick={handleRefreshClick}
+                                          disabled={isGeneratingContent}
+                                          className="relative flex items-center justify-center gap-2 px-4 py-4 rounded-xl text-sm font-semibold text-white/90 bg-gradient-to-r from-gray-500/10 to-gray-600/10 border border-gray-400/30 hover:border-gray-300/50 transition-all duration-500 group overflow-hidden backdrop-blur-sm hover:shadow-lg hover:shadow-gray-500/20 hover:scale-105 flex-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                        >
+                                          <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+                                          <span className="relative z-10 bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent group-hover:from-gray-200 group-hover:to-gray-300 transition-all duration-300">
+                                            {isGeneratingContent
+                                              ? "Generating..."
+                                              : "Refresh"}
+                                          </span>
+                                        </button>
                                       )}
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </>
-                    )}
-                  </>
-                )}
-              </>
-            )}
-          </div>
-        )}
+                                      <button
+                                        onClick={handlePost}
+                                        disabled={isPosting}
+                                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 border-0 text-white text-sm font-semibold px-4 py-4 rounded-lg transition-all active:scale-[0.95] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
+                                        style={{
+                                          width: isContentRevealed
+                                            ? "calc(50% - 0.25rem)"
+                                            : "100%",
+                                        }}
+                                      >
+                                        {isPosting ? (
+                                          <>
+                                            <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
+                                            Posting...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <span className="text-lg">💸</span>
+                                            Cast this to earn ${pricing}
+                                          </>
+                                        )}
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
-  </div>
   );
 };
 

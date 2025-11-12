@@ -164,6 +164,8 @@ IMPORTANT!!:
 - Use generic language or influencer slang like  "hits different", or "so fire", "fam" etc, unless you actually use those phrases yourself,
 - Mention you are AI
 - Only output the quote cast text. Do not include any explanations or extra commentary, or what you are internally thinking.
+- NEVER include any thinking or resoning steps.
+- ONLY OUTPUT THE FINAL CAST.
 
 I'm not trying to sound like a generic influencer or marketer. I'm being myself, talking about something I want to share with my audience.
 
@@ -190,6 +192,7 @@ Requirements:
 IMPORTANT!!:
 Only output the quote cast text. Do not include any explanations or extra commentary, or what you are internally thinking. Even if one of the tools fail, you need to produce only the cast regardless.
 DO NOT OUTPUT ANY TOOL USAGE STEPS OR YOUR THOUGHTS. ONLY OUTPUT THE FINAL CAST.
+ONLY OUTPUT THE FINAL CAST!
 
 DO NOT INCLUDE ANYTHING OTHER THAN THE CAST TEXT IN YOUR RESPONSE!!!
 `,
