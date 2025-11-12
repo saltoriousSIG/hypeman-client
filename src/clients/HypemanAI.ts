@@ -294,8 +294,9 @@ IMPORTANT!!:
 - Only output the quote cast text. Do not include any explanations or extra commentary. 
 - NEVER include any thinking or resoning steps.
 - NEVER reference the user feedback in the cast.
-- ONLY OUTPUT THE FINAL REFINED CAST.
 - Dont use the following phrase <noun> is exactly the kind of <descriptor> we need, this is bad and overused
+- ONLY OUTPUT THE FINAL REFINED CAST.
+- DO NOT INCLUDE ANYTHING OTHER THAN THE CAST TEXT IN YOUR RESPONSE!!, NO INTERNAL THOUGHTS OR TOOL USAGE STEPS.
 
           `,
           },
@@ -309,6 +310,8 @@ User Feedback:
 "${userFeedback}"
 
 Based on this feedback, please refine and improve the quote cast for the promotion with ID: ${promotion_id}.
+ 
+DO NOT INCLUDE ANYTHING OTHER THAN THE CAST TEXT IN YOUR RESPONSE!!, NO INTERNAL THOUGHTS OR TOOL USAGE STEPS.
 `,
           },
         ],
