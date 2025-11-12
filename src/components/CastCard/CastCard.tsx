@@ -466,7 +466,7 @@ const CastCard: React.FC<CastCardProps> = ({
           </div>
         ) : (
           <div className="space-y-4">
-            {!isContentRevealed && !promotion.claimable && !intent ? (
+            {!isContentRevealed && !generatedCast && !promotion.claimable && !intent ? (
               // Step 1: Show generate button
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <button
