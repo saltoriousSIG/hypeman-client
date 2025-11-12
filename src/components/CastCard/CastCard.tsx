@@ -475,8 +475,7 @@ const CastCard: React.FC<CastCardProps> = ({
             <div className="space-y-4">
               {!isContentRevealed &&
               !generatedCast &&
-              !promotion.claimable &&
-              !intent ? (
+              !promotion.claimable ? (
                 // Step 1: Show generate button
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <button
@@ -502,43 +501,39 @@ const CastCard: React.FC<CastCardProps> = ({
               ) : (
                 // Step 2: Show content and slide-to-post
                 <>
-                  {promotion.claimable ? (
-                    <></>
-                  ) : (
-                    <div
-                      className={`bg-black border-t border-l border-r ${promotion.claimable && "hidden"} border-purple-500/20 p-4 pb-0 ${showRefreshFeedback ? "rounded-t-xl rounded-b-none mb-0" : "rounded-t-xl mb-0 pb-3"}`}
-                    >
-                      <div className="flex justify-between items-center gap-2 mb-2">
-                        <span className="text-sm font-medium text-purple-400">
-                          Your Quote Cast
-                        </span>
-                      </div>
-                      {!generatedCast && !rerolledCast && (
-                        <span className="text-sm text-red-300 font-mediut">
-                          Something happened when we tried to generate your
-                          cast. Click Update to get a new one!
-                        </span>
-                      )}
-                      <p className="text-sm leading-relaxed text-white/90">
-                        {rerolledCast || generatedCast}
-                      </p>
-
-                      {/* Refresh Feedback Section - now part of the purple container */}
-                      {showRefreshFeedback && (
-                        <div className="mt-4 pt-4 border-t border-purple-500/20">
-                          <label className="block text-sm font-medium text-white/80 mb-2">
-                            How would you like to improve this cast? (optional)
-                          </label>
-                          <textarea
-                            value={refreshFeedback}
-                            onChange={(e) => setRefreshFeedback(e.target.value)}
-                            className="w-full bg-black/20 rounded-xl p-3 border border-white/10 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[80px] text-white placeholder-white/50"
-                            placeholder="e.g., make it more professional, add more excitement, use fewer emojis, make it shorter..."
-                          />
-                        </div>
-                      )}
+                  <div
+                    className={`bg-black border-t border-l border-r ${promotion.claimable && "hidden"} border-purple-500/20 p-4 pb-0 ${showRefreshFeedback ? "rounded-t-xl rounded-b-none mb-0" : "rounded-t-xl mb-0 pb-3"}`}
+                  >
+                    <div className="flex justify-between items-center gap-2 mb-2">
+                      <span className="text-sm font-medium text-purple-400">
+                        Your Quote Cast
+                      </span>
                     </div>
-                  )}
+                    {!generatedCast && !rerolledCast && (
+                      <span className="text-sm text-red-300 font-mediut">
+                        Something happened when we tried to generate your cast.
+                        Click Update to get a new one!
+                      </span>
+                    )}
+                    <p className="text-sm leading-relaxed text-white/90">
+                      {rerolledCast || generatedCast}
+                    </p>
+
+                    {/* Refresh Feedback Section - now part of the purple container */}
+                    {showRefreshFeedback && (
+                      <div className="mt-4 pt-4 border-t border-purple-500/20">
+                        <label className="block text-sm font-medium text-white/80 mb-2">
+                          How would you like to improve this cast? (optional)
+                        </label>
+                        <textarea
+                          value={refreshFeedback}
+                          onChange={(e) => setRefreshFeedback(e.target.value)}
+                          className="w-full bg-black/20 rounded-xl p-3 border border-white/10 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[80px] text-white placeholder-white/50"
+                          placeholder="e.g., make it more professional, add more excitement, use fewer emojis, make it shorter..."
+                        />
+                      </div>
+                    )}
+                  </div>
 
                   {isPosting ? (
                     <div className="flex items-center justify-center gap-3 py-4">
