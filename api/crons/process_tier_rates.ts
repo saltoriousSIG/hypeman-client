@@ -86,6 +86,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       };
     }
 
+    console.log(tierRates);
+
     await redis.set("tier_rates", JSON.stringify(tierRates));
 
     return res
