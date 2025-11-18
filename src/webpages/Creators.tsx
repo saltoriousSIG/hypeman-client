@@ -47,6 +47,7 @@ export default function BuyersPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [drawerStep, setDrawerStep] = useState<1 | 2>(1);
   const [newPromotionId, setNewPromotionId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"casts" | "replies">("casts");
 
   const axios = useAxios();
 
@@ -68,6 +69,7 @@ export default function BuyersPage() {
   } = useUserCasts({
     fid: fUser?.fid ?? 0,
     enabled: !!fUser?.fid,
+    filter: activeTab,
   });
 
   // Flatten all pages of casts into a single array
@@ -276,6 +278,30 @@ export default function BuyersPage() {
 
   return (
     <MainLayout className="pb-20 space-y-4">
+      {/* Tabs for Casts vs Replies */}
+      <div className="flex items-center gap-2 bg-white/5 rounded-lg p-1 backdrop-blur-sm border border-white/10">
+        <button
+          onClick={() => setActiveTab("casts")}
+          className={`flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 ${
+            activeTab === "casts"
+              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              : "text-white/60 hover:text-white/80 hover:bg-white/5"
+          }`}
+        >
+          Casts
+        </button>
+        <button
+          onClick={() => setActiveTab("replies")}
+          className={`flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 ${
+            activeTab === "replies"
+              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              : "text-white/60 hover:text-white/80 hover:bg-white/5"
+          }`}
+        >
+          Replies
+        </button>
+      </div>
+
       {isLoading ? (
         <LoadingState
           title="Gathering your casts..."
@@ -294,7 +320,9 @@ export default function BuyersPage() {
         <Card className="bg-white/10 backdrop-blur-sm border-white/20">
           <CardContent className="p-8 text-center">
             <p className="text-white/60">
-              No casts found. Create some casts first!
+              {activeTab === "casts"
+                ? "No casts found. Create some casts first!"
+                : "No replies found. Reply to some casts first!"}
             </p>
           </CardContent>
         </Card>

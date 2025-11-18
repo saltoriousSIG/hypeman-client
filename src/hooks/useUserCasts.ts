@@ -12,14 +12,16 @@ interface FetchUserCastsResponse {
 interface UseUserCastsParams {
   fid: number;
   enabled?: boolean;
+  filter?: "casts" | "replies" | "all";
 }
 
 /**
  * Hook to fetch user casts with infinite scroll/pagination support
  * @param fid - Farcaster ID of the user
  * @param enabled - Whether the query should be enabled (default: true)
+ * @param filter - Filter type: "casts" (only top-level casts), "replies" (only replies), or "all" (default: "casts")
  */
-export function useUserCasts({ fid, enabled = true }: UseUserCastsParams) {
+export function useUserCasts({ fid, enabled = true, filter = "casts" }: UseUserCastsParams) {
   const axios = useAxios();
   return useInfiniteQuery<
     FetchUserCastsResponse,
@@ -28,13 +30,14 @@ export function useUserCasts({ fid, enabled = true }: UseUserCastsParams) {
     string[],
     string | undefined
   >({
-    queryKey: ["user-casts", fid.toString()],
+    queryKey: ["user-casts", fid.toString(), filter],
     queryFn: async ({ pageParam }) => {
       const { data } = await axios.post<FetchUserCastsResponse>(
         "/api/fetch_user_casts",
         {
           cursor: pageParam,
           limit: 10, // Fetch only 10 casts at a time
+          filter,
         }
       );
       return data;
