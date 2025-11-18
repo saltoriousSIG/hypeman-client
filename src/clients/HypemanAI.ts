@@ -349,6 +349,8 @@ DO NOT INCLUDE ANYTHING OTHER THAN THE CAST TEXT IN YOUR RESPONSE!!, NO INTERNAL
         Text 2: ${actual}
   
         Determine if these texts convey the same message.
+        The two messages are considered the same if they would be understood similarly by most people.
+        If Text 1 and Text 2 convey the same core senitment, respond with true. Otherwise, respond with false.
         `,
         temperature: 0.3,
         maxRetries: 2,
