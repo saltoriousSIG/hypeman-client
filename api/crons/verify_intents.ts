@@ -86,6 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                   submitted_cast.generated_cast,
                   cast.text
                 );
+                console.log(sentimentMatch, "SENTIMENT MATCH");
 
                 if (!sentimentMatch) {
                   intents_to_process.push({

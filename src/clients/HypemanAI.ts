@@ -348,7 +348,8 @@ DO NOT INCLUDE ANYTHING OTHER THAN THE CAST TEXT IN YOUR RESPONSE!!, NO INTERNAL
         Text 1: ${expected}
         Text 2: ${actual}
   
-        Determine if these texts convey the same message.`,
+        Determine if these texts convey the same message.
+        `,
         temperature: 0.3,
         maxRetries: 2,
         abortSignal: AbortSignal.timeout(10000),
