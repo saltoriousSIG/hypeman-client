@@ -31,12 +31,14 @@ interface GenerationResult {
 
 export class HypemanAI {
   private model;
+  private fastModel;
   private userFid: number = 0;
   private username: string;
 
   constructor(fid: number, username: string) {
     // Haiku-optimized model
     this.model = anthropic("claude-sonnet-4-5-20250929");
+    this.fastModel = anthropic("claude-haiku-4-5-20251001");
     this.userFid = fid;
     this.username = username;
   }
@@ -339,19 +341,49 @@ DO NOT INCLUDE ANYTHING OTHER THAN THE CAST TEXT IN YOUR RESPONSE!!, NO INTERNAL
         return { sentimentMatch: true };
       }
       const { object } = await generateObject({
-        model: this.model,
+        model: this.fastModel,
         schema: ContentComparisonSchema,
-        prompt: `You are a content similarity analyzer. Compare these two texts and determine if they convey the same core message and meaning.
-        Focus on whether they're saying the same thing, not exact wording.
-        Be lenient with minor differences in style, emojis, punctuation.
-  
-        Text 1: ${expected}
-        Text 2: ${actual}
-  
-        Determine if these texts convey the same message.
-        The two messages are considered the same if they would be understood similarly by most people.
-        If Text 1 and Text 2 convey the same core senitment, respond with true. Otherwise, respond with false.
-        `,
+        prompt: `
+
+You are a social media sentiment analyzer for crypto/web3 culture.
+
+Compare these texts for same sentiment and outcome:
+
+Text 1: ${expected}
+Text 2: ${actual}
+
+Key rules (check in order):
+
+1. SARCASM FIRST: 😂🙄💀 make text negative/mocking
+   "Wow genius idea 😂" = NEGATIVE (sarcastic) = "terrible idea"
+
+2. AGREEMENT WORDS: Facts/Real/True/This/Fr = "I agree" (any length)
+   "Facts" = "I completely agree with everything"
+
+3. OUTCOME FOCUS: Same prediction = match (ignore reasoning)
+   "succeed because team" = "succeed because tech" (both predict success)
+
+4. DIFFERENT FACTS = NO MATCH:
+   - Different numbers: 5000 ≠ 10000
+   - Different subjects: @alice ≠ @bob, Ethereum ≠ Bitcoin
+   - Different punctuation emotion: !!! (excited) ≠ ??? (confused)
+
+5. EQUIVALENTS:
+   Slang: WAGMI=we're all gonna make it | LFG=let's go | GM=good morning
+   Emojis: 🔥=🚀=💯 (hype) | 😂=🙄 (mocking)
+
+6. IGNORE: length, style, caps, added/removed @mentions/#hashtags
+
+Examples:
+✓ "Wow genius idea 😂" = "terrible idea" (both negative, sarcasm detected)
+✓ "succeed: team" = "succeed: tech" (same outcome, reasoning ignored)
+✓ "Facts" = "I completely agree with everything"
+✗ "better than Ethereum" ≠ "better than Bitcoin" (different subjects)
+✗ "!!!" ≠ "???" (excitement ≠ confusion)
+
+True if same sentiment/outcome, false otherwise.
+
+`,
         temperature: 0.3,
         maxRetries: 2,
         abortSignal: AbortSignal.timeout(10000),
