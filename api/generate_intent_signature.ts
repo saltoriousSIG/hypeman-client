@@ -77,17 +77,28 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       args: [BigInt(body.promotion_id)],
     });
 
-    const { score, follower_count, avgLikes, avgRecasts, avgReplies } =
-      await getUserStats(req.fid as number);
-    const tier = calculateUserTier(
+    const {
       score,
       follower_count,
       avgLikes,
       avgRecasts,
-      avgReplies
+      avgReplies,
+      following_count,
+      power_badge,
+    } = await getUserStats(req.fid as number);
+    const tier = calculateUserTier(
+      score,
+      req.fid as number,
+      follower_count,
+      following_count,
+      avgLikes,
+      avgRecasts,
+      avgReplies,
+      power_badge
     );
 
     let fee: number;
+    console.log(tier, "user tier");
     switch (tier) {
       case Tiers.TIER_1:
         if (promotion.base_rate > 0n) {
@@ -114,6 +125,24 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
             pricing_tiers.tier3;
         } else {
           fee = parseFloat(default_base_rate) * pricing_tiers.tier3;
+        }
+        break;
+      case Tiers.TIER_4:
+        if (promotion.base_rate > 0n) {
+          fee =
+            parseFloat(formatUnits(promotion.base_rate, 6)) *
+            pricing_tiers.tier4;
+        } else {
+          fee = parseFloat(default_base_rate) * pricing_tiers.tier4;
+        }
+        break;
+      case Tiers.TIER_5:
+        if (promotion.base_rate > 0n) {
+          fee =
+            parseFloat(formatUnits(promotion.base_rate, 6)) *
+            pricing_tiers.tier5;
+        } else {
+          fee = parseFloat(default_base_rate) * pricing_tiers.tier5;
         }
         break;
       default:

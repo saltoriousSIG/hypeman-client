@@ -104,9 +104,6 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
           });
 
         const list = await redis.lrange(`intent:${promotion.id}`, 0, -1);
-        if (promotion.id === "98") {
-          console.log(list);
-        }
         const current_user_intent = list.find((intent: any) => {
           return intent?.fid === req.fid?.toString();
         });
@@ -119,9 +116,6 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
         const formattedBaseRate = parseFloat(formatUnits(promotion.base_rate, 6));
 
         const enoughBudget = (formattedRemainingBudget - formattedCommittedBudget) >= formattedBaseRate;
-
-        console.log(enoughBudget, promotion)
-        
 
         return {
           ...promotion,

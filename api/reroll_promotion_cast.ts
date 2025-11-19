@@ -7,11 +7,12 @@ import { validateSignature } from "../middleware/validateSignature.js";
 
 const redisClient = new RedisClient(process.env.REDIS_URL as string);
 
+export const maxDuration = 300; 
+
 async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
   try {
     const {
       username,
-      promotionUrl,
       promotionId,
       previousCast,
       promotionContent,
@@ -20,12 +21,10 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       userFeedback,
     } = req.body;
 
-    const hypeman_ai = await HypemanAI.getInstance(req.fid as number, username);
+    const hypeman_ai = new HypemanAI(req.fid as number, username);
 
     const cast = await hypeman_ai.refineCast(
-      promotionUrl,
-      promotionContent,
-      promotionAuthor,
+      promotionId,
       embedContext,
       userFeedback,
       previousCast

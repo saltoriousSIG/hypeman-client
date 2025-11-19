@@ -103,6 +103,14 @@ async function handler(req: VercelRequest, res: VercelResponse) {
     console.log(`FID: ${fid}`);
     console.log(`User message: ${req.body.data.text}`);
 
+
+    res.status(200).json({
+      success: true,
+      message: "Webhook received successfully",
+      timestamp: new Date().toISOString(),
+    });
+
+
     const result = await generateText({
       model,
       system: SYSTEM_PROMPT,
@@ -127,18 +135,23 @@ async function handler(req: VercelRequest, res: VercelResponse) {
               const {
                 score,
                 follower_count,
+                following_count,
                 avgLikes,
                 avgRecasts,
                 avgReplies,
+                power_badge,
               } = stats;
 
               // Calculate composite score and tier
               const tier = calculateUserTier(
                 score,
+                fid,
                 follower_count,
+                following_count,
                 avgLikes,
                 avgRecasts,
-                avgReplies
+                avgReplies,
+                power_badge
               );
 
               // Calculate earning potential (tier value is USDC per promotion)
@@ -242,14 +255,6 @@ async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Return success response
-    return res.status(200).json({
-      success: true,
-      message: "Webhook received successfully",
-      response: responseText,
-      publishedCastHash: publishResult.success ? publishResult.castHash : null,
-      publishError: publishResult.success ? null : publishResult.error,
-      timestamp: new Date().toISOString(),
-    });
   } catch (error: any) {
     console.error("Error processing agent webhook:", error.message);
     return res.status(500).json({ error: "Internal server error" });

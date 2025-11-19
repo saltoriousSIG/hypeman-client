@@ -6,8 +6,9 @@ import fs from "fs";
 import path from "path";
 import { getUserStats } from "../../src/lib/getUserStats.js";
 import { calculateUserTier } from "../../src/lib/calculateUserScore.js";
-
 const redis = new RedisClient(process.env.REDIS_URL as string);
+
+export const maxDuration = 300;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -42,15 +43,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const userData = await getUserStats(item.fid);
           const tier = calculateUserTier(
             userData.score,
+            item.fid,
             userData.follower_count,
+            userData.following_count,
             userData.avgLikes,
             userData.avgRecasts,
-            userData.avgReplies
+            userData.avgReplies,
+            userData.power_badge
           );
           await redis.set(`user_tier:${item.fid}`, tier, 60 * 60 * 24 * 7); // Cache for 24 hours
           feeTierFrequencyMap.set(
             tier,
-            (feeTierFrequencyMap.get(tier) || 0) + 1,
+            (feeTierFrequencyMap.get(tier) || 0) + 1
           );
         } else {
           feeTierFrequencyMap.set(
@@ -73,7 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         rate: number;
       };
     } = {};
-    
+
     for (const [feeTier, frequency] of feeTierFrequencyMap.entries()) {
       const rate = frequency / frequencySum;
       tierRates[feeTier] = {
@@ -81,6 +85,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         rate,
       };
     }
+
+    console.log(tierRates);
 
     await redis.set("tier_rates", JSON.stringify(tierRates));
 

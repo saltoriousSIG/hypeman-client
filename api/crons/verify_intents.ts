@@ -34,7 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const intentsAbiFileContents = fs.readFileSync(intentsAbiFilePath, "utf8");
     const intents_abi = JSON.parse(intentsAbiFileContents);
 
-    const hypeman = await HypemanAI.getInstance(0, "hypeman_admin");
+    const hypeman = new HypemanAI(0, "hypeman_admin");
 
     const { publicClient, walletClient, account } = setupAdminWallet();
 
@@ -82,10 +82,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                   }
                 );
 
+                console.log(submitted_cast.generated_cast, "SUBMITTED CAST");
+                console.log(cast.text, "FETCHED CAST");
                 const { sentimentMatch } = await hypeman.compareContent(
                   submitted_cast.generated_cast,
                   cast.text
                 );
+                console.log(sentimentMatch, "SENTIMENT MATCH");
 
                 if (!sentimentMatch) {
                   intents_to_process.push({

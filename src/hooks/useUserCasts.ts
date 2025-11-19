@@ -1,6 +1,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Cast } from "@neynar/nodejs-sdk/build/api";
 import useAxios from "./useAxios";
+import { useFrameContext } from "@/providers/FrameProvider";
 
 interface FetchUserCastsResponse {
   casts: Cast[];
@@ -23,15 +24,17 @@ interface UseUserCastsParams {
  */
 export function useUserCasts({ fid, enabled = true, filter = "casts" }: UseUserCastsParams) {
   const axios = useAxios();
+  const { isAuthenticated } = useFrameContext();
   return useInfiniteQuery<
     FetchUserCastsResponse,
     Error,
     FetchUserCastsResponse,
-    string[],
+    (string | boolean)[],
     string | undefined
   >({
-    queryKey: ["user-casts", fid.toString(), filter],
+    queryKey: ["user-casts", fid.toString(), filter, isAuthenticated],
     queryFn: async ({ pageParam }) => {
+      if (!axios) return { casts : [] } 
       const { data } = await axios.post<FetchUserCastsResponse>(
         "/api/fetch_user_casts",
         {

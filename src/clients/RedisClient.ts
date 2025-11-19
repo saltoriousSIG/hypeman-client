@@ -6,6 +6,7 @@ export class RedisClient {
 
   constructor(connectionString: string) {
     this.redis = new Redis(connectionString);
+    this.redis.options.connectTimeout = 30000;
     this.key = process.env.REDIS_ENCRYPTION_KEY as string;
 
     if (!this.key || this.key.length !== 64) {

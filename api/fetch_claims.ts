@@ -75,12 +75,10 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       })
     );
 
-    console.log(promotions);
-
     return res
       .status(200)
       .json({
-        promotions: promotions.filter((p: any) => p.intents.length > 0),
+        promotions: promotions.filter((p: any) => p.intents.length > 0 && p.claimable).reverse(),
       });
   } catch (e: any) {
     console.log(e, e.message);

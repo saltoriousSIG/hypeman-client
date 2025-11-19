@@ -134,6 +134,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const signinEventHandler = () => {
       if (!promotions) {
         refetch();
+        refetchClaims()
       }
     };
     window.addEventListener("fc-signin-success", signinEventHandler);
