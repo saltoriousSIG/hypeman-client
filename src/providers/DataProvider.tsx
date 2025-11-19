@@ -21,6 +21,7 @@ interface DataContextValue {
   claims?: Array<
     Promotion & {
       current_user_intent: any;
+      claimed: boolean;
     }
   >;
   claimsLoading: boolean;

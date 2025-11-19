@@ -23,11 +23,21 @@ export default function Header() {
   const { fUser, isFrameAdded, handleAddFrame } = useFrameContext();
   const { claims, refetchClaims, claimsLoading } = useData();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"pending" | "completed">("pending");
   const axios = useAxios();
 
   const completedPromotions = useMemo(() => {
+    if (activeTab === "completed") {
+      return claims?.filter((p) => {
+        return p.claimed
+      })
+    } else if (activeTab === "pending") {
+      return claims?.filter((p) => {
+        return !p.claimed
+      });
+    }
     return claims;
-  }, [claims, fUser]);
+  }, [claims, fUser, activeTab]);
 
   const processingPromotions = useMemo(() => {
     return (
@@ -108,12 +118,28 @@ export default function Header() {
       <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
         <DrawerContent className="bg-black border-white/10">
           <DrawerHeader>
-            <DrawerTitle className="text-center text-white">
-              Your Claims
-            </DrawerTitle>
-            <DrawerDescription className="text-center text-white/60">
-              View your completed promotions and earnings
-            </DrawerDescription>
+            <div className="flex items-center gap-2 bg-white/5 rounded-lg p-1 backdrop-blur-sm border border-white/10">
+              <button
+                onClick={() => setActiveTab("pending")}
+                className={`flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 ${
+                  activeTab === "pending"
+                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                    : "text-white/60 hover:text-white/80 hover:bg-white/5"
+                }`}
+              >
+               Pending 
+              </button>
+              <button
+                onClick={() => setActiveTab("completed")}
+                className={`flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 ${
+                  activeTab === "completed"
+                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                    : "text-white/60 hover:text-white/80 hover:bg-white/5"
+                }`}
+              >
+                Completed
+              </button>
+            </div>
           </DrawerHeader>
 
           {claimsLoading ? (
@@ -168,3 +194,10 @@ export default function Header() {
     </>
   );
 }
+
+//<DrawerTitle className="text-center text-white">
+//  Your Claims
+//</DrawerTitle>
+//<DrawerDescription className="text-center text-white/60">
+//  View your completed promotions and earnings
+//</DrawerDescription>

@@ -35,9 +35,21 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
     });
 
     const uniquePromotions = Array.from(
-      new Map(promoterPromotions.map((item: any) => [item.id.toString(), item])).values()
-    ); 
+      new Map(
+        promoterPromotions.map((item: any) => [item.id.toString(), item])
+      ).values()
+    );
 
+    const promoterDetailsTxs: Record<
+      string,
+      {
+        id: string;
+        address: `0x${string}`;
+        abi: any;
+        functionName: string;
+        args: any[];
+      }
+    > = {};
 
     const promotions = await Promise.all(
       uniquePromotions.map(async (promotion: any) => {
@@ -52,6 +64,17 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
         const cast = await redis.get(
           `promotion:cast:${promotion.id.toString()}`
         );
+
+        if (current_user_intent) {
+          promoterDetailsTxs[promotion.id.toString()] = {
+            id: promotion.id.toString(),
+            address: DIAMOND_ADDRESS as `0x${string}`,
+            abi: data_abi,
+            functionName: "getPromoterDetails",
+            args: [promotion.id.toString(), current_user_intent.wallet],
+          };
+        }
+
         return {
           id: promotion.id.toString(),
           total_budget: promotion.total_budget.toString(),
@@ -75,11 +98,30 @@ async function handler(req: ExtendedVercelRequest, res: VercelResponse) {
       })
     );
 
-    return res
-      .status(200)
-      .json({
-        promotions: promotions.filter((p: any) => p.intents.length > 0 && p.claimable).reverse(),
-      });
+    const txs = Object.values(promoterDetailsTxs);
+    const promoterDetailsResults = await publicClient.multicall({
+      contracts: txs,
+    });
+
+    console.log(promoterDetailsResults);
+    const promoterDetailsMap: Record<string, any> = {};
+    for (const [index, result] of promoterDetailsResults.entries()) {
+      const promotionId = txs[index].id;
+      promoterDetailsMap[promotionId] = result.result;
+    }
+
+    return res.status(200).json({
+      promotions: promotions
+        .filter((p: any) => p.intents.length > 0 && p.claimable)
+        .reverse()
+        .map((promotion: any) => {
+          const promoterData = promoterDetailsMap[promotion.id];
+          return {
+            ...promotion,
+            claimed: promoterData && promoterData.state === 2,
+          };
+        }),
+    });
   } catch (e: any) {
     console.log(e, e.message);
     return res.status(500).json({ error: e.message });
