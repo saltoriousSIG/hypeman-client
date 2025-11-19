@@ -3,6 +3,8 @@ import useAxios from "@/hooks/useAxios";
 import { useQuery } from "@tanstack/react-query";
 import { Promotion } from "@/types/promotion.type";
 import useContract, { ExecutionType } from "@/hooks/useContract";
+import { useFrameContext } from "./FrameProvider";
+import { formatUnits } from "viem";
 
 interface DataContextValue {
   promotions?: Array<
@@ -25,6 +27,7 @@ interface DataContextValue {
     }
   >;
   claimsLoading: boolean;
+  promoterEarnings?: string;
   promoterPromotions?: Array<
     Promotion & {
       claimable: boolean;
@@ -58,11 +61,18 @@ export function useData() {
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const axios = useAxios();
+  const { address } = useFrameContext();
 
   const getPlatformFee = useContract(
     ExecutionType.READABLE,
     "Data",
     "getPlatformFee"
+  );
+
+  const getAlltimeEarnings = useContract(
+    ExecutionType.READABLE,
+    "Data",
+    "getAmountEarnedByPromoter"
   );
 
   const {
@@ -96,6 +106,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       });
     },
     enabled: !!axios,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    retry: 2, // Retry failed requests twice
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+  });
+
+  const { data: promoterEarnings, isLoading: isPromoterEarningsLoading } = useQuery({
+    queryKey: ["promoterEarnings", address],
+    queryFn: async () => {
+      if (!address) return "0";
+      const earnings = await getAlltimeEarnings([address]);
+      return parseFloat(formatUnits(earnings, 6)).toFixed(2);
+    },
+    enabled: !!address,
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
     gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
     retry: 2, // Retry failed requests twice
@@ -155,6 +179,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         promotions,
         loading,
         platformFee,
+        promoterEarnings,
         refetchPromotions: refetch,
         error,
       }}

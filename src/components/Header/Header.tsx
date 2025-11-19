@@ -21,19 +21,21 @@ import useAxios from "@/hooks/useAxios";
  */
 export default function Header() {
   const { fUser, isFrameAdded, handleAddFrame } = useFrameContext();
-  const { claims, refetchClaims, claimsLoading } = useData();
+  const { claims, refetchClaims, claimsLoading, promoterEarnings } = useData();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"pending" | "completed">("pending");
+  const [activeTab, setActiveTab] = useState<"pending" | "completed">(
+    "pending"
+  );
   const axios = useAxios();
 
   const completedPromotions = useMemo(() => {
     if (activeTab === "completed") {
       return claims?.filter((p) => {
-        return p.claimed
-      })
+        return p.claimed;
+      });
     } else if (activeTab === "pending") {
       return claims?.filter((p) => {
-        return !p.claimed
+        return !p.claimed;
       });
     }
     return claims;
@@ -118,6 +120,14 @@ export default function Header() {
       <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
         <DrawerContent className="bg-black border-white/10">
           <DrawerHeader>
+            <DrawerTitle className="text-center">
+              <div className="text-gray-300 text-xs uppercase tracking-wider mb-2">
+                All Time Earnings
+              </div>
+              <div className="text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
+                ${promoterEarnings}
+              </div>
+            </DrawerTitle>
             <div className="flex items-center gap-2 bg-white/5 rounded-lg p-1 backdrop-blur-sm border border-white/10">
               <button
                 onClick={() => setActiveTab("pending")}
@@ -127,7 +137,7 @@ export default function Header() {
                     : "text-white/60 hover:text-white/80 hover:bg-white/5"
                 }`}
               >
-               Pending 
+                Pending
               </button>
               <button
                 onClick={() => setActiveTab("completed")}
@@ -195,9 +205,6 @@ export default function Header() {
   );
 }
 
-//<DrawerTitle className="text-center text-white">
-//  Your Claims
-//</DrawerTitle>
 //<DrawerDescription className="text-center text-white/60">
 //  View your completed promotions and earnings
 //</DrawerDescription>
