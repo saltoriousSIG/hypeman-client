@@ -55,6 +55,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const list = redis_list.filter((item) => !item.processed);
       if (list.length > 0) {
         for (const [index, item] of list.entries()) {
+          if (intents_to_process.length >= 30) {
+            continue;
+          }
+
           const promoter_details: any = await publicClient.readContract({
             address: DIAMOND_ADDRESS as `0x${string}`,
             abi: data_abi,
