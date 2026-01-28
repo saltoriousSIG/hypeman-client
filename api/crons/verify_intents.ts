@@ -82,13 +82,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                   }
                 );
 
-                console.log(submitted_cast.generated_cast, "SUBMITTED CAST");
-                console.log(cast.text, "FETCHED CAST");
                 const { sentimentMatch } = await hypeman.compareContent(
                   submitted_cast.generated_cast,
                   cast.text
                 );
-                console.log(sentimentMatch, "SENTIMENT MATCH");
 
                 if (!sentimentMatch) {
                   intents_to_process.push({
@@ -157,6 +154,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
     }
+
     console.log(intents_to_process.length, "INTENTS TO PROCESS");
 
     if (intents_to_process.length > 0) {
