@@ -7,7 +7,7 @@ export const config = createConfig({
   connectors: [farcasterFrame()],
   transports: {
     [base.id]: http(
-      "https://yolo-fabled-wave.base-mainnet.quiknode.pro/89d0417479d5e2b5f8749f7f76ec159e9e378aba/"
+      "https://lasso.sh/rpc/profile/default/load-balanced/base?key=lasso_2jUd3eZhGjDJ73sFYZQ3FRbdMIh1EHKCl"
     ),
     [mainnet.id]: http(),
   },
