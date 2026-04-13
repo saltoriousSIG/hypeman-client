@@ -6,7 +6,7 @@ import { defineConfig } from "file:///Users/sigalafosam/hypeman/hypeman_client/n
 // src/config.ts
 var embedConfig = {
   version: "next",
-  imageUrl: "https://res.cloudinary.com/dsrjjqkjs/image/upload/v1760928636/replicate-prediction-t60cxw0m31rmc0csxfbbam7xgr_vlc51o.jpg",
+  imageUrl: "https://hypeman.social/hypeman.png",
   button: {
     title: "Find your Hypeman",
     action: {
